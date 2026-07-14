@@ -27,6 +27,7 @@ import {
   ListTodo,
   MessageSquare,
   Radio,
+  Send,
   ServerCog,
   Settings,
   Ticket,
@@ -138,6 +139,11 @@ export function useSidebarData(): SidebarData {
             title: t('Redemption Codes'),
             url: '/redemption-codes',
             icon: Ticket,
+          },
+          {
+            title: t('API Issuance'),
+            url: '/issuances',
+            icon: Send,
           },
           {
             title: t('Subscriptions'),

@@ -186,12 +186,18 @@ func UserAuth() func(c *gin.Context) {
 
 func AdminAuth() func(c *gin.Context) {
 	return func(c *gin.Context) {
+		if !RequireIterLoopAdminHost(c) {
+			return
+		}
 		authHelper(c, common.RoleAdminUser)
 	}
 }
 
 func RootAuth() func(c *gin.Context) {
 	return func(c *gin.Context) {
+		if !RequireIterLoopAdminHost(c) {
+			return
+		}
 		authHelper(c, common.RoleRootUser)
 	}
 }

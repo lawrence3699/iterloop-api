@@ -1,0 +1,12 @@
+tunnel: replace-with-new-iterloop-tunnel-uuid
+credentials-file: C:\IterLoopAPI\cloudflared\replace-with-new-iterloop-tunnel-uuid.json
+
+ingress:
+  - hostname: console.iter-loop.com
+    service: http://127.0.0.1:28517
+  - hostname: api.iter-loop.com
+    service: http://127.0.0.1:28517
+  - hostname: admin.iter-loop.com
+    service: http://127.0.0.1:28517
+  - service: http_status:404
+

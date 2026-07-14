@@ -13,6 +13,8 @@ import (
 )
 
 func SetRouter(router *gin.Engine, assets ThemeAssets) {
+	router.Use(middleware.EnforceIterLoopHostPolicy())
+	SetIterLoopRouter(router)
 	SetApiRouter(router)
 	SetDashboardRouter(router)
 	SetRelayRouter(router)

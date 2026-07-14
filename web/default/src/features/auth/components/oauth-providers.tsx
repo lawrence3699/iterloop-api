@@ -37,6 +37,7 @@ type OAuthProvidersProps = {
   className?: string
   onWeChatLogin?: () => void
   isWeChatLoading?: boolean
+  separatorPosition?: 'before' | 'after'
 }
 
 type ProviderButton = {
@@ -53,6 +54,7 @@ export function OAuthProviders({
   className,
   onWeChatLogin,
   isWeChatLoading = false,
+  separatorPosition = 'before',
 }: OAuthProvidersProps) {
   const { t } = useTranslation()
   const {
@@ -137,18 +139,22 @@ export function OAuthProviders({
 
   if (providerButtons.length === 0) return null
 
+  const separator = (
+    <div className='relative'>
+      <div className='absolute inset-0 flex items-center'>
+        <span className='w-full border-t' />
+      </div>
+      <div className='relative flex justify-center text-xs uppercase'>
+        <span className='bg-background text-muted-foreground px-2'>
+          {t('Or continue with')}
+        </span>
+      </div>
+    </div>
+  )
+
   return (
     <div className={cn('space-y-3', className)}>
-      <div className='relative'>
-        <div className='absolute inset-0 flex items-center'>
-          <span className='w-full border-t' />
-        </div>
-        <div className='relative flex justify-center text-xs uppercase'>
-          <span className='bg-background text-muted-foreground px-2'>
-            {t('Or continue with')}
-          </span>
-        </div>
-      </div>
+      {separatorPosition === 'before' && separator}
 
       <div className='flex flex-col gap-2'>
         {providerButtons.map(
@@ -167,6 +173,7 @@ export function OAuthProviders({
           )
         )}
       </div>
+      {separatorPosition === 'after' && separator}
     </div>
   )
 }

@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"net"
 	"net/http"
 	"os"
 	"os/signal"
@@ -215,7 +216,7 @@ func main() {
 	}
 
 	srv := &http.Server{
-		Addr:    ":" + port,
+		Addr:    listenAddress(os.Getenv("BIND_ADDRESS"), port),
 		Handler: server,
 	}
 
@@ -246,6 +247,14 @@ func main() {
 		model.SaveQuotaDataCache()
 	}
 	common.SysLog("server exited")
+}
+
+func listenAddress(host string, port string) string {
+	host = strings.TrimSpace(host)
+	if host == "" {
+		return ":" + port
+	}
+	return net.JoinHostPort(host, port)
 }
 
 func InjectUmamiAnalytics() {

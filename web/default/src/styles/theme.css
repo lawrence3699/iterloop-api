@@ -20,6 +20,10 @@ For commercial licensing, please contact support@quantumnous.com
 
 @theme inline {
   --font-sans: 'Public Sans', sans-serif;
+  --font-display:
+    'Space Grotesk Variable', 'Space Grotesk', 'Public Sans', sans-serif;
+  --font-mono:
+    'JetBrains Mono Variable', 'JetBrains Mono', ui-monospace, monospace;
   /* Editorial serif token — the body face used by the `serif` font axis
    * and by presets that opt in (currently Anthropic). Lora carries only
    * Latin glyphs, so the stack walks through CJK serifs (Noto / Source Han
@@ -93,6 +97,103 @@ For commercial licensing, please contact support@quantumnous.com
   --radius-4xl: calc(var(--radius) * 2.6);
 }
 
+/* IterLoop's white-and-blue operating palette. These declarations live after
+ * the upstream defaults so every existing screen inherits the same restrained,
+ * rule-driven visual language. */
+html:root {
+  --radius: 0.5rem;
+  --background: #ffffff;
+  --foreground: #212121;
+  --card: #ffffff;
+  --card-foreground: #212121;
+  --popover: #ffffff;
+  --popover-foreground: #212121;
+  --primary: #1863dc;
+  --primary-foreground: #ffffff;
+  --secondary: #eef4fc;
+  --secondary-foreground: #212121;
+  --muted: #f4f7fb;
+  --muted-foreground: #616161;
+  --accent: #eaf3ff;
+  --accent-foreground: #164f9f;
+  --destructive: #b30000;
+  --destructive-foreground: #ffffff;
+  --success: #176b55;
+  --success-foreground: #ffffff;
+  --warning: #b45f06;
+  --warning-foreground: #ffffff;
+  --info: #1863dc;
+  --info-foreground: #ffffff;
+  --neutral: #93939f;
+  --neutral-foreground: #172033;
+  --border: #d9e2ef;
+  --input: #d9e2ef;
+  --ring: #4c6ee6;
+  --chart-1: #1863dc;
+  --chart-2: #1863dc;
+  --chart-3: #ff7759;
+  --chart-4: #071829;
+  --chart-5: #75758a;
+  --overview-accent-1: #1863dc;
+  --overview-accent-2: #1863dc;
+  --overview-accent-3: #ff7759;
+  --sidebar: #f8fbff;
+  --sidebar-foreground: #212121;
+  --sidebar-primary: #1863dc;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #eaf3ff;
+  --sidebar-accent-foreground: #164f9f;
+  --sidebar-border: #d9e2ef;
+  --sidebar-ring: #4c6ee6;
+  --skeleton-base: #f2f2f2;
+  --skeleton-highlight: #fafafa;
+}
+
+html.dark {
+  --background: #0f1c2e;
+  --foreground: #f5f5f1;
+  --card: #16263d;
+  --card-foreground: #f5f5f1;
+  --popover: #1b2d48;
+  --popover-foreground: #f5f5f1;
+  --primary: #8db7ff;
+  --primary-foreground: #0d2442;
+  --secondary: #213550;
+  --secondary-foreground: #f5f5f1;
+  --muted: #1c304b;
+  --muted-foreground: #b3b3ad;
+  --accent: #24456e;
+  --accent-foreground: #eaf3ff;
+  --destructive: #ff7f76;
+  --destructive-foreground: #17171c;
+  --success: #78c9a9;
+  --success-foreground: #102019;
+  --warning: #f2b36f;
+  --warning-foreground: #21170a;
+  --info: #8ab4ff;
+  --info-foreground: #071829;
+  --neutral: #a4a49e;
+  --neutral-foreground: #0f1c2e;
+  --border: rgba(255, 255, 255, 0.12);
+  --input: rgba(255, 255, 255, 0.18);
+  --ring: #8aa1ff;
+  --chart-1: #8db7ff;
+  --chart-2: #8ab4ff;
+  --chart-3: #ff9a82;
+  --chart-4: #a6c8e8;
+  --chart-5: #b3b3ad;
+  --sidebar: #0c192a;
+  --sidebar-foreground: #f5f5f1;
+  --sidebar-primary: #8db7ff;
+  --sidebar-primary-foreground: #0d2442;
+  --sidebar-accent: #24456e;
+  --sidebar-accent-foreground: #eaf3ff;
+  --sidebar-border: rgba(255, 255, 255, 0.12);
+  --sidebar-ring: #8aa1ff;
+  --skeleton-base: #22344d;
+  --skeleton-highlight: #304765;
+}
+
 :root {
   --radius: 1rem;
   --app-header-height: 3rem;
@@ -161,7 +262,11 @@ For commercial licensing, please contact support@quantumnous.com
   );
   /* Disabled rows: kept subtle so they read as "quiet", not as a colored
      alert state. */
-  --table-disabled: color-mix(in oklch, var(--foreground) 3%, var(--background));
+  --table-disabled: color-mix(
+    in oklch,
+    var(--foreground) 3%,
+    var(--background)
+  );
   --table-disabled-hover: color-mix(
     in oklch,
     var(--foreground) 4.5%,
@@ -225,7 +330,11 @@ For commercial licensing, please contact support@quantumnous.com
     var(--foreground) 9%,
     var(--background)
   );
-  --table-disabled: color-mix(in oklch, var(--foreground) 7%, var(--background));
+  --table-disabled: color-mix(
+    in oklch,
+    var(--foreground) 7%,
+    var(--background)
+  );
   --table-disabled-hover: color-mix(
     in oklch,
     var(--foreground) 9.5%,

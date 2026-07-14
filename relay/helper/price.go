@@ -65,6 +65,11 @@ func HandleGroupRatio(ctx *gin.Context, relayInfo *relaycommon.RelayInfo) types.
 		// normal group ratio
 		groupRatioInfo.GroupRatio = ratio_setting.GetGroupRatio(relayInfo.UsingGroup)
 	}
+	if iterLoopRatio, ok := operation_setting.GetIterLoopGroupModelRatio(relayInfo.UsingGroup, relayInfo.OriginModelName); ok {
+		groupRatioInfo.GroupRatio = iterLoopRatio
+		groupRatioInfo.GroupSpecialRatio = iterLoopRatio
+		groupRatioInfo.HasSpecialRatio = true
+	}
 
 	return groupRatioInfo
 }

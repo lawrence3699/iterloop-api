@@ -8,8 +8,11 @@ import (
 )
 
 var userUsableGroups = map[string]string{
-	"default": "默认分组",
-	"vip":     "vip分组",
+	"default":           "默认分组",
+	"vip":               "vip分组",
+	"codex-standard":    "Codex 标准",
+	"claude-standard":   "Claude 标准",
+	"combined-standard": "Codex + Claude 混合",
 }
 var userUsableGroupsMutex sync.RWMutex
 

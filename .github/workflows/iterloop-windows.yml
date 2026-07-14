@@ -1,0 +1,92 @@
+name: IterLoop Windows Artifact
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - 'iterloop-v*'
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Checkout
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          fetch-depth: 0
+
+      - name: Resolve version
+        run: |
+          if [[ "$GITHUB_REF" == refs/tags/* ]]; then
+            VERSION="${GITHUB_REF#refs/tags/}"
+          else
+            VERSION="0.1.0-${GITHUB_SHA::8}"
+          fi
+          echo "VERSION=$VERSION" >> "$GITHUB_ENV"
+
+      - name: Install Bun
+        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        with:
+          bun-version: '1.3.14'
+
+      - name: Build frontends
+        env:
+          VITE_ITERLOOP_ADMIN_HOST: admin.iter-loop.com
+          VITE_ITERLOOP_API_BASE_URL: https://api.iter-loop.com/v1
+          VITE_REACT_APP_VERSION: ${{ env.VERSION }}
+        run: |
+          cd web
+          bun install --frozen-lockfile
+          cd default
+          bun run build
+          cd ../classic
+          bun run build
+          cd ../..
+
+      - name: Install Go
+        uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6.5.0
+        with:
+          go-version: '1.26.x'
+
+      - name: Test and build
+        env:
+          CGO_ENABLED: '0'
+          GOOS: windows
+          GOARCH: amd64
+        run: |
+          go test ./model ./middleware ./controller ./router
+          mkdir -p artifact/app artifact/scripts
+          go build -trimpath -ldflags "-s -w -X github.com/QuantumNous/new-api/common.Version=$VERSION" -o artifact/app/iterloop-api.exe .
+          cp deploy/windows/*.ps1 deploy/windows/*.sql artifact/scripts/
+          cp deploy/windows/iterloop.env.example artifact/
+          cp deploy/windows/cloudflared-config.yml.example artifact/
+          cp deploy/windows/README.md artifact/
+          cp LICENSE NOTICE THIRD-PARTY-LICENSES.md artifact/
+          cd artifact
+          sha256sum app/iterloop-api.exe > SHA256SUMS.txt
+          7z a -tzip "../iterloop-api-windows-amd64-$VERSION.zip" .
+          cd ..
+          sha256sum "iterloop-api-windows-amd64-$VERSION.zip" >> artifact/SHA256SUMS.txt
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: iterloop-api-windows-amd64-${{ env.VERSION }}
+          path: |
+            iterloop-api-windows-amd64-${{ env.VERSION }}.zip
+            artifact/SHA256SUMS.txt
+
+      - name: Publish tagged release
+        if: startsWith(github.ref, 'refs/tags/iterloop-v')
+        uses: softprops/action-gh-release@718ea10b132b3b2eba29c1007bb80653f286566b # v3.0.1
+        with:
+          files: |
+            iterloop-api-windows-amd64-${{ env.VERSION }}.zip
+            artifact/SHA256SUMS.txt
+

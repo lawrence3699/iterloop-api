@@ -20,14 +20,23 @@ import i18n from 'i18next'
 import LanguageDetector from 'i18next-browser-languagedetector'
 import { initReactI18next } from 'react-i18next'
 
+import { iterLoopZhCN } from './iterloop-translations'
 import { convertDetectedLanguage } from './languages'
 import en from './locales/en.json'
 import fr from './locales/fr.json'
 import ja from './locales/ja.json'
 import ru from './locales/ru.json'
 import vi from './locales/vi.json'
-import zhCN from './locales/zh.json'
 import zhTW from './locales/zh-TW.json'
+import zhCN from './locales/zh.json'
+
+const initialLanguage = (() => {
+  try {
+    return window.localStorage.getItem('i18nextLng') || 'zhCN'
+  } catch {
+    return 'zhCN'
+  }
+})()
 
 export const resources = {
   en,
@@ -36,7 +45,7 @@ export const resources = {
   ru,
   ja,
   vi,
-  zhTW
+  zhTW,
 } as const
 
 i18n
@@ -44,6 +53,7 @@ i18n
   .use(initReactI18next)
   .init({
     resources,
+    lng: initialLanguage,
     fallbackLng: 'en',
     supportedLngs: ['en', 'zhCN', 'fr', 'ru', 'ja', 'vi', 'zhTW'],
     load: 'currentOnly',
@@ -53,12 +63,14 @@ i18n
       escapeValue: false, // not needed for react as it escapes by default
     },
     detection: {
-      order: ['localStorage', 'navigator'],
+      order: ['localStorage'],
       caches: ['localStorage'],
       // Browsers report `zh-CN`/`zh-TW`/`zh`; map them onto our `zhCN`/`zhTW`
       // codes (non-Chinese codes pass through for normal supportedLngs matching).
       convertDetectedLanguage,
     },
   })
+
+i18n.addResourceBundle('zhCN', 'translation', iterLoopZhCN, true, true)
 
 export default i18n

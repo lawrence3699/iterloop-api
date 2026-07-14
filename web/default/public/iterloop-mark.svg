@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-labelledby="title desc">
+  <title id="title">IterLoop API</title>
+  <desc id="desc">Interlocking loop mark on a deep green square.</desc>
+  <rect width="256" height="256" rx="44" fill="#003c33"/>
+  <path
+    fill="#ffffff"
+    d="M47 128c0-36 25-62 59-62 29 0 46 20 61 47l12 21c7 12 14 17 24 17 13 0 22-10 22-23s-9-23-22-23c-10 0-17 5-24 17l-11-20c10-19 24-32 45-32 31 0 52 25 52 58s-21 58-52 58c-29 0-46-20-61-47l-12-21c-7-12-14-17-24-17-13 0-22 10-22 27s9 27 22 27c10 0 17-5 24-17l11 20c-10 19-24 32-45 32-34 0-59-26-59-62Z"
+  />
+  <circle cx="128" cy="128" r="8" fill="#ff7759"/>
+</svg>

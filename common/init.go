@@ -98,6 +98,22 @@ func InitEnv() {
 	}
 	SMTPStartTLSEnabled = GetEnvOrDefaultBool("SMTP_STARTTLS_ENABLE", GetEnvOrDefaultBool("SMTP_STARTTLS_ENABLED", false))
 	SMTPInsecureSkipVerify = GetEnvOrDefaultBool("SMTP_INSECURE_SKIP_VERIFY", GetEnvOrDefaultBool("SMTP_TLS_INSECURE_SKIP_VERIFY", false))
+	SMTPServer = GetEnvOrDefaultString("SMTP_SERVER", SMTPServer)
+	SMTPPort = GetEnvOrDefault("SMTP_PORT", SMTPPort)
+	SMTPSSLEnabled = GetEnvOrDefaultBool("SMTP_SSL_ENABLED", SMTPSSLEnabled)
+	SMTPForceAuthLogin = GetEnvOrDefaultBool("SMTP_FORCE_AUTH_LOGIN", SMTPForceAuthLogin)
+	SMTPAccount = GetEnvOrDefaultString("SMTP_ACCOUNT", SMTPAccount)
+	SMTPFrom = GetEnvOrDefaultString("SMTP_FROM", SMTPFrom)
+	SMTPToken = GetEnvOrDefaultString("SMTP_TOKEN", SMTPToken)
+	TurnstileSiteKey = GetEnvOrDefaultString("TURNSTILE_SITE_KEY", TurnstileSiteKey)
+	TurnstileSecretKey = GetEnvOrDefaultString("TURNSTILE_SECRET_KEY", TurnstileSecretKey)
+	TurnstileCheckEnabled = GetEnvOrDefaultBool("TURNSTILE_CHECK_ENABLED", TurnstileCheckEnabled)
+	EmailVerificationEnabled = GetEnvOrDefaultBool("EMAIL_VERIFICATION_ENABLED", EmailVerificationEnabled)
+	RegisterEnabled = GetEnvOrDefaultBool("REGISTER_ENABLED", RegisterEnabled)
+	PasswordLoginEnabled = GetEnvOrDefaultBool("PASSWORD_LOGIN_ENABLED", PasswordLoginEnabled)
+	PasswordRegisterEnabled = GetEnvOrDefaultBool("PASSWORD_REGISTER_ENABLED", PasswordRegisterEnabled)
+	SystemName = GetEnvOrDefaultString("SYSTEM_NAME", SystemName)
+	Logo = GetEnvOrDefaultString("SYSTEM_LOGO", Logo)
 
 	// Parse requestInterval and set RequestInterval
 	requestInterval, _ = strconv.Atoi(os.Getenv("POLLING_INTERVAL"))

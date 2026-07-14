@@ -20,6 +20,8 @@ For commercial licensing, please contact support@quantumnous.com
 @import 'tw-animate-css';
 @import 'shadcn/tailwind.css';
 @import '@fontsource-variable/public-sans';
+@import '@fontsource-variable/space-grotesk';
+@import '@fontsource-variable/jetbrains-mono';
 /* Editorial serif (Lora) backing the `serif` font axis and the Anthropic
  * preset's default typography. See `--font-serif` in theme.css for the
  * full Latin + CJK fallback stack and `theme-presets.css` for the cascade
@@ -50,6 +52,7 @@ For commercial licensing, please contact support@quantumnous.com
 @layer base {
   * {
     @apply border-border outline-ring/50;
+    letter-spacing: 0;
     scrollbar-width: thin;
     scrollbar-color: var(--border) transparent;
   }
@@ -62,6 +65,20 @@ For commercial licensing, please contact support@quantumnous.com
      * (defined in theme.css, swapped by `[data-theme-font='...']` blocks
      * in theme-presets.css). Defaults to the project's humanist sans. */
     font-family: var(--font-body);
+  }
+
+  code,
+  pre,
+  kbd,
+  .font-mono {
+    font-family: var(--font-mono);
+  }
+
+  [data-slot='card'],
+  [data-slot='dialog-content'],
+  [data-slot='sheet-content'] {
+    border-radius: 8px;
+    box-shadow: none;
   }
 
   /* Keep sticky headers stable while primitives lock body scrolling. */
@@ -82,6 +99,36 @@ For commercial licensing, please contact support@quantumnous.com
     textarea {
       font-size: 16px !important;
     }
+  }
+}
+
+@layer components {
+  .font-display {
+    font-family: var(--font-display);
+    font-weight: 400;
+    letter-spacing: 0;
+  }
+
+  .iterloop-rule-table {
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--background);
+    box-shadow: none;
+  }
+
+  .iterloop-tech-panel {
+    border: 1px solid color-mix(in srgb, white 14%, transparent);
+    border-radius: 8px;
+    background: #17171c;
+    color: white;
+  }
+
+  .iterloop-section-label {
+    font-family: var(--font-mono);
+    color: var(--muted-foreground);
+    font-size: 0.75rem;
+    line-height: 1.4;
+    text-transform: uppercase;
   }
 }
 

@@ -264,6 +264,32 @@ func SetApiRouter(router *gin.Engine) {
 			redemptionRoute.DELETE("/invalid", controller.DeleteInvalidRedemption)
 			redemptionRoute.DELETE("/:id", controller.DeleteRedemption)
 		}
+
+		issuanceProfileRoute := apiRouter.Group("/issuance-profiles")
+		issuanceProfileRoute.Use(middleware.AdminAuth())
+		{
+			issuanceProfileRoute.GET("/", controller.ListIssuanceProfiles)
+			issuanceProfileRoute.GET("/:id", controller.GetIssuanceProfile)
+			issuanceProfileRoute.POST("/", controller.CreateIssuanceProfile)
+			issuanceProfileRoute.PUT("/:id", controller.UpdateIssuanceProfile)
+			issuanceProfileRoute.DELETE("/:id", controller.DeleteIssuanceProfile)
+		}
+
+		issuanceRoute := apiRouter.Group("/issuances")
+		issuanceRoute.Use(middleware.AdminAuth())
+		{
+			issuanceRoute.GET("/", controller.ListIssuances)
+			issuanceRoute.POST("/", controller.CreateIssuance)
+			issuanceRoute.POST("/:id/revoke", controller.RevokeIssuance)
+		}
+
+		iterLoopRoute := apiRouter.Group("/iterloop")
+		iterLoopRoute.Use(middleware.AdminAuth())
+		{
+			iterLoopRoute.GET("/upstream-health", controller.GetIterLoopUpstreamHealth)
+			iterLoopRoute.GET("/pricing-settings", controller.GetIterLoopPricingSettings)
+			iterLoopRoute.PUT("/pricing-settings", controller.UpdateIterLoopPricingSettings)
+		}
 		logRoute := apiRouter.Group("/log")
 		logRoute.GET("/", middleware.AdminAuth(), controller.GetAllLogs)
 		// Legacy synchronous direct-delete route used only by the classic frontend.

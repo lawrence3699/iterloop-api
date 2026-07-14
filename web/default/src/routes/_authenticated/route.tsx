@@ -20,6 +20,7 @@ import { createFileRoute, redirect } from '@tanstack/react-router'
 
 import { AuthenticatedLayout } from '@/components/layout'
 import { getSelf } from '@/lib/api'
+import { isIterLoopAdminHost, isIterLoopAdminPath } from '@/lib/iterloop-host'
 import { useAuthStore } from '@/stores/auth-store'
 
 // 内存中的验证标记，避免同一会话中重复验证
@@ -27,6 +28,10 @@ let sessionVerified = false
 
 export const Route = createFileRoute('/_authenticated')({
   beforeLoad: async ({ location }) => {
+    if (isIterLoopAdminPath(location.pathname) && !isIterLoopAdminHost()) {
+      throw redirect({ to: '/403' })
+    }
+
     const { auth } = useAuthStore.getState()
 
     // 如果本地没有用户信息，直接跳转登录页
