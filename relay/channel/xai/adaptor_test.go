@@ -64,6 +64,12 @@ func TestIterLoopGrokOnlyAllowsTextEndpoints(t *testing.T) {
 
 	info.RequestURLPath = "/v1/responses"
 	info.ChannelBaseUrl = "https://api.x.ai/v1"
-	_, err = (&Adaptor{}).GetRequestURL(info)
+	requestURL, err := (&Adaptor{}).GetRequestURL(info)
 	require.NoError(t, err)
+	require.Equal(t, "https://api.x.ai/v1/responses", requestURL)
+
+	info.ChannelBaseUrl = "https://api.x.ai"
+	requestURL, err = (&Adaptor{}).GetRequestURL(info)
+	require.NoError(t, err)
+	require.Equal(t, "https://api.x.ai/v1/responses", requestURL)
 }

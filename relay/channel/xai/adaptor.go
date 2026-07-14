@@ -149,7 +149,12 @@ func (a *Adaptor) GetRequestURL(info *relaycommon.RelayInfo) (string, error) {
 			return "", errors.New("this xAI group only supports /v1/responses and /v1/chat/completions")
 		}
 	}
-	return relaycommon.GetFullRequestURL(info.ChannelBaseUrl, info.RequestURLPath, info.ChannelType), nil
+	baseURL := strings.TrimRight(strings.TrimSpace(info.ChannelBaseUrl), "/")
+	requestURL := strings.TrimSpace(info.RequestURLPath)
+	if strings.HasSuffix(baseURL, "/v1") && strings.HasPrefix(requestURL, "/v1/") {
+		requestURL = strings.TrimPrefix(requestURL, "/v1")
+	}
+	return relaycommon.GetFullRequestURL(baseURL, requestURL, info.ChannelType), nil
 }
 
 func (a *Adaptor) SetupRequestHeader(c *gin.Context, req *http.Header, info *relaycommon.RelayInfo) error {
