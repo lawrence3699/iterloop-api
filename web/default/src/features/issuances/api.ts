@@ -115,6 +115,7 @@ export async function getIterLoopPricingSettings(): Promise<
 export async function updateIterLoopPricingSettings(payload: {
   codex_ratio: number
   claude_ratio: number
+  grok_ratio: number
   confirm: boolean
 }): Promise<ApiResponse<IterLoopPricingPreview>> {
   const response = await api.put('/api/iterloop/pricing-settings', payload)

@@ -36,6 +36,7 @@ const MODEL_ROWS = [
   ['gpt-5.5', 'Codex', '0.4x'],
   ['gpt-5.6-sol', 'Codex', '0.4x'],
   ['claude-sonnet-4-6', 'Claude', '0.7x'],
+  ['grok-4.5', 'xAI', '1.0x'],
 ]
 
 function ProductInterface() {
@@ -59,7 +60,7 @@ function ProductInterface() {
           {t('Upstream healthy')}
         </span>
       </div>
-      <div className='grid h-[292px] grid-cols-1 overflow-hidden sm:h-[312px] md:h-[268px] md:grid-cols-[190px_minmax(0,1fr)]'>
+      <div className='grid h-[340px] grid-cols-1 overflow-hidden sm:h-[360px] md:h-[340px] md:grid-cols-[190px_minmax(0,1fr)]'>
         <aside className='hidden border-r border-[#dce5f1] bg-[#f6f9ff] p-4 md:block dark:border-white/10 dark:bg-[#102038]'>
           <div className='mb-8 flex items-center gap-2'>
             <img
@@ -210,14 +211,14 @@ export function IterLoopHome(props: { isAuthenticated: boolean }) {
           <div className='max-w-3xl'>
             <div className='mb-4 flex items-center gap-2 font-mono text-xs text-[#1863dc]'>
               <RadioTower className='size-4' />
-              {t('Unified OpenAI and Anthropic protocols').toUpperCase()}
+              {t('Unified Codex, Claude, and Grok access').toUpperCase()}
             </div>
             <h1 className='font-display text-5xl leading-[1.02] font-normal sm:text-6xl md:text-7xl'>
               IterLoop API
             </h1>
             <p className='text-muted-foreground mt-5 max-w-2xl text-base leading-7 sm:text-lg'>
               {t(
-                'One governed API surface for Codex and Claude, with clear balances, scoped keys, auditable usage, and delivery-ready client configuration.'
+                'One governed API surface for Codex, Claude, and Grok, with clear balances, scoped keys, auditable usage, and delivery-ready client configuration.'
               )}
             </p>
             <div className='mt-7 flex flex-wrap gap-3'>
@@ -297,7 +298,7 @@ export function IterLoopHome(props: { isAuthenticated: boolean }) {
                 KeyRound,
                 t('Scoped credentials'),
                 t(
-                  'Create Claude-only, Codex-only, or combined keys with model, IP, quota, and expiry limits.'
+                  'Create Claude-only, Codex-only, Grok-only, or combined keys with model, IP, quota, and expiry limits.'
                 ),
               ],
               [

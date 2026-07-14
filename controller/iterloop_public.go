@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/QuantumNous/new-api/common"
+	"github.com/QuantumNous/new-api/setting/billing_setting"
 	"github.com/QuantumNous/new-api/setting/operation_setting"
 	"github.com/gin-gonic/gin"
 )
@@ -27,10 +28,15 @@ func IterLoopPricing(c *gin.Context) {
 		"groups": gin.H{
 			"codex-standard":  gin.H{"ratio": pricing.CodexRatio, "provider": "OpenAI-compatible"},
 			"claude-standard": gin.H{"ratio": pricing.ClaudeRatio, "provider": "Anthropic-compatible"},
+			"grok-standard":   gin.H{"ratio": pricing.GrokRatio, "provider": "xAI"},
 			"combined-standard": gin.H{
-				"codex_ratio": pricing.CodexRatio, "claude_ratio": pricing.ClaudeRatio,
+				"codex_ratio": pricing.CodexRatio, "claude_ratio": pricing.ClaudeRatio, "grok_ratio": pricing.GrokRatio,
 				"mode": pricing.CombinedMode,
 			},
+		},
+		"models": gin.H{
+			"grok-4.5": gin.H{"provider": "xAI", "billing_mode": billing_setting.BillingModeTieredExpr, "billing_expr": billing_setting.Grok45BillingExpr, "group": "grok-standard"},
+			"grok-4.3": gin.H{"provider": "xAI", "billing_mode": billing_setting.BillingModeTieredExpr, "billing_expr": billing_setting.Grok43BillingExpr, "group": "grok-standard"},
 		},
 		"endpoints": gin.H{
 			"responses":        "/v1/responses",
@@ -38,7 +44,8 @@ func IterLoopPricing(c *gin.Context) {
 			"messages":         "/v1/messages",
 			"models":           "/v1/models",
 		},
-		"websockets": false,
+		"websockets":   false,
+		"hosted_tools": gin.H{"web_search": false, "x_search": false},
 	})
 }
 
@@ -59,7 +66,7 @@ func IterLoopOpenAPI(c *gin.Context) {
 		"info": gin.H{
 			"title":       "IterLoop API",
 			"version":     "2026-07-14",
-			"description": "OpenAI- and Anthropic-compatible model gateway for governed Codex and Claude access.",
+			"description": "OpenAI- and Anthropic-compatible model gateway for governed Codex, Claude, and Grok access.",
 		},
 		"servers": []gin.H{{"url": "https://api.iter-loop.com"}},
 		"components": gin.H{

@@ -13,6 +13,9 @@ const (
 	BillingModeTieredExpr = "tiered_expr"
 	BillingModeField      = "billing_mode"
 	BillingExprField      = "billing_expr"
+
+	Grok45BillingExpr = `len <= 200000 ? tier("standard", p * 2 + c * 6 + cr * 0.5) : tier("long_context", p * 4 + c * 12 + cr * 1)`
+	Grok43BillingExpr = `len <= 200000 ? tier("standard", p * 1.25 + c * 2.5 + cr * 0.2) : tier("long_context", p * 2.5 + c * 5 + cr * 0.4)`
 )
 
 // BillingSetting is managed by config.GlobalConfig.Register.
@@ -23,8 +26,14 @@ type BillingSetting struct {
 }
 
 var billingSetting = BillingSetting{
-	BillingMode: make(map[string]string),
-	BillingExpr: make(map[string]string),
+	BillingMode: map[string]string{
+		"grok-4.5": BillingModeTieredExpr,
+		"grok-4.3": BillingModeTieredExpr,
+	},
+	BillingExpr: map[string]string{
+		"grok-4.5": Grok45BillingExpr,
+		"grok-4.3": Grok43BillingExpr,
+	},
 }
 
 func init() {

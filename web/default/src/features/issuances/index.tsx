@@ -106,6 +106,7 @@ const CLAUDE_API_BASE = PUBLIC_API_BASE.replace(/\/v1\/?$/, '')
 const MODE_LABELS: Record<IssuanceMode, string> = {
   codex: 'Codex only',
   claude: 'Claude only',
+  grok: 'Grok only',
   combined: 'Combined key',
   split: 'Split keys',
 }
@@ -128,7 +129,8 @@ function profileHasCodex(profile?: IssuanceProfile | null) {
     profile &&
     (profile.mode === 'codex' ||
       profile.mode === 'combined' ||
-      profile.mode === 'split')
+      profile.mode === 'split') &&
+    profile.codex_models.trim()
   )
 }
 
@@ -137,25 +139,48 @@ function profileHasClaude(profile?: IssuanceProfile | null) {
     profile &&
     (profile.mode === 'claude' ||
       profile.mode === 'combined' ||
-      profile.mode === 'split')
+      profile.mode === 'split') &&
+    profile.claude_models.trim()
   )
+}
+
+function profileHasGrok(profile?: IssuanceProfile | null) {
+  return Boolean(
+    profile &&
+    (profile.mode === 'grok' ||
+      profile.mode === 'combined' ||
+      profile.mode === 'split') &&
+    profile.grok_models.trim()
+  )
+}
+
+function isClaudeModel(model: string) {
+  return model.toLowerCase().includes('claude')
+}
+
+function isGrokModel(model: string) {
+  return model.toLowerCase().startsWith('grok-')
 }
 
 function credentialHasCodex(credential: IssuedCredential) {
   return credential.models.some(
-    (model) => !model.toLowerCase().includes('claude')
+    (model) => !isClaudeModel(model) && !isGrokModel(model)
   )
 }
 
 function credentialHasClaude(credential: IssuedCredential) {
-  return credential.models.some((model) =>
-    model.toLowerCase().includes('claude')
-  )
+  return credential.models.some(isClaudeModel)
+}
+
+function credentialHasGrok(credential: IssuedCredential) {
+  return credential.models.some(isGrokModel)
 }
 
 function codexConfig(credential: IssuedCredential) {
   const model =
-    credential.models.find((item) => !item.toLowerCase().includes('claude')) ||
+    credential.models.find(
+      (item) => !isClaudeModel(item) && !isGrokModel(item)
+    ) ||
     credential.models[0] ||
     'gpt-5.5'
   return [
@@ -169,6 +194,36 @@ function codexConfig(credential: IssuedCredential) {
     'name = "IterLoop API"',
     'wire_api = "responses"',
     'requires_openai_auth = true',
+  ].join('\n')
+}
+
+function grokCodexConfig(credential: IssuedCredential) {
+  const model = credential.models.find(isGrokModel) || 'grok-4.5'
+  return [
+    `model = "${model}"`,
+    'model_provider = "iterloop-grok"',
+    'supports_websockets = false',
+    '',
+    '[model_providers.iterloop-grok]',
+    `base_url = "${PUBLIC_API_BASE}"`,
+    `experimental_bearer_token = "${credential.api_key}"`,
+    'name = "IterLoop Grok"',
+    'wire_api = "responses"',
+    'requires_openai_auth = true',
+  ].join('\n')
+}
+
+function grokOpenAIConfig(credential: IssuedCredential) {
+  const model = credential.models.find(isGrokModel) || 'grok-4.5'
+  return [
+    'from openai import OpenAI',
+    '',
+    'client = OpenAI(',
+    `    base_url="${PUBLIC_API_BASE}",`,
+    `    api_key="${credential.api_key}",`,
+    ')',
+    `response = client.responses.create(model="${model}", input="Hello")`,
+    'print(response.output_text)',
   ].join('\n')
 }
 
@@ -202,6 +257,10 @@ function deliveryText(result: IssueAccessResult) {
     }
     if (credentialHasClaude(credential)) {
       lines.push('', 'Claude Code shell config:', claudeConfig(credential))
+    }
+    if (credentialHasGrok(credential)) {
+      lines.push('', 'Grok OpenAI SDK:', grokOpenAIConfig(credential))
+      lines.push('', 'Grok via Codex Responses:', grokCodexConfig(credential))
     }
   }
   return lines.join('\n')
@@ -289,6 +348,13 @@ export function Issuances() {
       selectedProfile.mode === 'combined'
         ? selectedProfile.combined_group
         : selectedProfile.claude_group
+  }
+  let selectedGrokGroup = '—'
+  if (selectedProfile && profileHasGrok(selectedProfile)) {
+    selectedGrokGroup =
+      selectedProfile.mode === 'combined'
+        ? selectedProfile.combined_group
+        : selectedProfile.grok_group
   }
 
   let profileSelector: React.ReactNode
@@ -388,27 +454,53 @@ export function Issuances() {
         ),
       ]
     }
+    if (selectedProfile.mode === 'grok') {
+      return [
+        createPreview(
+          `${selectedProfile.name} Grok`,
+          selectedProfile.grok_models,
+          selectedProfile.grok_group
+        ),
+      ]
+    }
     if (selectedProfile.mode === 'combined') {
       return [
         createPreview(
           `${selectedProfile.name} Combined`,
-          `${selectedProfile.codex_models},${selectedProfile.claude_models}`,
+          `${selectedProfile.codex_models},${selectedProfile.claude_models},${selectedProfile.grok_models}`,
           selectedProfile.combined_group
         ),
       ]
     }
-    return [
-      createPreview(
-        `${selectedProfile.name} Codex`,
-        selectedProfile.codex_models,
-        selectedProfile.codex_group
-      ),
-      createPreview(
-        `${selectedProfile.name} Claude`,
-        selectedProfile.claude_models,
-        selectedProfile.claude_group
-      ),
-    ]
+    const splitCredentials: IssuedCredential[] = []
+    if (selectedProfile.codex_models.trim()) {
+      splitCredentials.push(
+        createPreview(
+          `${selectedProfile.name} Codex`,
+          selectedProfile.codex_models,
+          selectedProfile.codex_group
+        )
+      )
+    }
+    if (selectedProfile.claude_models.trim()) {
+      splitCredentials.push(
+        createPreview(
+          `${selectedProfile.name} Claude`,
+          selectedProfile.claude_models,
+          selectedProfile.claude_group
+        )
+      )
+    }
+    if (selectedProfile.grok_models.trim()) {
+      splitCredentials.push(
+        createPreview(
+          `${selectedProfile.name} Grok`,
+          selectedProfile.grok_models,
+          selectedProfile.grok_group
+        )
+      )
+    }
+    return splitCredentials
   }, [issueResult, selectedProfile])
 
   const handleIssue = async () => {
@@ -719,6 +811,10 @@ export function Issuances() {
                         label={t('Claude group')}
                         value={selectedClaudeGroup}
                       />
+                      <SummaryLine
+                        label={t('Grok group')}
+                        value={selectedGrokGroup}
+                      />
                     </div>
                   ) : null}
 
@@ -915,7 +1011,7 @@ function UpstreamStrip(props: { health?: UpstreamHealth; loading: boolean }) {
     {
       label: t('Active accounts'),
       value: props.loading ? '—' : String(health?.accounts.active ?? 0),
-      detail: `${health?.accounts.codex ?? 0} Codex · ${health?.accounts.claude ?? 0} Claude`,
+      detail: `${health?.accounts.codex ?? 0} Codex · ${health?.accounts.claude ?? 0} Claude · ${health?.accounts.xai ?? 0} xAI`,
       icon: CheckCircle2,
     },
     {
@@ -923,6 +1019,20 @@ function UpstreamStrip(props: { health?: UpstreamHealth; loading: boolean }) {
       value: props.loading ? '—' : String(errors),
       detail: `${health?.accounts.disabled ?? 0} ${t('disabled')}`,
       icon: AlertTriangle,
+    },
+    {
+      label: t('xAI active'),
+      value: props.loading ? '—' : String(health?.accounts.xai_active ?? 0),
+      detail: `${health?.accounts.xai ?? 0} ${t('xAI OAuth accounts')}`,
+      icon: CheckCircle2,
+    },
+    {
+      label: t('xAI spending limit'),
+      value: props.loading
+        ? '—'
+        : String(health?.accounts.xai_spending_limit ?? 0),
+      detail: `${health?.accounts.xai_failed ?? 0} ${t('xAI failed')}`,
+      icon: XCircle,
     },
     {
       label: t('5-hour remaining'),
@@ -939,13 +1049,13 @@ function UpstreamStrip(props: { health?: UpstreamHealth; loading: boolean }) {
   ]
 
   return (
-    <section className='overflow-hidden border bg-[#003c33] text-white'>
+    <section className='overflow-hidden border bg-[#17477f] text-white'>
       {!health?.configured && !props.loading ? (
         <div className='border-b border-white/15 px-4 py-2.5 text-xs text-white/65'>
           {t('Upstream management is not configured')}
         </div>
       ) : null}
-      <div className='grid grid-cols-2 lg:grid-cols-4'>
+      <div className='grid grid-cols-2 lg:grid-cols-6'>
         {metrics.map((metric, index) => {
           const Icon = metric.icon
           return (
@@ -954,7 +1064,7 @@ function UpstreamStrip(props: { health?: UpstreamHealth; loading: boolean }) {
               className={cn(
                 'min-w-0 p-4 sm:p-5',
                 index % 2 === 0 && 'border-r border-white/15',
-                index < 2 && 'border-b border-white/15 lg:border-b-0',
+                index < 4 && 'border-b border-white/15 lg:border-b-0',
                 index !== metrics.length - 1 && 'lg:border-r lg:border-white/15'
               )}
             >
@@ -1121,6 +1231,18 @@ function DeliveryPreview(props: {
                   <ConfigBlock
                     title='Claude Code'
                     value={claudeConfig(credential)}
+                  />
+                ) : null}
+                {credentialHasGrok(credential) ? (
+                  <ConfigBlock
+                    title='Grok OpenAI SDK'
+                    value={grokOpenAIConfig(credential)}
+                  />
+                ) : null}
+                {credentialHasGrok(credential) ? (
+                  <ConfigBlock
+                    title='Grok via Codex Responses'
+                    value={grokCodexConfig(credential)}
                   />
                 ) : null}
               </div>

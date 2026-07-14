@@ -16,6 +16,14 @@ func TestGetIterLoopGroupModelRatio(t *testing.T) {
 	require.True(t, ok)
 	assert.Equal(t, 0.7, ratio)
 
+	ratio, ok = GetIterLoopGroupModelRatio("combined-standard", "grok-4.5")
+	require.True(t, ok)
+	assert.Equal(t, 1.0, ratio)
+
+	ratio, ok = GetIterLoopGroupModelRatio("grok-standard", "grok-4.3")
+	require.True(t, ok)
+	assert.Equal(t, 1.0, ratio)
+
 	_, ok = GetIterLoopGroupModelRatio("default", "gpt-5.5")
 	assert.False(t, ok)
 }

@@ -4,6 +4,22 @@ import (
 	"strings"
 )
 
+type defaultModelMetadata struct {
+	Description string
+	Tags        string
+}
+
+var defaultModelMetadataByName = map[string]defaultModelMetadata{
+	"grok-4.5": {
+		Description: "xAI flagship text model with reasoning, Responses, Chat Completions, SSE, and function calling.",
+		Tags:        "text,reasoning,responses,sse,function-calling",
+	},
+	"grok-4.3": {
+		Description: "xAI balanced text model with reasoning, Responses, Chat Completions, SSE, and function calling.",
+		Tags:        "text,reasoning,responses,sse,function-calling",
+	},
+}
+
 // 简化的供应商映射规则
 var defaultVendorRules = map[string]string{
 	"gpt":      "OpenAI",
@@ -86,11 +102,14 @@ func initDefaultVendorMapping(metaMap map[string]*Model, vendorMap map[int]*Vend
 		}
 
 		// 创建模型元数据
+		metadata := defaultModelMetadataByName[modelName]
 		metaMap[modelName] = &Model{
-			ModelName: modelName,
-			VendorID:  vendorID,
-			Status:    1,
-			NameRule:  NameRuleExact,
+			ModelName:   modelName,
+			Description: metadata.Description,
+			Tags:        metadata.Tags,
+			VendorID:    vendorID,
+			Status:      1,
+			NameRule:    NameRuleExact,
 		}
 	}
 }

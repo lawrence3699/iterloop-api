@@ -20,6 +20,7 @@ export const iterLoopZhCN: Record<string, string> = {
   '0 means no expiry': '0 表示永不过期',
   '5-hour remaining': '5 小时剩余',
   'API docs': 'API 文档',
+  'AGPLv3 source': 'AGPLv3 源码',
   'API Issuance': 'API 发放',
   'Access issued successfully': '访问权限发放成功',
   'Account amount': '账户金额',
@@ -29,6 +30,7 @@ export const iterLoopZhCN: Record<string, string> = {
   'Any IP': '任意 IP',
   'At least one Claude model is required': '至少需要一个 Claude 模型',
   'At least one Codex model is required': '至少需要一个 Codex 模型',
+  'At least one Grok model is required': '至少需要一个 Grok 模型',
   'Claude group': 'Claude 分组',
   'Claude models': 'Claude 模型',
   'Claude only': '仅 Claude',
@@ -36,11 +38,16 @@ export const iterLoopZhCN: Record<string, string> = {
   'Codex group': 'Codex 分组',
   'Codex models': 'Codex 模型',
   'Codex only': '仅 Codex',
+  'Grok group': 'Grok 分组',
+  'Grok models': 'Grok 模型',
+  'Grok only': '仅 Grok',
   'Combined group': '混合分组',
   'Combined key': '混合 Key',
   'Comma separated': '使用英文逗号分隔',
   'Compatible endpoints': '兼容接口',
+  'Codex and Grok Responses API and SSE': 'Codex 与 Grok Responses API 和 SSE',
   'Connect Codex and Claude': '接入 Codex 与 Claude',
+  'Connect Codex, Claude, and Grok': '接入 Codex、Claude 与 Grok',
   'Copy API key': '复制 API Key',
   'Copy Base URL': '复制 Base URL',
   'Copy all': '复制全部',
@@ -54,6 +61,7 @@ export const iterLoopZhCN: Record<string, string> = {
   'Credentials ready': '凭据已就绪',
   'Delete issuance profile?': '删除发放方案？',
   'Direct request': '直接调用',
+  Developers: '开发者',
   'Disabled profiles remain in history but cannot issue new access.':
     '停用后的方案会保留历史记录，但不能继续发放。',
   'Display currency': '当前显示币种',
@@ -109,13 +117,20 @@ export const iterLoopZhCN: Record<string, string> = {
   'Pricing ratios updated': '计费倍率已更新',
   'Codex ratio': 'Codex 倍率',
   'Claude ratio': 'Claude 倍率',
+  'Grok ratio': 'Grok 倍率',
   'Confirm pricing update': '确认更新倍率',
   'Enter valid pricing ratios': '请输入有效的计费倍率',
   'Failed to update pricing ratios': '更新计费倍率失败',
   'Codex-only and Claude-only keys use their matching ratio. Combined keys choose the ratio from the requested model family.':
     'Codex 专用与 Claude 专用 Key 使用各自倍率；混合 Key 根据请求模型所属系列选择倍率。',
+  'Codex-only, Claude-only, and Grok-only keys use their matching ratio. Combined keys choose the ratio from the requested model family.':
+    'Codex、Claude 与 Grok 专用 Key 使用各自倍率；混合 Key 根据请求模型所属系列选择倍率。',
   'Confirming writes both values atomically and records the administrator request in the audit log.':
     '确认后将原子写入两个倍率，并在审计日志中记录管理员请求。',
+  'Confirming writes all values atomically and records the administrator request in the audit log.':
+    '确认后将原子写入全部倍率，并在审计日志中记录管理员请求。',
+  'Combined mode requires at least two model families':
+    '混合模式至少需要配置两个模型家族',
   'Profile enabled': '启用方案',
   'Profile name': '方案名称',
   'Profile name is required': '请输入方案名称',
@@ -131,6 +146,8 @@ export const iterLoopZhCN: Record<string, string> = {
   'Save profile': '保存方案',
   'Select profile': '选择方案',
   'Split keys': '分离 Key',
+  'Split mode requires at least one model family':
+    '分离模式至少需要配置一个模型家族',
   'The key is still constrained by models, expiry, and IP rules.':
     'Key 仍受模型、有效期和 IP 规则限制。',
   'The selected profile is disabled': '所选方案已停用',
@@ -145,12 +162,18 @@ export const iterLoopZhCN: Record<string, string> = {
   'View pricing': '查看价格',
   'View the running AGPL source': '查看当前运行版本的 AGPL 源码',
   'Weekly remaining': '周剩余',
+  'xAI active': 'xAI 存活',
+  'xAI OAuth accounts': '个 xAI OAuth 账号',
+  'xAI spending limit': 'xAI 消费限制',
+  'xAI failed': '个 xAI 异常账号',
   'below 30%': '低于 30%',
   disabled: '已停用',
   minimum: '最低',
   unlimited: '无限额度',
   'One governed API surface for Codex and Claude, with clear balances, scoped keys, auditable usage, and delivery-ready client configuration.':
     '通过一个受控 API 入口使用 Codex 与 Claude，并获得清晰余额、受限 Key、可审计用量和可直接交付的客户端配置。',
+  'One governed API surface for Codex, Claude, and Grok, with clear balances, scoped keys, auditable usage, and delivery-ready client configuration.':
+    '通过一个受控 API 入口使用 Codex、Claude 与 Grok，并获得清晰余额、受限 Key、可审计用量和可直接交付的客户端配置。',
   'Add this provider to the Codex config file. WebSockets stay disabled until their billing path is verified.':
     '将此 Provider 添加到 Codex 配置文件。在 WebSocket 计费链路验证前保持关闭。',
   'Set these variables in the shell that launches Claude Code. Use a Claude-enabled or combined IterLoop key.':
@@ -166,6 +189,33 @@ export const iterLoopZhCN: Record<string, string> = {
   'Combined standard': '混合标准方案',
   'Create Claude-only, Codex-only, or combined keys with model, IP, quota, and expiry limits.':
     '创建仅 Claude、仅 Codex 或混合 Key，并限制模型、IP、额度与有效期。',
+  'Create Claude-only, Codex-only, Grok-only, or combined keys with model, IP, quota, and expiry limits.':
+    '创建仅 Claude、仅 Codex、仅 Grok 或混合 Key，并限制模型、IP、额度与有效期。',
+  'Governed Codex, Claude, and Grok access.':
+    '受控的 Codex、Claude 与 Grok API 访问。',
+  'IterLoop API documentation': 'IterLoop API 文档',
+  'Models visible to the current key': '当前 Key 可见的模型',
+  'On this page': '本页内容',
+  'OpenAI-compatible chat': '兼容 OpenAI 的 Chat 接口',
+  'Anthropic-compatible Messages API': '兼容 Anthropic 的 Messages API',
+  'Public pricing data': '公共价格数据',
+  'Quick start': '快速开始',
+  'Running source': '运行版本源码',
+  'Service health': '服务状态',
+  Troubleshooting: '故障排查',
+  'Upstream project': '上游项目',
+  '401 or invalid key': '401 或 Key 无效',
+  'Confirm the full sk- key and that it is still enabled.':
+    '确认使用了完整的 sk- Key，且该 Key 仍处于启用状态。',
+  '403 model or IP denied': '403 模型或 IP 被拒绝',
+  'Use a model and source IP allowed by the issued key.':
+    '请使用发放 Key 允许的模型和来源 IP。',
+  'Streaming stops early': '流式响应提前中断',
+  'Record the Request ID and check the usage log before retrying.':
+    '记录 Request ID，并在重试前检查调用日志。',
+  'Unified Codex, Claude, and Grok access': '统一接入 Codex、Claude 与 Grok',
+  'Use a Grok-enabled key with the OpenAI SDK or the Codex Responses client. WebSocket and hosted search tools remain disabled.':
+    '使用支持 Grok 的 Key 接入 OpenAI SDK 或 Codex Responses 客户端；WebSocket 与托管搜索工具暂不开放。',
   'Error accounts': '异常账号',
   Expires: '有效期',
   Issuance: 'API 发放',

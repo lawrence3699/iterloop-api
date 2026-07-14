@@ -1,6 +1,7 @@
 package xai
 
 import (
+	"encoding/json"
 	"errors"
 	"io"
 	"net/http"
@@ -21,6 +22,92 @@ import (
 type Adaptor struct {
 }
 
+func restrictHostedSearch(info *relaycommon.RelayInfo) bool {
+	if info == nil {
+		return false
+	}
+	switch strings.ToLower(strings.TrimSpace(info.UsingGroup)) {
+	case "grok-standard", "combined-standard":
+		return true
+	default:
+		return false
+	}
+}
+
+func isNonEmptyJSON(raw json.RawMessage) bool {
+	value := strings.TrimSpace(string(raw))
+	return value != "" && value != "null" && value != "{}" && value != "[]"
+}
+
+func isBlockedHostedTool(toolType string) bool {
+	switch strings.ToLower(strings.TrimSpace(toolType)) {
+	case "web_search", "web_search_preview", "x_search":
+		return true
+	default:
+		return false
+	}
+}
+
+func validateChatHostedSearch(info *relaycommon.RelayInfo, request *dto.GeneralOpenAIRequest) error {
+	if !restrictHostedSearch(info) || request == nil {
+		return nil
+	}
+	upstreamModel := ""
+	if info.ChannelMeta != nil {
+		upstreamModel = info.UpstreamModelName
+	}
+	if strings.HasSuffix(strings.ToLower(request.Model), "-search") || strings.HasSuffix(strings.ToLower(upstreamModel), "-search") {
+		return errors.New("xAI hosted web_search and x_search tools are not enabled for this group")
+	}
+	if isNonEmptyJSON(request.SearchParameters) || request.WebSearchOptions != nil {
+		return errors.New("xAI hosted web_search and x_search tools are not enabled for this group")
+	}
+	for _, tool := range request.Tools {
+		if isBlockedHostedTool(tool.Type) {
+			return errors.New("xAI hosted web_search and x_search tools are not enabled for this group")
+		}
+	}
+	if choice, ok := request.ToolChoice.(map[string]any); ok {
+		if toolType, ok := choice["type"].(string); ok && isBlockedHostedTool(toolType) {
+			return errors.New("xAI hosted web_search and x_search tools are not enabled for this group")
+		}
+	}
+	return nil
+}
+
+func validateResponsesHostedSearch(info *relaycommon.RelayInfo, request dto.OpenAIResponsesRequest) error {
+	if !restrictHostedSearch(info) {
+		return nil
+	}
+	upstreamModel := ""
+	if info.ChannelMeta != nil {
+		upstreamModel = info.UpstreamModelName
+	}
+	if strings.HasSuffix(strings.ToLower(request.Model), "-search") || strings.HasSuffix(strings.ToLower(upstreamModel), "-search") {
+		return errors.New("xAI hosted web_search and x_search tools are not enabled for this group")
+	}
+	tools := request.Tools
+	if isNonEmptyJSON(tools) {
+		var values []map[string]any
+		if json.Unmarshal(tools, &values) == nil {
+			for _, tool := range values {
+				if toolType, ok := tool["type"].(string); ok && isBlockedHostedTool(toolType) {
+					return errors.New("xAI hosted web_search and x_search tools are not enabled for this group")
+				}
+			}
+		}
+	}
+	if isNonEmptyJSON(request.ToolChoice) {
+		var choice map[string]any
+		if json.Unmarshal(request.ToolChoice, &choice) == nil {
+			if toolType, ok := choice["type"].(string); ok && isBlockedHostedTool(toolType) {
+				return errors.New("xAI hosted web_search and x_search tools are not enabled for this group")
+			}
+		}
+	}
+	return nil
+}
+
 func (a *Adaptor) ConvertGeminiRequest(*gin.Context, *relaycommon.RelayInfo, *dto.GeminiChatRequest) (any, error) {
 	//TODO implement me
 	return nil, errors.New("not implemented")
@@ -38,6 +125,9 @@ func (a *Adaptor) ConvertAudioRequest(c *gin.Context, info *relaycommon.RelayInf
 }
 
 func (a *Adaptor) ConvertImageRequest(c *gin.Context, info *relaycommon.RelayInfo, request dto.ImageRequest) (any, error) {
+	if restrictHostedSearch(info) {
+		return nil, errors.New("xAI image and video generation are not enabled for this group")
+	}
 	xaiRequest := ImageRequest{
 		Model:          request.Model,
 		Prompt:         request.Prompt,
@@ -51,6 +141,14 @@ func (a *Adaptor) Init(info *relaycommon.RelayInfo) {
 }
 
 func (a *Adaptor) GetRequestURL(info *relaycommon.RelayInfo) (string, error) {
+	if restrictHostedSearch(info) {
+		path := strings.TrimSuffix(strings.TrimSpace(info.RequestURLPath), "/")
+		switch path {
+		case "/v1/responses", "/v1/chat/completions":
+		default:
+			return "", errors.New("this xAI group only supports /v1/responses and /v1/chat/completions")
+		}
+	}
 	return relaycommon.GetFullRequestURL(info.ChannelBaseUrl, info.RequestURLPath, info.ChannelType), nil
 }
 
@@ -63,6 +161,9 @@ func (a *Adaptor) SetupRequestHeader(c *gin.Context, req *http.Header, info *rel
 func (a *Adaptor) ConvertOpenAIRequest(c *gin.Context, info *relaycommon.RelayInfo, request *dto.GeneralOpenAIRequest) (any, error) {
 	if request == nil {
 		return nil, errors.New("request is nil")
+	}
+	if err := validateChatHostedSearch(info, request); err != nil {
+		return nil, err
 	}
 	if strings.HasSuffix(info.UpstreamModelName, "-search") {
 		info.UpstreamModelName = strings.TrimSuffix(info.UpstreamModelName, "-search")
@@ -101,6 +202,9 @@ func (a *Adaptor) ConvertEmbeddingRequest(c *gin.Context, info *relaycommon.Rela
 }
 
 func (a *Adaptor) ConvertOpenAIResponsesRequest(c *gin.Context, info *relaycommon.RelayInfo, request dto.OpenAIResponsesRequest) (any, error) {
+	if err := validateResponsesHostedSearch(info, request); err != nil {
+		return nil, err
+	}
 	if request.Model == "" && info != nil {
 		request.Model = info.UpstreamModelName
 	}

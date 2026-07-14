@@ -32,7 +32,7 @@ func createIssuanceProfileFixture(t *testing.T, mode string) *IssuanceProfile {
 		Name: "Standard access", Description: "Test profile", Mode: mode,
 		BalanceQuota: 5000, KeyQuota: 1000, KeyCount: 1, ExpireDays: 30,
 		CodexModels: "gpt-5.5,gpt-5.6-sol", ClaudeModels: "claude-sonnet-4-6",
-		CodexGroup: "codex-standard", ClaudeGroup: "claude-standard", CombinedGroup: "combined-standard",
+		CodexGroup: "codex-standard", ClaudeGroup: "claude-standard", GrokGroup: "grok-standard", CombinedGroup: "combined-standard",
 		Enabled: true, CreatedBy: 99,
 	}
 	require.NoError(t, profile.Insert())
@@ -90,6 +90,47 @@ func TestIssueAccessExistingUserSplitAndRevoke(t *testing.T) {
 	}
 }
 
+func TestIssueAccessCreatesGrokOnlyKey(t *testing.T) {
+	setupIssuanceTest(t)
+	profile := &IssuanceProfile{
+		Name: "Grok access", Mode: IssuanceModeGrok, KeyCount: 1,
+		GrokModels: "grok-4.5,grok-4.3", GrokGroup: "grok-standard", Enabled: true,
+	}
+	require.NoError(t, profile.Insert())
+
+	result, err := IssueAccess(profile, "grok@example.com", "", 99, IssueAccessOptions{})
+	require.NoError(t, err)
+	require.Len(t, result.Credentials, 1)
+	assert.Equal(t, "grok-standard", result.Credentials[0].Group)
+	assert.Equal(t, []string{"grok-4.5", "grok-4.3"}, result.Credentials[0].Models)
+}
+
+func TestIssueAccessCombinedAndSplitUseConfiguredFamilies(t *testing.T) {
+	setupIssuanceTest(t)
+	combined := &IssuanceProfile{
+		Name: "Three family", Mode: IssuanceModeCombined, KeyCount: 1,
+		CodexModels: "gpt-5.5", ClaudeModels: "claude-sonnet-4-6", GrokModels: "grok-4.5",
+		CombinedGroup: "combined-standard", Enabled: true,
+	}
+	require.NoError(t, combined.Insert())
+	combinedResult, err := IssueAccess(combined, "combined@example.com", "", 99, IssueAccessOptions{})
+	require.NoError(t, err)
+	require.Len(t, combinedResult.Credentials, 1)
+	assert.Equal(t, []string{"gpt-5.5", "claude-sonnet-4-6", "grok-4.5"}, combinedResult.Credentials[0].Models)
+
+	split := &IssuanceProfile{
+		Name: "Claude Grok split", Mode: IssuanceModeSplit, KeyCount: 1,
+		ClaudeModels: "claude-sonnet-4-6", GrokModels: "grok-4.3",
+		ClaudeGroup: "claude-standard", GrokGroup: "grok-standard", Enabled: true,
+	}
+	require.NoError(t, split.Insert())
+	splitResult, err := IssueAccess(split, "split-grok@example.com", "", 99, IssueAccessOptions{})
+	require.NoError(t, err)
+	require.Len(t, splitResult.Credentials, 2)
+	assert.Equal(t, "claude-standard", splitResult.Credentials[0].Group)
+	assert.Equal(t, "grok-standard", splitResult.Credentials[1].Group)
+}
+
 func TestIssuanceProfileValidation(t *testing.T) {
 	profile := &IssuanceProfile{Name: "Codex", Mode: IssuanceModeCodex, KeyCount: 1, Enabled: true}
 	err := profile.Normalize()
@@ -99,6 +140,11 @@ func TestIssuanceProfileValidation(t *testing.T) {
 	profile.CodexModels = "gpt-5.5, gpt-5.5, gpt-5.6-sol"
 	require.NoError(t, profile.Normalize())
 	assert.Equal(t, "gpt-5.5,gpt-5.6-sol", profile.CodexModels)
+
+	combined := &IssuanceProfile{Name: "Invalid combined", Mode: IssuanceModeCombined, CodexModels: "gpt-5.5", KeyCount: 1}
+	err = combined.Normalize()
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "two model families")
 }
 
 func TestIssuanceProfileInsertPreservesDisabledState(t *testing.T) {

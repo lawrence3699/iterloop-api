@@ -8,8 +8,8 @@ import (
 )
 
 func TestValidateIterLoopPricingRatios(t *testing.T) {
-	require.NoError(t, validateIterLoopPricingRatios(0.4, 0.7))
-	require.Error(t, validateIterLoopPricingRatios(0, 0.7))
-	require.Error(t, validateIterLoopPricingRatios(0.4, math.NaN()))
-	require.Error(t, validateIterLoopPricingRatios(0.4, 11))
+	require.NoError(t, validateIterLoopPricingRatios(0.4, 0.7, 1.0))
+	require.Error(t, validateIterLoopPricingRatios(0, 0.7, 1.0))
+	require.Error(t, validateIterLoopPricingRatios(0.4, math.NaN(), 1.0))
+	require.Error(t, validateIterLoopPricingRatios(0.4, 0.7, 11))
 }

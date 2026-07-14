@@ -42,6 +42,15 @@ C:\IterLoopAPI\
 11. Validate Claude/Codex normal and SSE calls, key model/IP/expiry rejection, and billing before starting the new Tunnel task.
 12. Start only `IterLoop Tunnel Shadow`, verify Cloudflare Access, and use test accounts before opening registration.
 
+## Grok phase 1
+
+- Create a dedicated type `48` xAI channel for `grok-4.5,grok-4.3` at `https://api.x.ai/v1`.
+- Assign the official channel only to `grok-standard,combined-standard`, set priority `20`, and keep it disabled until a funded official xAI API key is available.
+- Create a separate disabled type `58` Advanced Custom channel named `ai-mac CLIProxyAPI Grok Shadow` at `http://127.0.0.1:28317`, with only `/v1/responses` and `/v1/chat/completions` routes and group `grok-shadow`.
+- Never add Grok models to the existing shared `ai-mac CLIProxyAPI` channel.
+- Do not enable the OAuth Shadow until at least three accounts are active, 20 consecutive probes succeed, and no account reports `spending-limit`.
+- Phase 1 exposes text, HTTP, and SSE only. WebSocket, image, video, `web_search`, and `x_search` remain disabled.
+
 Never restart Windows, ai-mac, CLIProxyAPI, CodePrism, original cloudflared tasks, old SSH tunnels, or `quota-cpa.codeprism.tech` as part of this rollout.
 
 ## Registration settings
@@ -55,4 +64,3 @@ The environment template enables Resend SMTP, email verification, and Turnstile.
 - Store the age private key outside the server and upload only encrypted `.age` files to R2.
 - Run `run-retention.ps1` daily with `ITERLOOP_DATABASE_URL` set for `psql`.
 - Test a restore into a separate PostgreSQL database before public launch.
-

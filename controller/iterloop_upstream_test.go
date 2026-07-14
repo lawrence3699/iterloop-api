@@ -13,16 +13,22 @@ func TestAggregateAccountsExcludesOtherProviders(t *testing.T) {
 		{"provider": "codex", "disabled": true},
 		{"provider": "claude", "status": "error"},
 		{"provider": "claude", "disabled": false, "unavailable": true},
+		{"provider": "xai", "status": "active"},
+		{"provider": "xai", "status": "active", "status_message": "personal-team-blocked:spending-limit"},
 		{"provider": "gemini", "status": "active"},
 	}
 	summary := aggregateAccounts(files)
-	assert.Equal(t, 4, summary.Total)
-	assert.Equal(t, 1, summary.Active)
+	assert.Equal(t, 6, summary.Total)
+	assert.Equal(t, 2, summary.Active)
 	assert.Equal(t, 1, summary.Disabled)
-	assert.Equal(t, 1, summary.Error)
+	assert.Equal(t, 2, summary.Error)
 	assert.Equal(t, 1, summary.Unavailable)
 	assert.Equal(t, 2, summary.Codex)
 	assert.Equal(t, 2, summary.Claude)
+	assert.Equal(t, 2, summary.XAI)
+	assert.Equal(t, 1, summary.XAIActive)
+	assert.Equal(t, 1, summary.XAIFailed)
+	assert.Equal(t, 1, summary.SpendingLimit)
 }
 
 func TestQuotaRemainingParsers(t *testing.T) {

@@ -8,6 +8,7 @@ import (
 	"github.com/QuantumNous/new-api/dto"
 	"github.com/QuantumNous/new-api/pkg/billingexpr"
 	relaycommon "github.com/QuantumNous/new-api/relay/common"
+	"github.com/QuantumNous/new-api/setting/billing_setting"
 	"github.com/shopspring/decimal"
 )
 
@@ -206,6 +207,37 @@ func TestTryTieredSettle_BoundaryPlusOne(t *testing.T) {
 	}
 	if !result.CrossedTier {
 		t.Fatal("expected CrossedTier = true")
+	}
+}
+
+func TestIterLoopGrokSettlementBoundaryCacheAndReconciliation(t *testing.T) {
+	info := makeRelayInfo(billing_setting.Grok45BillingExpr, 1.0, 200000, 2000)
+	usedVars := billingexpr.UsedVars(billing_setting.Grok45BillingExpr)
+
+	standardUsage := &dto.Usage{PromptTokens: 200000, CompletionTokens: 1000}
+	standardUsage.PromptTokensDetails.CachedTokens = 100
+	ok, standardQuota, standard := TryTieredSettle(info, BuildTieredTokenParams(standardUsage, false, usedVars))
+	if !ok || standard == nil {
+		t.Fatal("expected Grok standard tier settlement")
+	}
+	if standard.MatchedTier != "standard" || standardQuota != 202925 {
+		t.Fatalf("standard settlement = (%s, %d), want (standard, 202925)", standard.MatchedTier, standardQuota)
+	}
+	if standardQuota >= info.FinalPreConsumedQuota {
+		t.Fatalf("expected standard usage to refund from pre-consume %d, got %d", info.FinalPreConsumedQuota, standardQuota)
+	}
+
+	longUsage := &dto.Usage{PromptTokens: 200001, CompletionTokens: 1000}
+	longUsage.PromptTokensDetails.CachedTokens = 100
+	ok, longQuota, longContext := TryTieredSettle(info, BuildTieredTokenParams(longUsage, false, usedVars))
+	if !ok || longContext == nil {
+		t.Fatal("expected Grok long-context settlement")
+	}
+	if longContext.MatchedTier != "long_context" || longQuota != 405852 {
+		t.Fatalf("long-context settlement = (%s, %d), want (long_context, 405852)", longContext.MatchedTier, longQuota)
+	}
+	if longQuota <= info.FinalPreConsumedQuota {
+		t.Fatalf("expected long-context usage to exceed pre-consume %d, got %d", info.FinalPreConsumedQuota, longQuota)
 	}
 }
 

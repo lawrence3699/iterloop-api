@@ -103,7 +103,7 @@ export function AuthLayout({ children }: AuthLayoutProps) {
               {loading ? t('Loading...') : systemName}
             </span>
             <span className='mt-1 text-sm text-[#647188] dark:text-white/55'>
-              {t('Governed Codex and Claude access.')}
+              {t('Governed Codex, Claude, and Grok access.')}
             </span>
           </Link>
 

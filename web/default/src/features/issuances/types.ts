@@ -16,7 +16,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
-export type IssuanceMode = 'codex' | 'claude' | 'combined' | 'split'
+export type IssuanceMode = 'codex' | 'claude' | 'grok' | 'combined' | 'split'
 export type IssuanceStatus = 'active' | 'revoked'
 
 export interface IssuanceProfile {
@@ -31,8 +31,10 @@ export interface IssuanceProfile {
   expire_days: number
   codex_models: string
   claude_models: string
+  grok_models: string
   codex_group: string
   claude_group: string
+  grok_group: string
   combined_group: string
   allow_ips: string
   enabled: boolean
@@ -103,6 +105,10 @@ export interface UpstreamAccountSummary {
   unavailable: number
   codex: number
   claude: number
+  xai: number
+  xai_active: number
+  xai_failed: number
+  xai_spending_limit: number
 }
 
 export interface UpstreamQuotaSummary {
@@ -128,6 +134,7 @@ export interface IterLoopPricingSettings {
   enabled: boolean
   codex_ratio: number
   claude_ratio: number
+  grok_ratio: number
   combined_mode: string
 }
 

@@ -38,6 +38,7 @@ export function PricingDialog(props: {
   const { t } = useTranslation()
   const [codexRatio, setCodexRatio] = useState('0.4')
   const [claudeRatio, setClaudeRatio] = useState('0.7')
+  const [grokRatio, setGrokRatio] = useState('1')
   const [preview, setPreview] = useState<IterLoopPricingPreview | null>(null)
   const [busy, setBusy] = useState(false)
 
@@ -45,13 +46,19 @@ export function PricingDialog(props: {
     if (!props.open) return
     setCodexRatio(String(props.settings?.codex_ratio ?? 0.4))
     setClaudeRatio(String(props.settings?.claude_ratio ?? 0.7))
+    setGrokRatio(String(props.settings?.grok_ratio ?? 1))
     setPreview(null)
   }, [props.open, props.settings])
 
   const submit = async (confirm: boolean) => {
     const codex = Number(codexRatio)
     const claude = Number(claudeRatio)
-    if (!Number.isFinite(codex) || !Number.isFinite(claude)) {
+    const grok = Number(grokRatio)
+    if (
+      !Number.isFinite(codex) ||
+      !Number.isFinite(claude) ||
+      !Number.isFinite(grok)
+    ) {
       toast.error(t('Enter valid pricing ratios'))
       return
     }
@@ -60,6 +67,7 @@ export function PricingDialog(props: {
       const response = await updateIterLoopPricingSettings({
         codex_ratio: codex,
         claude_ratio: claude,
+        grok_ratio: grok,
         confirm,
       })
       if (!response.success || !response.data) {
@@ -109,7 +117,7 @@ export function PricingDialog(props: {
       onOpenChange={props.onOpenChange}
       title={t('Pricing ratios')}
       description={t(
-        'Codex-only and Claude-only keys use their matching ratio. Combined keys choose the ratio from the requested model family.'
+        'Codex-only, Claude-only, and Grok-only keys use their matching ratio. Combined keys choose the ratio from the requested model family.'
       )}
       contentClassName='sm:max-w-lg'
       footer={footer}
@@ -126,14 +134,19 @@ export function PricingDialog(props: {
             current={preview.current.claude_ratio}
             next={preview.preview.claude_ratio}
           />
+          <PreviewRow
+            label='Grok'
+            current={preview.current.grok_ratio}
+            next={preview.preview.grok_ratio}
+          />
           <div className='text-muted-foreground py-3 text-xs leading-5'>
             {t(
-              'Confirming writes both values atomically and records the administrator request in the audit log.'
+              'Confirming writes all values atomically and records the administrator request in the audit log.'
             )}
           </div>
         </div>
       ) : (
-        <div className='grid gap-4 sm:grid-cols-2'>
+        <div className='grid gap-4 sm:grid-cols-3'>
           <RatioField
             id='iterloop-codex-ratio'
             label={t('Codex ratio')}
@@ -145,6 +158,12 @@ export function PricingDialog(props: {
             label={t('Claude ratio')}
             value={claudeRatio}
             onChange={setClaudeRatio}
+          />
+          <RatioField
+            id='iterloop-grok-ratio'
+            label={t('Grok ratio')}
+            value={grokRatio}
+            onChange={setGrokRatio}
           />
         </div>
       )}

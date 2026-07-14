@@ -14,11 +14,12 @@ import (
 type iterLoopPricingUpdateRequest struct {
 	CodexRatio  float64 `json:"codex_ratio"`
 	ClaudeRatio float64 `json:"claude_ratio"`
+	GrokRatio   float64 `json:"grok_ratio"`
 	Confirm     bool    `json:"confirm"`
 }
 
-func validateIterLoopPricingRatios(codexRatio float64, claudeRatio float64) error {
-	for _, ratio := range []float64{codexRatio, claudeRatio} {
+func validateIterLoopPricingRatios(codexRatio float64, claudeRatio float64, grokRatio float64) error {
+	for _, ratio := range []float64{codexRatio, claudeRatio, grokRatio} {
 		if math.IsNaN(ratio) || math.IsInf(ratio, 0) || ratio <= 0 || ratio > 10 {
 			return errors.New("pricing ratios must be greater than 0 and no more than 10")
 		}
@@ -32,6 +33,7 @@ func iterLoopPricingSettingsPayload() gin.H {
 		"enabled":       pricing.Enabled,
 		"codex_ratio":   pricing.CodexRatio,
 		"claude_ratio":  pricing.ClaudeRatio,
+		"grok_ratio":    pricing.GrokRatio,
 		"combined_mode": pricing.CombinedMode,
 	}
 }
@@ -46,7 +48,7 @@ func UpdateIterLoopPricingSettings(c *gin.Context) {
 		common.ApiError(c, err)
 		return
 	}
-	if err := validateIterLoopPricingRatios(request.CodexRatio, request.ClaudeRatio); err != nil {
+	if err := validateIterLoopPricingRatios(request.CodexRatio, request.ClaudeRatio, request.GrokRatio); err != nil {
 		common.ApiError(c, err)
 		return
 	}
@@ -55,6 +57,7 @@ func UpdateIterLoopPricingSettings(c *gin.Context) {
 		"enabled":       true,
 		"codex_ratio":   request.CodexRatio,
 		"claude_ratio":  request.ClaudeRatio,
+		"grok_ratio":    request.GrokRatio,
 		"combined_mode": "model-family",
 	}
 	if !request.Confirm {
@@ -65,6 +68,7 @@ func UpdateIterLoopPricingSettings(c *gin.Context) {
 		"iterloop_pricing_setting.enabled":       "true",
 		"iterloop_pricing_setting.codex_ratio":   strconv.FormatFloat(request.CodexRatio, 'f', -1, 64),
 		"iterloop_pricing_setting.claude_ratio":  strconv.FormatFloat(request.ClaudeRatio, 'f', -1, 64),
+		"iterloop_pricing_setting.grok_ratio":    strconv.FormatFloat(request.GrokRatio, 'f', -1, 64),
 		"iterloop_pricing_setting.combined_mode": "model-family",
 	}); err != nil {
 		common.ApiError(c, err)
@@ -73,8 +77,10 @@ func UpdateIterLoopPricingSettings(c *gin.Context) {
 	recordManageAudit(c, "iterloop.pricing_update", map[string]interface{}{
 		"previous_codex_ratio":  current["codex_ratio"],
 		"previous_claude_ratio": current["claude_ratio"],
+		"previous_grok_ratio":   current["grok_ratio"],
 		"codex_ratio":           request.CodexRatio,
 		"claude_ratio":          request.ClaudeRatio,
+		"grok_ratio":            request.GrokRatio,
 		"combined_mode":         "model-family",
 	})
 	common.ApiSuccess(c, gin.H{"applied": true, "current": current, "preview": iterLoopPricingSettingsPayload()})

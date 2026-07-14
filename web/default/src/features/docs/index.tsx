@@ -41,6 +41,26 @@ const CLAUDE_CONFIG = `export ANTHROPIC_BASE_URL="https://api.iter-loop.com"
 export ANTHROPIC_AUTH_TOKEN="sk-your-iterloop-key"
 export ANTHROPIC_API_KEY=""`
 
+const GROK_OPENAI_CONFIG = `from openai import OpenAI
+
+client = OpenAI(
+    base_url="https://api.iter-loop.com/v1",
+    api_key="sk-your-iterloop-key",
+)
+response = client.responses.create(model="grok-4.5", input="Say hello")
+print(response.output_text)`
+
+const GROK_CODEX_CONFIG = `model = "grok-4.5"
+model_provider = "iterloop-grok"
+supports_websockets = false
+
+[model_providers.iterloop-grok]
+base_url = "https://api.iter-loop.com/v1"
+experimental_bearer_token = "sk-your-iterloop-key"
+name = "IterLoop Grok"
+wire_api = "responses"
+requires_openai_auth = true`
+
 const CURL_EXAMPLE = `curl https://api.iter-loop.com/v1/responses \\
   -H "Authorization: Bearer sk-your-iterloop-key" \\
   -H "Content-Type: application/json" \\
@@ -54,10 +74,10 @@ export function IterLoopDocs() {
         <section className='border-b px-4 py-16 sm:px-6 sm:py-20'>
           <div className='mx-auto max-w-7xl'>
             <p className='font-mono text-xs text-[#ff7759] uppercase'>
-              IterLoop API documentation
+              {t('IterLoop API documentation')}
             </p>
             <h1 className='font-display mt-4 text-5xl sm:text-6xl'>
-              {t('Connect Codex and Claude')}
+              {t('Connect Codex, Claude, and Grok')}
             </h1>
             <p className='text-muted-foreground mt-5 max-w-2xl text-base leading-7'>
               {t(
@@ -85,6 +105,7 @@ export function IterLoopDocs() {
                   ['Endpoints', '#endpoints'],
                   ['Codex', '#codex'],
                   ['Claude Code', '#claude-code'],
+                  ['Grok', '#grok'],
                   ['Direct request', '#direct-request'],
                   ['Troubleshooting', '#troubleshooting'],
                 ].map(([label, href]) => (
@@ -107,7 +128,11 @@ export function IterLoopDocs() {
               >
                 <div className='border-t'>
                   {[
-                    ['POST', '/v1/responses', 'Codex Responses API and SSE'],
+                    [
+                      'POST',
+                      '/v1/responses',
+                      'Codex and Grok Responses API and SSE',
+                    ],
                     ['POST', '/v1/chat/completions', 'OpenAI-compatible chat'],
                     [
                       'POST',
@@ -125,7 +150,7 @@ export function IterLoopDocs() {
                       </Badge>
                       <code className='text-sm'>{path}</code>
                       <span className='text-muted-foreground text-sm'>
-                        {description}
+                        {t(description)}
                       </span>
                     </div>
                   ))}
@@ -150,9 +175,27 @@ export function IterLoopDocs() {
                 <CodeSample title='shell' value={CLAUDE_CONFIG} />
               </DocSection>
 
+              <DocSection id='grok' label='04' title='Grok'>
+                <p className='text-muted-foreground mb-5 text-sm leading-6'>
+                  {t(
+                    'Use a Grok-enabled key with the OpenAI SDK or the Codex Responses client. WebSocket and hosted search tools remain disabled.'
+                  )}
+                </p>
+                <div className='grid gap-4 xl:grid-cols-2'>
+                  <CodeSample
+                    title='Python · OpenAI SDK'
+                    value={GROK_OPENAI_CONFIG}
+                  />
+                  <CodeSample
+                    title='Codex · config.toml'
+                    value={GROK_CODEX_CONFIG}
+                  />
+                </div>
+              </DocSection>
+
               <DocSection
                 id='direct-request'
-                label='04'
+                label='05'
                 title={t('Direct request')}
               >
                 <CodeSample title='curl' value={CURL_EXAMPLE} />
@@ -160,7 +203,7 @@ export function IterLoopDocs() {
 
               <DocSection
                 id='troubleshooting'
-                label='05'
+                label='06'
                 title={t('Troubleshooting')}
               >
                 <div className='border-t'>
@@ -189,10 +232,10 @@ export function IterLoopDocs() {
                       >
                         <ItemIcon className='size-5 text-[#1863dc]' />
                         <div className='text-sm font-medium'>
-                          {title as string}
+                          {t(title as string)}
                         </div>
                         <div className='text-muted-foreground text-sm leading-6'>
-                          {description as string}
+                          {t(description as string)}
                         </div>
                       </div>
                     )

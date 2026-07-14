@@ -54,8 +54,10 @@ type ProfileFormState = {
   expireDays: string
   codexModels: string
   claudeModels: string
+  grokModels: string
   codexGroup: string
   claudeGroup: string
+  grokGroup: string
   combinedGroup: string
   allowIps: string
   enabled: boolean
@@ -64,6 +66,7 @@ type ProfileFormState = {
 const MODE_LABELS: Record<IssuanceMode, string> = {
   codex: 'Codex only',
   claude: 'Claude only',
+  grok: 'Grok only',
   combined: 'Combined key',
   split: 'Split keys',
 }
@@ -81,8 +84,10 @@ function initialForm(profile?: IssuanceProfile | null): ProfileFormState {
       expireDays: String(profile.expire_days),
       codexModels: profile.codex_models,
       claudeModels: profile.claude_models,
+      grokModels: profile.grok_models,
       codexGroup: profile.codex_group,
       claudeGroup: profile.claude_group,
+      grokGroup: profile.grok_group,
       combinedGroup: profile.combined_group,
       allowIps: profile.allow_ips,
       enabled: profile.enabled,
@@ -99,8 +104,10 @@ function initialForm(profile?: IssuanceProfile | null): ProfileFormState {
     expireDays: '30',
     codexModels: 'gpt-5.5',
     claudeModels: 'claude-sonnet-4-6',
+    grokModels: '',
     codexGroup: 'codex-standard',
     claudeGroup: 'claude-standard',
+    grokGroup: 'grok-standard',
     combinedGroup: 'combined-standard',
     allowIps: '',
     enabled: true,
@@ -113,6 +120,10 @@ function hasCodex(mode: IssuanceMode) {
 
 function hasClaude(mode: IssuanceMode) {
   return mode === 'claude' || mode === 'combined' || mode === 'split'
+}
+
+function hasGrok(mode: IssuanceMode) {
+  return mode === 'grok' || mode === 'combined' || mode === 'split'
 }
 
 export function ProfileDialog(props: {
@@ -157,12 +168,29 @@ export function ProfileDialog(props: {
       toast.error(t('Amounts cannot be negative'))
       return
     }
-    if (hasCodex(form.mode) && !form.codexModels.trim()) {
+    if (form.mode === 'codex' && !form.codexModels.trim()) {
       toast.error(t('At least one Codex model is required'))
       return
     }
-    if (hasClaude(form.mode) && !form.claudeModels.trim()) {
+    if (form.mode === 'claude' && !form.claudeModels.trim()) {
       toast.error(t('At least one Claude model is required'))
+      return
+    }
+    if (form.mode === 'grok' && !form.grokModels.trim()) {
+      toast.error(t('At least one Grok model is required'))
+      return
+    }
+    const familyCount = [
+      form.codexModels,
+      form.claudeModels,
+      form.grokModels,
+    ].filter((models) => models.trim()).length
+    if (form.mode === 'combined' && familyCount < 2) {
+      toast.error(t('Combined mode requires at least two model families'))
+      return
+    }
+    if (form.mode === 'split' && familyCount === 0) {
+      toast.error(t('Split mode requires at least one model family'))
       return
     }
 
@@ -177,8 +205,10 @@ export function ProfileDialog(props: {
       expire_days: expireDays,
       codex_models: form.codexModels.trim(),
       claude_models: form.claudeModels.trim(),
+      grok_models: form.grokModels.trim(),
       codex_group: form.codexGroup.trim(),
       claude_group: form.claudeGroup.trim(),
+      grok_group: form.grokGroup.trim(),
       combined_group: form.combinedGroup.trim(),
       allow_ips: form.allowIps.trim(),
       enabled: form.enabled,
@@ -310,7 +340,7 @@ export function ProfileDialog(props: {
           </Field>
         </div>
 
-        <div className='grid gap-4 sm:grid-cols-2'>
+        <div className='grid gap-4 sm:grid-cols-2 lg:grid-cols-3'>
           {hasCodex(form.mode) ? (
             <Field
               id='issuance-profile-codex-models'
@@ -341,9 +371,25 @@ export function ProfileDialog(props: {
               />
             </Field>
           ) : null}
+          {hasGrok(form.mode) ? (
+            <Field
+              id='issuance-profile-grok-models'
+              label={t('Grok models')}
+              hint={t('Comma separated')}
+            >
+              <Textarea
+                id='issuance-profile-grok-models'
+                className='font-mono text-xs'
+                value={form.grokModels}
+                onChange={(event) => update('grokModels', event.target.value)}
+                placeholder='grok-4.5,grok-4.3'
+                rows={3}
+              />
+            </Field>
+          ) : null}
         </div>
 
-        <div className='grid gap-4 sm:grid-cols-3'>
+        <div className='grid gap-4 sm:grid-cols-2 lg:grid-cols-4'>
           {hasCodex(form.mode) && form.mode !== 'combined' ? (
             <Field id='issuance-profile-codex-group' label={t('Codex group')}>
               <Input
@@ -361,6 +407,16 @@ export function ProfileDialog(props: {
                 className='font-mono text-xs'
                 value={form.claudeGroup}
                 onChange={(event) => update('claudeGroup', event.target.value)}
+              />
+            </Field>
+          ) : null}
+          {hasGrok(form.mode) && form.mode !== 'combined' ? (
+            <Field id='issuance-profile-grok-group' label={t('Grok group')}>
+              <Input
+                id='issuance-profile-grok-group'
+                className='font-mono text-xs'
+                value={form.grokGroup}
+                onChange={(event) => update('grokGroup', event.target.value)}
               />
             </Field>
           ) : null}

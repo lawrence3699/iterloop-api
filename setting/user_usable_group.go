@@ -12,7 +12,8 @@ var userUsableGroups = map[string]string{
 	"vip":               "vip分组",
 	"codex-standard":    "Codex 标准",
 	"claude-standard":   "Claude 标准",
-	"combined-standard": "Codex + Claude 混合",
+	"grok-standard":     "Grok 标准",
+	"combined-standard": "Codex + Claude + Grok 混合",
 }
 var userUsableGroupsMutex sync.RWMutex
 

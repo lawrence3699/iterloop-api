@@ -18,4 +18,7 @@ func TestHandleGroupRatioUsesModelFamilyForCombinedIterLoopGroup(t *testing.T) {
 
 	claude := &relaycommon.RelayInfo{UsingGroup: "combined-standard", OriginModelName: "claude-sonnet-4-6"}
 	assert.Equal(t, 0.7, HandleGroupRatio(ctx, claude).GroupRatio)
+
+	grok := &relaycommon.RelayInfo{UsingGroup: "combined-standard", OriginModelName: "grok-4.5"}
+	assert.Equal(t, 1.0, HandleGroupRatio(ctx, grok).GroupRatio)
 }

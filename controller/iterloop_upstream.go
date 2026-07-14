@@ -17,13 +17,17 @@ import (
 )
 
 type upstreamAccountSummary struct {
-	Total       int `json:"total"`
-	Active      int `json:"active"`
-	Disabled    int `json:"disabled"`
-	Error       int `json:"error"`
-	Unavailable int `json:"unavailable"`
-	Codex       int `json:"codex"`
-	Claude      int `json:"claude"`
+	Total         int `json:"total"`
+	Active        int `json:"active"`
+	Disabled      int `json:"disabled"`
+	Error         int `json:"error"`
+	Unavailable   int `json:"unavailable"`
+	Codex         int `json:"codex"`
+	Claude        int `json:"claude"`
+	XAI           int `json:"xai"`
+	XAIActive     int `json:"xai_active"`
+	XAIFailed     int `json:"xai_failed"`
+	SpendingLimit int `json:"xai_spending_limit"`
 }
 
 type upstreamQuotaSummary struct {
@@ -157,33 +161,69 @@ func upstreamFileUnavailable(file map[string]any) bool {
 	return boolValue(file, "disabled") || boolValue(file, "unavailable")
 }
 
+func upstreamFileContains(file map[string]any, needle string) bool {
+	needle = strings.ToLower(strings.TrimSpace(needle))
+	if needle == "" {
+		return false
+	}
+	for _, key := range []string{"status", "state", "status_message", "error", "message"} {
+		value, ok := file[key]
+		if !ok || value == nil {
+			continue
+		}
+		raw, err := json.Marshal(value)
+		if err == nil && strings.Contains(strings.ToLower(string(raw)), needle) {
+			return true
+		}
+	}
+	return false
+}
+
 func aggregateAccounts(files []map[string]any) upstreamAccountSummary {
 	summary := upstreamAccountSummary{}
 	for _, file := range files {
 		provider := upstreamProvider(file)
-		if provider != "codex" && provider != "claude" {
+		if provider != "codex" && provider != "claude" && provider != "xai" {
 			continue
 		}
 		summary.Total++
 		if provider == "codex" {
 			summary.Codex++
-		} else {
+		} else if provider == "claude" {
 			summary.Claude++
+		} else {
+			summary.XAI++
 		}
 		status := strings.ToLower(stringValue(file, "status", "state"))
+		spendingLimit := provider == "xai" && upstreamFileContains(file, "spending-limit")
+		if spendingLimit {
+			summary.SpendingLimit++
+		}
 		if boolValue(file, "disabled") || status == "disabled" {
 			summary.Disabled++
+			if provider == "xai" {
+				summary.XAIFailed++
+			}
 			continue
 		}
 		if boolValue(file, "unavailable") || status == "unavailable" {
 			summary.Unavailable++
+			if provider == "xai" {
+				summary.XAIFailed++
+			}
 			continue
 		}
-		if status == "error" || stringValue(file, "status_message", "error") != "" {
+		if status == "error" || stringValue(file, "status_message", "error") != "" || spendingLimit {
 			summary.Error++
+			if provider == "xai" {
+				summary.XAIFailed++
+			}
 			continue
 		}
 		summary.Active++
+		if provider == "xai" {
+			summary.XAIActive++
+		}
 	}
 	return summary
 }
@@ -389,17 +429,21 @@ func loadUpstreamHealth(includeQuota bool) (upstreamHealthResponse, error) {
 	}
 	rawFiles, _ := data["files"].([]any)
 	files := make([]map[string]any, 0, len(rawFiles))
+	quotaFiles := make([]map[string]any, 0, len(rawFiles))
 	for _, raw := range rawFiles {
 		if file, ok := raw.(map[string]any); ok {
 			provider := upstreamProvider(file)
-			if provider == "codex" || provider == "claude" {
+			if provider == "codex" || provider == "claude" || provider == "xai" {
 				files = append(files, file)
+			}
+			if provider == "codex" || provider == "claude" {
+				quotaFiles = append(quotaFiles, file)
 			}
 		}
 	}
 	response := upstreamHealthResponse{Configured: true, Accounts: aggregateAccounts(files), UpdatedAt: common.GetTimestamp()}
 	if includeQuota {
-		response.Quota = aggregateQuota(ctx, client, base, key, files)
+		response.Quota = aggregateQuota(ctx, client, base, key, quotaFiles)
 	}
 	return response, nil
 }

@@ -118,6 +118,7 @@ function LegalLinks(props: { leadingSeparator?: boolean }) {
 // inline=true returns just the inner span for composition in a parent flex
 // row. inline=false wraps in a centered/right-aligned div (default).
 function ProjectAttribution(props: { currentYear: number; inline?: boolean }) {
+  const { t } = useTranslation()
   const { status } = useStatus()
   const version = String(status?.version || 'source')
   const content = (
@@ -131,7 +132,8 @@ function ProjectAttribution(props: { currentYear: number; inline?: boolean }) {
       >
         IterLoop API
       </a>
-      {' · '}AGPLv3 source · {version}
+      {' · '}
+      {t('AGPLv3 source')} · {version}
     </span>
   )
   if (props.inline) {
@@ -254,7 +256,7 @@ export function Footer(props: FooterProps) {
               </span>
             </Link>
             <p className='text-muted-foreground/60 mt-3 max-w-[200px] text-xs leading-relaxed'>
-              {t('Governed Codex and Claude access.')}
+              {t('Governed Codex, Claude, and Grok access.')}
             </p>
           </div>
 

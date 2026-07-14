@@ -10,6 +10,7 @@ type IterLoopPricingSetting struct {
 	Enabled      bool    `json:"enabled"`
 	CodexRatio   float64 `json:"codex_ratio"`
 	ClaudeRatio  float64 `json:"claude_ratio"`
+	GrokRatio    float64 `json:"grok_ratio"`
 	CombinedMode string  `json:"combined_mode"`
 }
 
@@ -17,6 +18,7 @@ var iterLoopPricingSetting = IterLoopPricingSetting{
 	Enabled:      true,
 	CodexRatio:   0.4,
 	ClaudeRatio:  0.7,
+	GrokRatio:    1.0,
 	CombinedMode: "model-family",
 }
 
@@ -32,6 +34,10 @@ func IsClaudeModel(modelName string) bool {
 	return strings.Contains(strings.ToLower(strings.TrimSpace(modelName)), "claude")
 }
 
+func IsGrokModel(modelName string) bool {
+	return strings.HasPrefix(strings.ToLower(strings.TrimSpace(modelName)), "grok-")
+}
+
 func GetIterLoopGroupModelRatio(group string, modelName string) (float64, bool) {
 	setting := GetIterLoopPricingSetting()
 	if !setting.Enabled {
@@ -42,9 +48,14 @@ func GetIterLoopGroupModelRatio(group string, modelName string) (float64, bool) 
 		return setting.CodexRatio, true
 	case "claude-standard":
 		return setting.ClaudeRatio, true
+	case "grok-standard":
+		return setting.GrokRatio, true
 	case "combined-standard":
 		if IsClaudeModel(modelName) {
 			return setting.ClaudeRatio, true
+		}
+		if IsGrokModel(modelName) {
+			return setting.GrokRatio, true
 		}
 		return setting.CodexRatio, true
 	default:

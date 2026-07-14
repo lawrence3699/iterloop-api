@@ -12,6 +12,7 @@ import (
 const (
 	IssuanceModeCodex    = "codex"
 	IssuanceModeClaude   = "claude"
+	IssuanceModeGrok     = "grok"
 	IssuanceModeCombined = "combined"
 	IssuanceModeSplit    = "split"
 
@@ -31,8 +32,10 @@ type IssuanceProfile struct {
 	ExpireDays     int    `json:"expire_days" gorm:"not null;default:0"`
 	CodexModels    string `json:"codex_models" gorm:"type:text"`
 	ClaudeModels   string `json:"claude_models" gorm:"type:text"`
+	GrokModels     string `json:"grok_models" gorm:"type:text"`
 	CodexGroup     string `json:"codex_group" gorm:"type:varchar(64);default:'codex-standard'"`
 	ClaudeGroup    string `json:"claude_group" gorm:"type:varchar(64);default:'claude-standard'"`
+	GrokGroup      string `json:"grok_group" gorm:"type:varchar(64);default:'grok-standard'"`
 	CombinedGroup  string `json:"combined_group" gorm:"type:varchar(64);default:'combined-standard'"`
 	AllowIps       string `json:"allow_ips" gorm:"type:text"`
 	Enabled        bool   `json:"enabled" gorm:"not null;default:true"`
@@ -111,8 +114,10 @@ func (profile *IssuanceProfile) Normalize() error {
 	profile.Mode = strings.ToLower(strings.TrimSpace(profile.Mode))
 	profile.CodexModels = cleanCommaList(profile.CodexModels)
 	profile.ClaudeModels = cleanCommaList(profile.ClaudeModels)
+	profile.GrokModels = cleanCommaList(profile.GrokModels)
 	profile.CodexGroup = strings.TrimSpace(profile.CodexGroup)
 	profile.ClaudeGroup = strings.TrimSpace(profile.ClaudeGroup)
+	profile.GrokGroup = strings.TrimSpace(profile.GrokGroup)
 	profile.CombinedGroup = strings.TrimSpace(profile.CombinedGroup)
 	profile.AllowIps = strings.TrimSpace(profile.AllowIps)
 
@@ -123,9 +128,9 @@ func (profile *IssuanceProfile) Normalize() error {
 		return errors.New("profile description must not exceed 255 characters")
 	}
 	switch profile.Mode {
-	case IssuanceModeCodex, IssuanceModeClaude, IssuanceModeCombined, IssuanceModeSplit:
+	case IssuanceModeCodex, IssuanceModeClaude, IssuanceModeGrok, IssuanceModeCombined, IssuanceModeSplit:
 	default:
-		return errors.New("mode must be codex, claude, combined, or split")
+		return errors.New("mode must be codex, claude, grok, combined, or split")
 	}
 	if profile.BalanceQuota < 0 || profile.KeyQuota < 0 {
 		return errors.New("quota values must not be negative")
@@ -145,14 +150,32 @@ func (profile *IssuanceProfile) Normalize() error {
 	if profile.ClaudeGroup == "" {
 		profile.ClaudeGroup = "claude-standard"
 	}
+	if profile.GrokGroup == "" {
+		profile.GrokGroup = "grok-standard"
+	}
 	if profile.CombinedGroup == "" {
 		profile.CombinedGroup = "combined-standard"
 	}
-	if (profile.Mode == IssuanceModeCodex || profile.Mode == IssuanceModeCombined || profile.Mode == IssuanceModeSplit) && profile.CodexModels == "" {
+	if profile.Mode == IssuanceModeCodex && profile.CodexModels == "" {
 		return errors.New("at least one Codex model is required")
 	}
-	if (profile.Mode == IssuanceModeClaude || profile.Mode == IssuanceModeCombined || profile.Mode == IssuanceModeSplit) && profile.ClaudeModels == "" {
+	if profile.Mode == IssuanceModeClaude && profile.ClaudeModels == "" {
 		return errors.New("at least one Claude model is required")
+	}
+	if profile.Mode == IssuanceModeGrok && profile.GrokModels == "" {
+		return errors.New("at least one Grok model is required")
+	}
+	familyCount := 0
+	for _, models := range []string{profile.CodexModels, profile.ClaudeModels, profile.GrokModels} {
+		if models != "" {
+			familyCount++
+		}
+	}
+	if profile.Mode == IssuanceModeCombined && familyCount < 2 {
+		return errors.New("combined mode requires at least two model families")
+	}
+	if profile.Mode == IssuanceModeSplit && familyCount == 0 {
+		return errors.New("split mode requires at least one model family")
 	}
 	return nil
 }
@@ -224,8 +247,9 @@ func (profile *IssuanceProfile) Update() error {
 		"balance_quota": profile.BalanceQuota, "key_quota": profile.KeyQuota,
 		"unlimited_quota": profile.UnlimitedQuota, "key_count": profile.KeyCount,
 		"expire_days": profile.ExpireDays, "codex_models": profile.CodexModels,
-		"claude_models": profile.ClaudeModels, "codex_group": profile.CodexGroup,
-		"claude_group": profile.ClaudeGroup, "combined_group": profile.CombinedGroup,
+		"claude_models": profile.ClaudeModels, "grok_models": profile.GrokModels,
+		"codex_group": profile.CodexGroup, "claude_group": profile.ClaudeGroup,
+		"grok_group": profile.GrokGroup, "combined_group": profile.CombinedGroup,
 		"allow_ips": profile.AllowIps, "enabled": profile.Enabled, "updated_time": profile.UpdatedTime,
 	}).Error
 }
@@ -400,8 +424,8 @@ func IssueAccess(profile *IssuanceProfile, email string, note string, createdBy 
 			user.Quota += balanceQuota
 		}
 
-		credentials := make([]IssuedCredential, 0, profile.KeyCount*2)
-		tokenIds := make([]int, 0, profile.KeyCount*2)
+		credentials := make([]IssuedCredential, 0, profile.KeyCount*3)
+		tokenIds := make([]int, 0, profile.KeyCount*3)
 		add := func(label string, models []string, group string, index int) error {
 			name := fmt.Sprintf("%s %s", profile.Name, label)
 			if profile.KeyCount > 1 {
@@ -420,6 +444,7 @@ func IssueAccess(profile *IssuanceProfile, email string, note string, createdBy 
 		}
 		codexModels := commaList(profile.CodexModels)
 		claudeModels := commaList(profile.ClaudeModels)
+		grokModels := commaList(profile.GrokModels)
 		for index := 0; index < profile.KeyCount; index++ {
 			switch profile.Mode {
 			case IssuanceModeCodex:
@@ -430,17 +455,30 @@ func IssueAccess(profile *IssuanceProfile, email string, note string, createdBy 
 				if err := add("Claude", claudeModels, profile.ClaudeGroup, index); err != nil {
 					return err
 				}
+			case IssuanceModeGrok:
+				if err := add("Grok", grokModels, profile.GrokGroup, index); err != nil {
+					return err
+				}
 			case IssuanceModeCombined:
-				models := append(append([]string{}, codexModels...), claudeModels...)
+				models := append(append(append([]string{}, codexModels...), claudeModels...), grokModels...)
 				if err := add("Combined", models, profile.CombinedGroup, index); err != nil {
 					return err
 				}
 			case IssuanceModeSplit:
-				if err := add("Codex", codexModels, profile.CodexGroup, index); err != nil {
-					return err
+				if len(codexModels) > 0 {
+					if err := add("Codex", codexModels, profile.CodexGroup, index); err != nil {
+						return err
+					}
 				}
-				if err := add("Claude", claudeModels, profile.ClaudeGroup, index); err != nil {
-					return err
+				if len(claudeModels) > 0 {
+					if err := add("Claude", claudeModels, profile.ClaudeGroup, index); err != nil {
+						return err
+					}
+				}
+				if len(grokModels) > 0 {
+					if err := add("Grok", grokModels, profile.GrokGroup, index); err != nil {
+						return err
+					}
 				}
 			}
 		}

@@ -67,20 +67,22 @@ func GetPricing(c *gin.Context) {
 	}
 
 	c.JSON(200, gin.H{
-		"success":            true,
-		"data":               pricing,
-		"vendors":            model.GetVendors(),
-		"group_ratio":        groupRatio,
+		"success":     true,
+		"data":        pricing,
+		"vendors":     model.GetVendors(),
+		"group_ratio": groupRatio,
 		"group_model_ratio": gin.H{
 			"combined-standard": gin.H{
-				"codex": iterLoopPricing.CodexRatio,
+				"codex":  iterLoopPricing.CodexRatio,
 				"claude": iterLoopPricing.ClaudeRatio,
+				"grok":   iterLoopPricing.GrokRatio,
 			},
+			"grok-standard": gin.H{"grok": iterLoopPricing.GrokRatio},
 		},
 		"usable_group":       usableGroup,
 		"supported_endpoint": model.GetSupportedEndpointMap(),
 		"auto_groups":        service.GetUserAutoGroup(group),
-		"pricing_version":    "a42d372ccf0b5dd13ecf71203521f9d2",
+		"pricing_version":    "iterloop-grok-2026-07-14",
 	})
 }
 

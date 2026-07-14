@@ -2,6 +2,8 @@ package xai
 
 var ModelList = []string{
 	// language models
+	"grok-4.5",
+	"grok-4.3",
 	"grok-4-1-fast-reasoning",
 	"grok-4-1-fast-non-reasoning",
 	"grok-code-fast-1",
