@@ -31,10 +31,17 @@ Get-Content $envFile | ForEach-Object {
 New-Item -ItemType Directory -Path $logDir -Force | Out-Null
 Set-Location (Join-Path $InstallRoot "data")
 
-$stamp = Get-Date -Format "yyyyMMdd"
+$stamp = Get-Date -Format "yyyyMMdd-HHmmss"
 $stdout = Join-Path $logDir "iterloop-$stamp.log"
 $stderr = Join-Path $logDir "iterloop-$stamp.error.log"
 
-& $exe --log-dir $logDir 1>> $stdout 2>> $stderr
-exit $LASTEXITCODE
+$process = Start-Process `
+  -FilePath $exe `
+  -ArgumentList @("--log-dir", $logDir) `
+  -WorkingDirectory (Join-Path $InstallRoot "data") `
+  -RedirectStandardOutput $stdout `
+  -RedirectStandardError $stderr `
+  -Wait `
+  -PassThru
 
+exit $process.ExitCode
