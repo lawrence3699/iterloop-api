@@ -34,6 +34,7 @@ $principal = New-ScheduledTaskPrincipal -UserId $env:USERNAME -LogonType S4U -Ru
 $settings = New-ScheduledTaskSettingsSet `
   -AllowStartIfOnBatteries `
   -DontStopIfGoingOnBatteries `
+  -DontStopOnIdleEnd `
   -ExecutionTimeLimit (New-TimeSpan -Days 3650) `
   -RestartCount 999 `
   -RestartInterval (New-TimeSpan -Minutes 1)
@@ -60,4 +61,3 @@ if ($StartTasks) {
 } else {
   Write-Host "Tasks were not started. Validate configuration, then start them explicitly."
 }
-
