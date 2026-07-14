@@ -35,13 +35,10 @@ $stamp = Get-Date -Format "yyyyMMdd-HHmmss"
 $stdout = Join-Path $logDir "iterloop-$stamp.log"
 $stderr = Join-Path $logDir "iterloop-$stamp.error.log"
 
-$process = Start-Process `
-  -FilePath $exe `
-  -ArgumentList @("--log-dir", $logDir) `
-  -WorkingDirectory (Join-Path $InstallRoot "data") `
-  -RedirectStandardOutput $stdout `
-  -RedirectStandardError $stderr `
-  -Wait `
-  -PassThru
+$previousErrorActionPreference = $ErrorActionPreference
+$ErrorActionPreference = "Continue"
+& $exe --log-dir $logDir 1>> $stdout 2>> $stderr
+$exitCode = $LASTEXITCODE
+$ErrorActionPreference = $previousErrorActionPreference
 
-exit $process.ExitCode
+exit $exitCode
