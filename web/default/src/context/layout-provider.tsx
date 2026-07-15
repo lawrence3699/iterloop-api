@@ -18,6 +18,7 @@ For commercial licensing, please contact support@quantumnous.com
 */
 import { createContext, useContext, useState } from 'react'
 
+import { ITERLOOP_BRAND_LOCKED } from '@/components/iterloop-mark'
 import { getCookie, setCookie } from '@/lib/cookies'
 
 export type Collapsible = 'offcanvas' | 'icon' | 'none'
@@ -29,7 +30,7 @@ const LAYOUT_VARIANT_COOKIE_NAME = 'layout_variant'
 const LAYOUT_COOKIE_MAX_AGE = 60 * 60 * 24 * 7 // 7 days
 
 // Default values
-const DEFAULT_VARIANT = 'inset'
+const DEFAULT_VARIANT = 'sidebar'
 const DEFAULT_COLLAPSIBLE = 'icon'
 
 type LayoutContextType = {
@@ -52,16 +53,19 @@ type LayoutProviderProps = {
 
 export function LayoutProvider({ children }: LayoutProviderProps) {
   const [collapsible, _setCollapsible] = useState<Collapsible>(() => {
+    if (ITERLOOP_BRAND_LOCKED) return DEFAULT_COLLAPSIBLE
     const saved = getCookie(LAYOUT_COLLAPSIBLE_COOKIE_NAME)
     return (saved as Collapsible) || DEFAULT_COLLAPSIBLE
   })
 
   const [variant, _setVariant] = useState<Variant>(() => {
+    if (ITERLOOP_BRAND_LOCKED) return DEFAULT_VARIANT
     const saved = getCookie(LAYOUT_VARIANT_COOKIE_NAME)
     return (saved as Variant) || DEFAULT_VARIANT
   })
 
   const setCollapsible = (newCollapsible: Collapsible) => {
+    if (ITERLOOP_BRAND_LOCKED) return
     _setCollapsible(newCollapsible)
     setCookie(
       LAYOUT_COLLAPSIBLE_COOKIE_NAME,
@@ -71,6 +75,7 @@ export function LayoutProvider({ children }: LayoutProviderProps) {
   }
 
   const setVariant = (newVariant: Variant) => {
+    if (ITERLOOP_BRAND_LOCKED) return
     _setVariant(newVariant)
     setCookie(LAYOUT_VARIANT_COOKIE_NAME, newVariant, LAYOUT_COOKIE_MAX_AGE)
   }

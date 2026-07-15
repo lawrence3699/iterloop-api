@@ -25,6 +25,7 @@ import {
   useState,
 } from 'react'
 
+import { ITERLOOP_BRAND_LOCKED } from '@/components/iterloop-mark'
 import { getCookie, removeCookie, setCookie } from '@/lib/cookies'
 import {
   CONTENT_LAYOUT_VALUES,
@@ -98,39 +99,49 @@ export function ThemeCustomizationProvider(props: {
   children: React.ReactNode
 }) {
   const [preset, _setPreset] = useState<ThemePreset>(() =>
-    readCookie<ThemePreset>(
-      THEME_COOKIE_KEYS.preset,
-      THEME_PRESET_VALUES,
-      DEFAULT_THEME_CUSTOMIZATION.preset
-    )
+    ITERLOOP_BRAND_LOCKED
+      ? DEFAULT_THEME_CUSTOMIZATION.preset
+      : readCookie<ThemePreset>(
+          THEME_COOKIE_KEYS.preset,
+          THEME_PRESET_VALUES,
+          DEFAULT_THEME_CUSTOMIZATION.preset
+        )
   )
   const [font, _setFont] = useState<ThemeFont>(() =>
-    readCookie<ThemeFont>(
-      THEME_COOKIE_KEYS.font,
-      THEME_FONT_VALUES,
-      DEFAULT_THEME_CUSTOMIZATION.font
-    )
+    ITERLOOP_BRAND_LOCKED
+      ? DEFAULT_THEME_CUSTOMIZATION.font
+      : readCookie<ThemeFont>(
+          THEME_COOKIE_KEYS.font,
+          THEME_FONT_VALUES,
+          DEFAULT_THEME_CUSTOMIZATION.font
+        )
   )
   const [radius, _setRadius] = useState<ThemeRadius>(() =>
-    readCookie<ThemeRadius>(
-      THEME_COOKIE_KEYS.radius,
-      THEME_RADIUS_VALUES,
-      DEFAULT_THEME_CUSTOMIZATION.radius
-    )
+    ITERLOOP_BRAND_LOCKED
+      ? DEFAULT_THEME_CUSTOMIZATION.radius
+      : readCookie<ThemeRadius>(
+          THEME_COOKIE_KEYS.radius,
+          THEME_RADIUS_VALUES,
+          DEFAULT_THEME_CUSTOMIZATION.radius
+        )
   )
   const [scale, _setScale] = useState<ThemeScale>(() =>
-    readCookie<ThemeScale>(
-      THEME_COOKIE_KEYS.scale,
-      THEME_SCALE_VALUES,
-      DEFAULT_THEME_CUSTOMIZATION.scale
-    )
+    ITERLOOP_BRAND_LOCKED
+      ? DEFAULT_THEME_CUSTOMIZATION.scale
+      : readCookie<ThemeScale>(
+          THEME_COOKIE_KEYS.scale,
+          THEME_SCALE_VALUES,
+          DEFAULT_THEME_CUSTOMIZATION.scale
+        )
   )
   const [contentLayout, _setContentLayout] = useState<ContentLayout>(() =>
-    readCookie<ContentLayout>(
-      THEME_COOKIE_KEYS.contentLayout,
-      CONTENT_LAYOUT_VALUES,
-      DEFAULT_THEME_CUSTOMIZATION.contentLayout
-    )
+    ITERLOOP_BRAND_LOCKED
+      ? DEFAULT_THEME_CUSTOMIZATION.contentLayout
+      : readCookie<ContentLayout>(
+          THEME_COOKIE_KEYS.contentLayout,
+          CONTENT_LAYOUT_VALUES,
+          DEFAULT_THEME_CUSTOMIZATION.contentLayout
+        )
   )
 
   // Mirror state to the <body> via data-* attributes so theme-presets.css can
@@ -171,6 +182,7 @@ export function ThemeCustomizationProvider(props: {
   }, [contentLayout])
 
   const setPreset = useCallback((value: ThemePreset) => {
+    if (ITERLOOP_BRAND_LOCKED) return
     _setPreset(value)
     if (value === DEFAULT_THEME_CUSTOMIZATION.preset) {
       removeCookie(THEME_COOKIE_KEYS.preset)
@@ -180,6 +192,7 @@ export function ThemeCustomizationProvider(props: {
   }, [])
 
   const setFont = useCallback((value: ThemeFont) => {
+    if (ITERLOOP_BRAND_LOCKED) return
     _setFont(value)
     if (value === DEFAULT_THEME_CUSTOMIZATION.font) {
       removeCookie(THEME_COOKIE_KEYS.font)
@@ -189,6 +202,7 @@ export function ThemeCustomizationProvider(props: {
   }, [])
 
   const setRadius = useCallback((value: ThemeRadius) => {
+    if (ITERLOOP_BRAND_LOCKED) return
     _setRadius(value)
     if (value === DEFAULT_THEME_CUSTOMIZATION.radius) {
       removeCookie(THEME_COOKIE_KEYS.radius)
@@ -198,6 +212,7 @@ export function ThemeCustomizationProvider(props: {
   }, [])
 
   const setScale = useCallback((value: ThemeScale) => {
+    if (ITERLOOP_BRAND_LOCKED) return
     _setScale(value)
     if (value === DEFAULT_THEME_CUSTOMIZATION.scale) {
       removeCookie(THEME_COOKIE_KEYS.scale)
@@ -207,6 +222,7 @@ export function ThemeCustomizationProvider(props: {
   }, [])
 
   const setContentLayout = useCallback((value: ContentLayout) => {
+    if (ITERLOOP_BRAND_LOCKED) return
     _setContentLayout(value)
     if (value === DEFAULT_THEME_CUSTOMIZATION.contentLayout) {
       removeCookie(THEME_COOKIE_KEYS.contentLayout)

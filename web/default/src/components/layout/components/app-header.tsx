@@ -16,17 +16,26 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
+import { Link, useLocation } from '@tanstack/react-router'
+import { useTranslation } from 'react-i18next'
+
 import { ConfigDrawer } from '@/components/config-drawer'
+import { ITERLOOP_BRAND_LOCKED } from '@/components/iterloop-mark'
 import { LanguageSwitcher } from '@/components/language-switcher'
 import { NotificationPopover } from '@/components/notification-popover'
 import { ProfileDropdown } from '@/components/profile-dropdown'
 import { Search } from '@/components/search'
+import { ThemeSwitch } from '@/components/theme-switch'
+import { SidebarTrigger } from '@/components/ui/sidebar'
 import { useNotifications } from '@/hooks/use-notifications'
 import { useTopNavLinks } from '@/hooks/use-top-nav-links'
+import {
+  isIterLoopAdminHost,
+  isIterLoopAdminPath,
+} from '@/lib/iterloop-host'
 
 import { defaultTopNavLinks } from '../config/top-nav.config'
 import { type TopNavLink } from '../types'
-import { Header } from './header'
 import { SystemBrand } from './system-brand'
 import { TopNav } from './top-nav'
 
@@ -100,51 +109,77 @@ export function AppHeader({
   showSearch = true,
   rightContent,
   showNotifications = true,
-  showConfigDrawer = true,
+  showConfigDrawer = false,
   showProfileDropdown = true,
 }: AppHeaderProps) {
+  const { t } = useTranslation()
+  const pathname = useLocation({ select: (location) => location.pathname })
   // Prioritize dynamically generated links from backend
   const dynamicLinks = useTopNavLinks()
   const links = dynamicLinks.length > 0 ? dynamicLinks : navLinks
+  const adminWorkspace =
+    isIterLoopAdminHost() || isIterLoopAdminPath(pathname)
 
   // Notifications hook
   const notifications = useNotifications()
 
   return (
-    <>
-      <Header>
-        <SystemBrand variant='inline' />
+    <header className='iterloop-app-header'>
+      <div className='iterloop-app-global'>
+        <div className='iterloop-app-global-inner'>
+          <SystemBrand variant='inline' />
 
-        {leftContent ? (
-          <div className='ms-2 flex items-center'>{leftContent}</div>
-        ) : null}
+          <nav className='iterloop-app-global-links' aria-label={t('Main navigation')}>
+            <Link to='/dashboard'>{t('Dashboard')}</Link>
+            <Link to='/keys'>{t('API Keys')}</Link>
+            <Link to='/usage-logs/$section' params={{ section: 'common' }}>
+              {t('Usage Logs')}
+            </Link>
+            <Link to='/pricing'>{t('Pricing')}</Link>
+            <Link to='/docs'>{t('API docs')}</Link>
+          </nav>
 
-        {rightContent ?? (
-          <div className='ms-auto flex items-center gap-1 sm:gap-2'>
-            {showTopNav && (
-              <div className='me-1 hidden lg:block'>
-                <TopNav links={links} />
-              </div>
-            )}
-            {showSearch && <Search />}
-            {showNotifications && (
-              <NotificationPopover
-                open={notifications.popoverOpen}
-                onOpenChange={notifications.setPopoverOpen}
-                unreadCount={notifications.unreadCount}
-                activeTab={notifications.activeTab}
-                onTabChange={notifications.setActiveTab}
-                notice={notifications.notice}
-                announcements={notifications.announcements}
-                loading={notifications.loading}
-              />
-            )}
-            <LanguageSwitcher />
-            {showConfigDrawer && <ConfigDrawer />}
-            {showProfileDropdown && <ProfileDropdown />}
+          {rightContent ?? (
+            <div className='iterloop-app-actions'>
+              {showSearch && <Search />}
+              {showNotifications && (
+                <NotificationPopover
+                  open={notifications.popoverOpen}
+                  onOpenChange={notifications.setPopoverOpen}
+                  unreadCount={notifications.unreadCount}
+                  activeTab={notifications.activeTab}
+                  onTabChange={notifications.setActiveTab}
+                  notice={notifications.notice}
+                  announcements={notifications.announcements}
+                  loading={notifications.loading}
+                />
+              )}
+              <LanguageSwitcher />
+              <ThemeSwitch />
+              {showConfigDrawer && !ITERLOOP_BRAND_LOCKED && <ConfigDrawer />}
+              {showProfileDropdown && <ProfileDropdown />}
+            </div>
+          )}
+        </div>
+      </div>
+
+      <div className='iterloop-app-local'>
+        <div className='iterloop-app-local-title'>
+          <SidebarTrigger variant='ghost' className='size-9' />
+          <span>
+            IterLoop {adminWorkspace ? t('Admin') : t('Console')}
+          </span>
+          {leftContent ? (
+            <div className='ms-3 flex items-center'>{leftContent}</div>
+          ) : null}
+        </div>
+
+        {showTopNav && links.length > 0 ? (
+          <div className='iterloop-app-local-links'>
+            <TopNav links={links} />
           </div>
-        )}
-      </Header>
-    </>
+        ) : null}
+      </div>
+    </header>
   )
 }

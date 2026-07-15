@@ -74,6 +74,7 @@ export interface PricingToolbarProps {
   onRechargePriceChange: (value: boolean) => void
   viewMode: ViewMode
   onViewModeChange: (value: ViewMode) => void
+  showViewToggle?: boolean
   quotaTypeFilter: string
   endpointTypeFilter: string
   vendorFilter: string
@@ -253,23 +254,25 @@ export function PricingToolbar(props: PricingToolbarProps) {
             </DropdownMenuContent>
           </DropdownMenu>
 
-          <SegmentedControl
-            options={[
-              {
-                value: VIEW_MODES.CARD,
-                icon: Grid2X2,
-                tooltip: t('Card view'),
-              },
-              {
-                value: VIEW_MODES.TABLE,
-                icon: Table2,
-                tooltip: t('Table view'),
-              },
-            ]}
-            value={props.viewMode}
-            onChange={handleViewModeChange}
-            ariaLabel={t('View mode')}
-          />
+          {props.showViewToggle !== false ? (
+            <SegmentedControl
+              options={[
+                {
+                  value: VIEW_MODES.CARD,
+                  icon: Grid2X2,
+                  tooltip: t('Card view'),
+                },
+                {
+                  value: VIEW_MODES.TABLE,
+                  icon: Table2,
+                  tooltip: t('Table view'),
+                },
+              ]}
+              value={props.viewMode}
+              onChange={handleViewModeChange}
+              ariaLabel={t('View mode')}
+            />
+          ) : null}
         </div>
       </div>
 

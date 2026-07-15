@@ -130,6 +130,721 @@ For commercial licensing, please contact support@quantumnous.com
     line-height: 1.4;
     text-transform: uppercase;
   }
+
+  .iterloop-mark {
+    position: relative;
+    display: inline-block;
+    width: 30px;
+    height: 30px;
+    flex: 0 0 auto;
+    overflow: hidden;
+    border-radius: 7px;
+    background: #0071e3;
+  }
+
+  .iterloop-mark-compact {
+    width: 22px;
+    height: 22px;
+    border-radius: 5px;
+  }
+
+  .iterloop-mark > span {
+    position: absolute;
+    top: 10px;
+    width: 14px;
+    height: 9px;
+    border: 2.5px solid #fff;
+    border-radius: 999px;
+    transform: rotate(-28deg);
+  }
+
+  .iterloop-mark-compact > span {
+    top: 7px;
+    width: 11px;
+    height: 7px;
+    border-width: 2px;
+  }
+
+  .iterloop-mark > span:first-child {
+    left: 4px;
+  }
+
+  .iterloop-mark > span:last-child {
+    right: 4px;
+  }
+
+  .iterloop-mark-compact > span:first-child {
+    left: 3px;
+  }
+
+  .iterloop-mark-compact > span:last-child {
+    right: 3px;
+  }
+
+  .iterloop-app-header {
+    position: sticky;
+    z-index: 40;
+    top: 0;
+    width: 100%;
+    height: var(--app-header-height);
+    flex: 0 0 var(--app-header-height);
+    color: var(--foreground);
+    background: color-mix(in srgb, var(--background) 92%, transparent);
+    backdrop-filter: saturate(180%) blur(18px);
+  }
+
+  .iterloop-app-global {
+    height: 44px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .iterloop-app-global-inner {
+    display: flex;
+    width: min(980px, calc(100% - 32px));
+    height: 44px;
+    align-items: center;
+    gap: 20px;
+    margin: 0 auto;
+  }
+
+  .iterloop-app-global-links {
+    display: flex;
+    min-width: 0;
+    flex: 1;
+    align-items: center;
+    justify-content: center;
+    gap: 26px;
+  }
+
+  .iterloop-app-global-links a {
+    color: var(--foreground);
+    font-size: 12px;
+    white-space: nowrap;
+  }
+
+  .iterloop-app-global-links a:hover {
+    color: var(--primary);
+  }
+
+  .iterloop-app-actions {
+    display: flex;
+    height: 44px;
+    align-items: center;
+    gap: 0;
+  }
+
+  .iterloop-app-actions [data-slot='button'] {
+    width: 34px;
+    height: 44px;
+    border-radius: 0;
+  }
+
+  .iterloop-app-local {
+    display: flex;
+    height: 52px;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid var(--border);
+    padding: 0 24px;
+    background: var(--background);
+  }
+
+  .iterloop-app-local-title {
+    display: flex;
+    min-width: 0;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .iterloop-app-local-title > span {
+    overflow: hidden;
+    font-size: 18px;
+    font-weight: 600;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .iterloop-app-local-links nav {
+    gap: 24px;
+  }
+
+  .iterloop-app-local-links nav a {
+    font-size: 13px;
+    font-weight: 400;
+  }
+
+  .iterloop-public-header {
+    position: fixed;
+    z-index: 50;
+    top: 0;
+    right: 0;
+    left: 0;
+    height: 44px;
+    border-bottom: 1px solid var(--border);
+    background: color-mix(in srgb, var(--background) 92%, transparent);
+    backdrop-filter: saturate(180%) blur(18px);
+  }
+
+  .iterloop-public-header-inner {
+    width: min(980px, calc(100% - 32px));
+    height: 44px;
+    margin: 0 auto;
+  }
+
+  .iterloop-public-nav {
+    display: flex;
+    height: 44px;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .iterloop-public-header [data-slot='button'] {
+    width: 34px;
+    height: 44px;
+    border-radius: 0;
+  }
+
+  .iterloop-auth-shell {
+    display: flex;
+    min-height: 100svh;
+    flex-direction: column;
+    color: var(--foreground);
+    background: var(--background);
+  }
+
+  .iterloop-auth-global {
+    height: 44px;
+    flex: 0 0 44px;
+    border-bottom: 1px solid var(--border);
+    background: color-mix(in srgb, var(--background) 92%, transparent);
+    backdrop-filter: saturate(180%) blur(18px);
+  }
+
+  .iterloop-auth-global-inner {
+    display: flex;
+    width: min(980px, calc(100% - 32px));
+    height: 44px;
+    align-items: center;
+    margin: 0 auto;
+  }
+
+  .iterloop-auth-brand {
+    display: grid;
+    width: 30px;
+    height: 44px;
+    place-items: center;
+  }
+
+  .iterloop-auth-global-inner > nav {
+    display: flex;
+    flex: 1;
+    justify-content: center;
+    gap: 42px;
+  }
+
+  .iterloop-auth-global-inner > nav a {
+    font-size: 12px;
+  }
+
+  .iterloop-auth-global-inner > nav a:hover {
+    color: var(--primary);
+  }
+
+  .iterloop-auth-actions {
+    display: flex;
+    align-items: center;
+  }
+
+  .iterloop-auth-actions [data-slot='button'] {
+    width: 34px;
+    height: 44px;
+    border-radius: 0;
+  }
+
+  .iterloop-account-local {
+    height: 52px;
+    flex: 0 0 52px;
+    border-bottom: 1px solid var(--border);
+    background: var(--background);
+  }
+
+  .iterloop-account-local-inner {
+    display: flex;
+    width: min(980px, calc(100% - 44px));
+    height: 52px;
+    align-items: center;
+    justify-content: space-between;
+    margin: 0 auto;
+  }
+
+  .iterloop-account-local-inner strong {
+    font-size: 20px;
+    font-weight: 600;
+  }
+
+  .iterloop-account-local-inner nav {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+  }
+
+  .iterloop-account-local-inner nav a {
+    font-size: 12px;
+  }
+
+  .iterloop-auth-main {
+    width: 100%;
+    flex: 1;
+  }
+
+  .iterloop-auth-main-signin {
+    min-height: 650px;
+    padding: 34px 22px 80px;
+  }
+
+  .iterloop-auth-page-title {
+    width: min(980px, 100%);
+    margin: 0 auto;
+    font-size: 32px;
+    font-weight: 600;
+    line-height: 1.2;
+  }
+
+  .iterloop-auth-main-signin .iterloop-auth-content {
+    width: 480px;
+    max-width: 100%;
+    margin: 84px auto 0;
+  }
+
+  .iterloop-signin-panel {
+    width: 100%;
+  }
+
+  .iterloop-signin-heading {
+    margin-bottom: 34px;
+    text-align: center;
+  }
+
+  .iterloop-signin-heading h2 {
+    margin: 0;
+    font-size: 24px;
+    font-weight: 600;
+    line-height: 1.25;
+  }
+
+  .iterloop-signin-heading p {
+    margin: 12px 0 0;
+    color: var(--muted-foreground);
+    font-size: 14px;
+  }
+
+  .iterloop-auth-link,
+  .iterloop-login-options a,
+  .iterloop-auth-help a {
+    color: var(--primary);
+  }
+
+  .iterloop-login-form,
+  .iterloop-login-password-stage,
+  .iterloop-signup-form {
+    display: grid;
+    gap: 14px;
+  }
+
+  .iterloop-login-field {
+    position: relative;
+  }
+
+  .iterloop-auth-input {
+    width: 100%;
+    height: 54px;
+    border: 1px solid var(--input);
+    border-radius: 12px;
+    padding: 0 16px;
+    background: var(--background);
+    box-shadow: none;
+    font-size: 17px;
+  }
+
+  .iterloop-auth-input:focus-visible,
+  .iterloop-signup-language select:focus-visible {
+    border-color: var(--primary);
+    outline: 2px solid color-mix(in srgb, var(--primary) 28%, transparent);
+    outline-offset: 1px;
+  }
+
+  .iterloop-login-field .iterloop-auth-input {
+    padding-right: 58px;
+  }
+
+  .iterloop-login-continue {
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    display: grid;
+    width: 42px;
+    height: 42px;
+    place-items: center;
+    border: 1px solid var(--border);
+    border-radius: 50%;
+    color: var(--muted-foreground);
+    background: var(--background);
+  }
+
+  .iterloop-login-continue:hover {
+    color: #fff;
+    border-color: var(--primary);
+    background: var(--primary);
+  }
+
+  .iterloop-login-continue svg {
+    width: 20px;
+    height: 20px;
+  }
+
+  .iterloop-login-options {
+    display: flex;
+    min-height: 44px;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 14px;
+  }
+
+  .iterloop-login-options label {
+    display: inline-flex;
+    align-items: center;
+    gap: 9px;
+  }
+
+  .iterloop-auth-primary {
+    width: 100%;
+    height: 50px;
+    justify-content: center;
+    border-radius: 10px;
+    font-size: 16px;
+    font-weight: 600;
+  }
+
+  .iterloop-auth-terms {
+    margin-top: 28px;
+    text-align: center;
+  }
+
+  .iterloop-auth-help {
+    display: flex;
+    min-height: 70px;
+    align-items: center;
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+    background: var(--muted);
+  }
+
+  .iterloop-auth-help > div {
+    width: min(980px, calc(100% - 44px));
+    margin: 0 auto;
+    font-size: 14px;
+  }
+
+  .iterloop-auth-footer {
+    display: flex;
+    min-height: 64px;
+    align-items: center;
+    justify-content: center;
+    gap: 24px;
+    padding: 16px 22px;
+    color: var(--muted-foreground);
+    background: var(--muted);
+    font-size: 12px;
+  }
+
+  .iterloop-auth-footer a:hover {
+    color: var(--primary);
+  }
+
+  .iterloop-auth-main-signup {
+    padding: 68px 22px 96px;
+  }
+
+  .iterloop-auth-main-signup .iterloop-auth-content {
+    width: 480px;
+    max-width: 100%;
+    margin: 0 auto;
+  }
+
+  .iterloop-signup-heading {
+    margin-bottom: 42px;
+    text-align: center;
+  }
+
+  .iterloop-signup-heading h2 {
+    margin: 0;
+    font-size: 40px;
+    font-weight: 600;
+    line-height: 1.1;
+  }
+
+  .iterloop-signup-heading > p {
+    margin: 18px 0 0;
+    color: var(--muted-foreground);
+    font-size: 17px;
+    line-height: 1.45;
+  }
+
+  .iterloop-signup-heading .iterloop-signup-existing {
+    margin-top: 10px;
+    font-size: 14px;
+  }
+
+  .iterloop-signup-form {
+    gap: 16px;
+  }
+
+  .iterloop-signup-first-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+
+  .iterloop-signup-form [data-slot='form-label'],
+  .iterloop-signup-language > label {
+    color: var(--muted-foreground);
+    font-size: 13px;
+    font-weight: 500;
+  }
+
+  .iterloop-signup-form .iterloop-auth-input,
+  .iterloop-signup-language select {
+    height: 56px;
+  }
+
+  .iterloop-signup-language {
+    display: grid;
+    gap: 8px;
+  }
+
+  .iterloop-signup-language select {
+    width: 100%;
+    appearance: auto;
+    border: 1px solid var(--input);
+    border-radius: 12px;
+    padding: 0 14px;
+    color: var(--foreground);
+    background: var(--background);
+    font-size: 16px;
+  }
+
+  .iterloop-verification-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 12px;
+  }
+
+  .iterloop-verification-row [data-slot='button'] {
+    min-width: 116px;
+    height: 56px;
+    border-radius: 12px;
+  }
+
+  .iterloop-form-separator {
+    height: 1px;
+    margin: 8px 0;
+    background: var(--border);
+  }
+
+  .iterloop-page-header {
+    flex: 0 0 auto;
+    padding: 38px 48px 24px;
+    border-bottom: 1px solid var(--border);
+    background: var(--background);
+  }
+
+  .iterloop-page-breadcrumb {
+    margin-bottom: 16px;
+  }
+
+  .iterloop-page-title-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 24px;
+  }
+
+  .iterloop-page-title-row h1 {
+    overflow: hidden;
+    margin: 0;
+    font-size: 32px;
+    font-weight: 600;
+    line-height: 1.2;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .iterloop-page-actions {
+    display: flex;
+    flex: 0 0 auto;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 10px;
+  }
+
+  .iterloop-page-content {
+    padding: 24px 48px 40px;
+    background: var(--background);
+  }
+
+  .iterloop-page-footer {
+    flex: 0 0 auto;
+    border-top: 1px solid var(--border);
+    padding: 12px 48px;
+    background: var(--background);
+  }
+
+  [data-slot='table-container'] {
+    background: var(--background);
+  }
+
+  [data-slot='table-header'] {
+    background: color-mix(in srgb, var(--muted) 70%, var(--background));
+  }
+
+  [data-slot='table-row'][data-state='selected'] {
+    background: #eaf3ff;
+  }
+
+  .dark [data-slot='table-row'][data-state='selected'] {
+    background: rgba(41, 151, 255, 0.16);
+  }
+
+  [data-slot='card'] {
+    border-color: var(--border);
+    background: var(--background);
+  }
+
+  [data-slot='dialog-content'],
+  [data-slot='sheet-content'] {
+    border-color: var(--border);
+    background: var(--background);
+  }
+}
+
+@media (max-width: 1023px) {
+  .iterloop-app-global-links,
+  .iterloop-app-local-links {
+    display: none;
+  }
+
+  .iterloop-app-global-inner {
+    justify-content: space-between;
+  }
+}
+
+@media (max-width: 767px) {
+  .iterloop-app-global-inner,
+  .iterloop-auth-global-inner {
+    width: calc(100% - 32px);
+  }
+
+  .iterloop-app-actions > :first-child,
+  .iterloop-app-actions > :nth-child(2),
+  .iterloop-app-actions > :nth-child(3) {
+    display: none;
+  }
+
+  .iterloop-app-local {
+    padding: 0 12px;
+  }
+
+  .iterloop-app-local-title > span {
+    font-size: 16px;
+  }
+
+  .iterloop-auth-global-inner > nav {
+    display: none;
+  }
+
+  .iterloop-auth-actions {
+    margin-left: auto;
+  }
+
+  .iterloop-account-local-inner {
+    width: calc(100% - 32px);
+  }
+
+  .iterloop-account-local-inner strong {
+    font-size: 17px;
+  }
+
+  .iterloop-account-local-inner nav {
+    gap: 14px;
+  }
+
+  .iterloop-account-local-inner nav a:last-child {
+    display: none;
+  }
+
+  .iterloop-auth-main-signin {
+    min-height: 610px;
+    padding-top: 34px;
+  }
+
+  .iterloop-auth-page-title {
+    font-size: 28px;
+  }
+
+  .iterloop-auth-main-signin .iterloop-auth-content {
+    width: calc(100% - 22px);
+    margin-top: 72px;
+  }
+
+  .iterloop-auth-main-signup .iterloop-auth-content {
+    width: 100%;
+  }
+
+  .iterloop-auth-main-signup {
+    padding-top: 48px;
+  }
+
+  .iterloop-signup-heading h2 {
+    font-size: 34px;
+  }
+
+  .iterloop-signup-first-row {
+    grid-template-columns: 1fr;
+  }
+
+  .iterloop-auth-footer {
+    flex-wrap: wrap;
+    gap: 8px 18px;
+  }
+
+  .iterloop-page-header {
+    padding: 26px 22px 20px;
+  }
+
+  .iterloop-page-title-row {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  .iterloop-page-title-row h1 {
+    font-size: 28px;
+    white-space: normal;
+  }
+
+  .iterloop-page-actions {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .iterloop-page-content {
+    padding: 18px 22px 30px;
+  }
+
+  .iterloop-page-footer {
+    padding: 12px 22px;
+  }
 }
 
 /* Vercel Geist-style skeleton shimmer */

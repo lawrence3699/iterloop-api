@@ -31,19 +31,19 @@ export function SignIn() {
   const { status } = useStatus()
 
   return (
-    <AuthLayout>
-      <div className='w-full space-y-8'>
-        <div className='space-y-2'>
-          <h2 className='text-center text-2xl font-semibold tracking-normal'>
-            {t('Sign in')}
+    <AuthLayout pageTitle={t('Sign in to access the console faster.')}> 
+      <div className='iterloop-signin-panel'>
+        <div className='iterloop-signin-heading'>
+          <h2>
+            {t('Sign in to IterLoop API')}
           </h2>
           {!status?.self_use_mode_enabled &&
             status?.register_enabled !== false && (
-              <p className='text-muted-foreground text-center text-sm sm:text-base'>
+              <p>
                 {t("Don't have an account?")}{' '}
                 <Link
                   to='/sign-up'
-                  className='hover:text-primary font-medium underline underline-offset-4'
+                  className='iterloop-auth-link'
                 >
                   {t('Sign up')}
                 </Link>
@@ -57,7 +57,7 @@ export function SignIn() {
         <TermsFooter
           variant='sign-in'
           status={status}
-          className='text-center'
+          className='iterloop-auth-terms'
         />
       </div>
     </AuthLayout>

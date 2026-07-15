@@ -14,6 +14,10 @@ export default defineConfig(({ envMode }) => {
     process.env.VITE_REACT_APP_SERVER_URL ||
     env.rawPublicVars.VITE_REACT_APP_SERVER_URL ||
     'http://localhost:3000'
+  const iterLoopBrandLock =
+    process.env.VITE_ITERLOOP_BRAND_LOCK ||
+    env.rawPublicVars.VITE_ITERLOOP_BRAND_LOCK ||
+    'true'
 
   const isProd = envMode === 'production'
   const devProxy = Object.fromEntries(
@@ -55,6 +59,11 @@ export default defineConfig(({ envMode }) => {
     source: {
       entry: {
         index: './src/main.tsx',
+      },
+      define: {
+        'import.meta.env.VITE_ITERLOOP_BRAND_LOCK': JSON.stringify(
+          iterLoopBrandLock
+        ),
       },
     },
     resolve: {

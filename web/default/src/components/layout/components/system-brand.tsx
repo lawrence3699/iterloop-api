@@ -20,6 +20,10 @@ import { Link } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
 
 import {
+  ITERLOOP_BRAND_LOCKED,
+  IterLoopMark,
+} from '@/components/iterloop-mark'
+import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
@@ -51,9 +55,21 @@ export function SystemBrand(props: SystemBrandProps) {
   const { logo } = useSystemConfig()
 
   const variant = props.variant ?? 'sidebar'
-  const name = status?.system_name || props.defaultName || 'New API'
+  const name = ITERLOOP_BRAND_LOCKED
+    ? 'IterLoop API'
+    : status?.system_name || props.defaultName || 'New API'
   const version =
     status?.version || props.defaultVersion || t('Unknown version')
+
+  const brandMark = ITERLOOP_BRAND_LOCKED ? (
+    <IterLoopMark compact={variant === 'inline'} />
+  ) : (
+    <img
+      src={logo}
+      alt={t('Logo')}
+      className='size-full rounded-md object-cover'
+    />
+  )
 
   if (variant === 'inline') {
     return (
@@ -61,18 +77,14 @@ export function SystemBrand(props: SystemBrandProps) {
         to='/'
         aria-label={t('Go to home')}
         className={cn(
-          'text-foreground inline-flex h-7 items-center gap-1.5 rounded-md px-1.5 text-sm font-medium transition-colors outline-none select-none',
-          'hover:bg-accent focus-visible:ring-ring/40 focus-visible:ring-2'
+          'text-foreground inline-flex h-11 items-center gap-2 text-xs font-medium transition-colors outline-none select-none',
+          'hover:text-primary focus-visible:ring-ring/40 focus-visible:ring-2'
         )}
       >
-        <div className='flex size-5 items-center justify-center overflow-hidden rounded-md'>
-          <img
-            src={logo}
-            alt={t('Logo')}
-            className='size-full rounded-md object-cover'
-          />
+        <div className='flex size-[22px] items-center justify-center overflow-hidden rounded-md'>
+          {brandMark}
         </div>
-        <span className='max-w-[12rem] truncate'>{name}</span>
+        <span className='max-w-[12rem] truncate font-semibold'>{name}</span>
       </Link>
     )
   }
@@ -86,11 +98,7 @@ export function SystemBrand(props: SystemBrandProps) {
           render={<div />}
         >
           <div className='flex aspect-square size-8 items-center justify-center overflow-hidden rounded-lg'>
-            <img
-              src={logo}
-              alt={t('Logo')}
-              className='size-full rounded-lg object-cover'
-            />
+            {brandMark}
           </div>
           <div className='grid flex-1 text-start text-sm leading-tight group-data-[collapsible=icon]:hidden'>
             <span className='truncate font-semibold'>{name}</span>

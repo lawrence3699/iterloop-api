@@ -83,18 +83,16 @@ export function SectionPageLayout(props: SectionPageLayoutProps) {
   return (
     <PageFooterProvider container={footerContainer}>
       <Main>
-        <div className='shrink-0 border-b px-3 py-3 sm:px-5 sm:py-4'>
+        <div className='iterloop-page-header'>
           {breadcrumb != null && (
-            <div className='mb-2 sm:mb-3'>{breadcrumb}</div>
+            <div className='iterloop-page-breadcrumb'>{breadcrumb}</div>
           )}
-          <div className='flex flex-col items-stretch gap-y-2 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:gap-x-4'>
-            <div className='min-w-0 sm:flex-1'>
-              <h1 className='font-display truncate text-xl font-medium sm:text-2xl'>
-                {title}
-              </h1>
+          <div className='iterloop-page-title-row'>
+            <div className='min-w-0 flex-1'>
+              <h1>{title}</h1>
             </div>
             {actions != null && (
-              <div className='flex w-full shrink-0 flex-wrap items-center justify-start gap-2 sm:w-auto sm:justify-end sm:gap-x-4'>
+              <div className='iterloop-page-actions'>
                 {actions}
               </div>
             )}
@@ -104,8 +102,8 @@ export function SectionPageLayout(props: SectionPageLayoutProps) {
         <div
           className={
             props.fixedContent
-              ? 'min-h-0 flex-1 overflow-hidden px-3 py-3 sm:px-5 sm:py-4'
-              : 'min-h-0 flex-1 overflow-auto px-3 py-3 sm:px-5 sm:py-4'
+              ? 'iterloop-page-content min-h-0 flex-1 overflow-hidden'
+              : 'iterloop-page-content min-h-0 flex-1 overflow-auto'
           }
         >
           {content}
@@ -113,7 +111,7 @@ export function SectionPageLayout(props: SectionPageLayoutProps) {
 
         <div
           ref={setFooterContainer}
-          className='bg-background shrink-0 border-t px-3 py-2.5 empty:hidden sm:px-4 sm:py-3'
+          className='iterloop-page-footer empty:hidden'
         />
       </Main>
     </PageFooterProvider>

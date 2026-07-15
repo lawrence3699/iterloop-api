@@ -18,7 +18,7 @@ For commercial licensing, please contact support@quantumnous.com
 */
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Link } from '@tanstack/react-router'
-import { Loader2, LogIn, KeyRound } from 'lucide-react'
+import { ArrowRight, Loader2, KeyRound } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
@@ -29,6 +29,7 @@ import { Dialog } from '@/components/dialog'
 import { PasswordInput } from '@/components/password-input'
 import { Turnstile } from '@/components/turnstile'
 import { Button } from '@/components/ui/button'
+import { Checkbox } from '@/components/ui/checkbox'
 import {
   Form,
   FormControl,
@@ -68,6 +69,8 @@ export function UserAuthForm({
   const [isPasskeyLoading, setIsPasskeyLoading] = useState(false)
   const [isWeChatDialogOpen, setIsWeChatDialogOpen] = useState(false)
   const [isWeChatSubmitting, setIsWeChatSubmitting] = useState(false)
+  const [showPassword, setShowPassword] = useState(false)
+  const [rememberMe, setRememberMe] = useState(true)
   const legalConsentErrorMessage = t('Please agree to the legal terms first')
   const loginFailedMessage = t('Login failed')
 
@@ -142,6 +145,11 @@ export function UserAuthForm({
       ''
     )
   }, [status])
+
+  async function handleContinue() {
+    const valid = await form.trigger('username')
+    if (valid) setShowPassword(true)
+  }
 
   async function onSubmit(data: z.infer<typeof loginFormSchema>) {
     if (requiresLegalConsent && !agreedToLegal) {
@@ -322,86 +330,126 @@ export function UserAuthForm({
   return (
     <Form {...form}>
       <form
-        onSubmit={form.handleSubmit(onSubmit)}
-        className={cn('grid gap-4', className)}
+        onSubmit={
+          showPassword
+            ? form.handleSubmit(onSubmit)
+            : (event) => {
+                event.preventDefault()
+                void handleContinue()
+              }
+        }
+        className={cn('iterloop-login-form', className)}
         {...props}
       >
-        {hasAlternativeLogin && alternativeLoginMethods}
-
         {passwordLoginEnabled && (
           <>
-            {/* Username Field */}
-            <FormField
-              control={form.control}
-              name='username'
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>{t('Username or Email')}</FormLabel>
-                  <FormControl>
-                    <Input
-                      placeholder={t('Enter your username or email')}
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            <div className='iterloop-login-field'>
+              <FormField
+                control={form.control}
+                name='username'
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className='sr-only'>
+                      {t('Username or Email')}
+                    </FormLabel>
+                    <FormControl>
+                      <Input
+                        autoComplete='username'
+                        placeholder={t('Username or Email')}
+                        className='iterloop-auth-input h-[54px]'
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              {!showPassword ? (
+                <button
+                  type='button'
+                  className='iterloop-login-continue'
+                  aria-label={t('Continue')}
+                  onClick={() => void handleContinue()}
+                >
+                  <ArrowRight />
+                </button>
+              ) : null}
+            </div>
 
-            {/* Password Field */}
-            <FormField
-              control={form.control}
-              name='password'
-              render={({ field }) => (
-                <FormItem className='relative'>
-                  <FormLabel>{t('Password')}</FormLabel>
-                  <FormControl>
-                    <PasswordInput
-                      placeholder={t('Enter password')}
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                  <Link
-                    to='/forgot-password'
-                    className='text-muted-foreground absolute end-0 -top-0.5 z-10 text-sm font-medium hover:opacity-75'
-                  >
-                    {t('Forgot password?')}
-                  </Link>
-                </FormItem>
-              )}
-            />
-
-            {/* Submit Button */}
-            <Button
-              type='submit'
-              className='mt-2 w-full justify-center gap-2'
-              disabled={isLoading || (requiresLegalConsent && !agreedToLegal)}
-            >
-              {isLoading ? <Loader2 className='animate-spin' /> : <LogIn />}
-              {t('Sign in')}
-            </Button>
-
-            {/* Turnstile */}
-            {isTurnstileEnabled && (
-              <div className='mt-2'>
-                <Turnstile
-                  siteKey={turnstileSiteKey}
-                  onVerify={setTurnstileToken}
+            {showPassword ? (
+              <div className='iterloop-login-password-stage'>
+                <FormField
+                  control={form.control}
+                  name='password'
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className='sr-only'>{t('Password')}</FormLabel>
+                      <FormControl>
+                        <PasswordInput
+                          autoComplete='current-password'
+                          placeholder={t('Password')}
+                          inputClassName='iterloop-auth-input h-[54px]'
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
                 />
+
+                <div className='iterloop-login-options'>
+                  <label>
+                    <Checkbox
+                      checked={rememberMe}
+                      onCheckedChange={(checked) =>
+                        setRememberMe(checked === true)
+                      }
+                    />
+                    <span>{t('Remember me')}</span>
+                  </label>
+                  <Link to='/forgot-password'>{t('Forgot password?')}</Link>
+                </div>
+
+                {isTurnstileEnabled ? (
+                  <Turnstile
+                    siteKey={turnstileSiteKey}
+                    onVerify={setTurnstileToken}
+                  />
+                ) : null}
+
+                <LegalConsent
+                  status={status}
+                  checked={agreedToLegal}
+                  onCheckedChange={setAgreedToLegal}
+                />
+
+                <Button
+                  type='submit'
+                  className='iterloop-auth-primary'
+                  disabled={
+                    isLoading || (requiresLegalConsent && !agreedToLegal)
+                  }
+                >
+                  {isLoading ? <Loader2 className='animate-spin' /> : null}
+                  {t('Sign in')}
+                </Button>
+
+                {hasAlternativeLogin ? alternativeLoginMethods : null}
               </div>
-            )}
+            ) : null}
           </>
         )}
 
-        <LegalConsent
-          status={status}
-          checked={agreedToLegal}
-          onCheckedChange={setAgreedToLegal}
-          className='mt-1'
-        />
-
-        {!hasAlternativeLogin && alternativeLoginMethods}
+        {!passwordLoginEnabled ? (
+          <>
+            <LegalConsent
+              status={status}
+              checked={agreedToLegal}
+              onCheckedChange={setAgreedToLegal}
+            />
+            {alternativeLoginMethods}
+          </>
+        ) : null}
       </form>
 
       {hasWeChatLogin && (

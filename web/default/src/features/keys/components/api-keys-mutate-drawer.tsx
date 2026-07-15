@@ -261,7 +261,7 @@ export function ApiKeysMutateDrawer({
       }}
     >
       <SheetContent
-        className={sideDrawerContentClassName('max-w-none sm:!max-w-[620px]')}
+        className={sideDrawerContentClassName('max-w-none sm:!max-w-[480px]')}
       >
         <SheetHeader className={sideDrawerHeaderClassName()}>
           <SheetTitle>

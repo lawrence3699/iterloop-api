@@ -28,12 +28,14 @@ type PasswordInputProps = Omit<
   React.InputHTMLAttributes<HTMLInputElement>,
   'type'
 > & {
+  inputClassName?: string
   ref?: React.Ref<HTMLInputElement>
 }
 
 export function PasswordInput({
   className,
   disabled,
+  inputClassName,
   ref,
   ...props
 }: PasswordInputProps) {
@@ -45,6 +47,7 @@ export function PasswordInput({
         type={showPassword ? 'text' : 'password'}
         ref={ref}
         disabled={disabled}
+        className={cn('pe-10', inputClassName)}
         {...props}
       />
       <Button

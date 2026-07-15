@@ -19,103 +19,82 @@ For commercial licensing, please contact support@quantumnous.com
 import { Link } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
 
+import { IterLoopMark } from '@/components/iterloop-mark'
 import { LanguageSwitcher } from '@/components/language-switcher'
 import { ThemeSwitch } from '@/components/theme-switch'
-import { Skeleton } from '@/components/ui/skeleton'
-import { useSystemConfig } from '@/hooks/use-system-config'
 
 type AuthLayoutProps = {
   children: React.ReactNode
+  pageTitle?: React.ReactNode
+  variant?: 'sign-in' | 'sign-up'
 }
 
-export function AuthLayout({ children }: AuthLayoutProps) {
+export function AuthLayout({
+  children,
+  pageTitle,
+  variant = 'sign-in',
+}: AuthLayoutProps) {
   const { t } = useTranslation()
-  const { systemName, logo, loading } = useSystemConfig()
+  const isSignUp = variant === 'sign-up'
 
   return (
-    <div className='relative flex min-h-svh flex-col bg-[#f2f7ff] text-[#172033] dark:bg-[#0f1c2e] dark:text-white'>
-      <header className='border-b border-[#d6e2f3] bg-white/90 backdrop-blur-md dark:border-white/10 dark:bg-[#102038]/90'>
-        <div className='mx-auto flex h-16 w-full max-w-7xl items-center justify-between px-4 sm:px-6'>
-          <Link
-            to='/'
-            className='flex items-center gap-2.5 transition-opacity hover:opacity-80'
-          >
-            <div className='relative h-8 w-8 shrink-0'>
-              {loading ? (
-                <Skeleton className='absolute inset-0 rounded-md' />
-              ) : (
-                <img
-                  src={logo}
-                  alt={t('Logo')}
-                  className='h-8 w-8 rounded-md object-cover ring-1 ring-[#c7d7ee] dark:ring-white/20'
-                />
-              )}
-            </div>
-            {loading ? (
-              <Skeleton className='h-5 w-24' />
-            ) : (
-              <h1 className='font-display text-base font-semibold'>
-                {systemName}
-              </h1>
-            )}
+    <div className='iterloop-auth-shell'>
+      <header className='iterloop-auth-global'>
+        <div className='iterloop-auth-global-inner'>
+          <Link to='/' className='iterloop-auth-brand' aria-label='IterLoop API'>
+            <IterLoopMark compact />
           </Link>
 
-          <nav className='hidden items-center gap-5 text-sm text-[#536177] sm:flex dark:text-white/65'>
-            <Link to='/' className='hover:text-primary transition-colors'>
-              {t('Home')}
-            </Link>
-            <Link
-              to='/pricing'
-              className='hover:text-primary transition-colors'
-            >
-              {t('Pricing')}
-            </Link>
-            <Link to='/docs' className='hover:text-primary transition-colors'>
-              {t('API docs')}
-            </Link>
+          <nav aria-label={t('Main navigation')}>
+            <Link to='/pricing'>{t('Pricing')}</Link>
+            <Link to='/docs'>{t('API docs')}</Link>
+            <Link to='/sign-in'>{t('Console')}</Link>
           </nav>
 
-          <div className='flex items-center gap-1'>
+          <div className='iterloop-auth-actions'>
             <LanguageSwitcher />
             <ThemeSwitch />
           </div>
         </div>
       </header>
 
-      <main className='flex flex-1 items-center justify-center px-4 py-10 sm:px-8 sm:py-14'>
-        <div className='w-full max-w-[460px]'>
-          <Link
-            to='/'
-            className='mb-7 flex flex-col items-center text-center transition-opacity hover:opacity-85'
-          >
-            <div className='relative mb-3 h-11 w-11'>
-              {loading ? (
-                <Skeleton className='absolute inset-0 rounded-lg' />
-              ) : (
-                <img
-                  src={logo}
-                  alt={t('Logo')}
-                  className='h-11 w-11 rounded-lg object-cover ring-1 ring-[#c7d7ee] dark:ring-white/20'
-                />
-              )}
-            </div>
-            <span className='font-display text-xl font-semibold'>
-              {loading ? t('Loading...') : systemName}
-            </span>
-            <span className='mt-1 text-sm text-[#647188] dark:text-white/55'>
-              {t('Governed Codex, Claude, and Grok access.')}
-            </span>
-          </Link>
-
-          <section className='text-foreground bg-background w-full rounded-lg border border-[#cad8eb] p-6 shadow-[0_18px_50px_rgba(49,83,128,0.10)] sm:p-8 dark:border-white/15'>
-            {children}
-          </section>
+      {isSignUp ? (
+        <div className='iterloop-account-local'>
+          <div className='iterloop-account-local-inner'>
+            <strong>IterLoop Account</strong>
+            <nav>
+              <Link to='/sign-in'>{t('Sign in')}</Link>
+              <Link to='/sign-up'>{t('Create account')}</Link>
+              <Link to='/docs'>{t('FAQ')}</Link>
+            </nav>
+          </div>
         </div>
+      ) : null}
+
+      <main
+        className={
+          isSignUp
+            ? 'iterloop-auth-main iterloop-auth-main-signup'
+            : 'iterloop-auth-main iterloop-auth-main-signin'
+        }
+      >
+        {pageTitle ? <h1 className='iterloop-auth-page-title'>{pageTitle}</h1> : null}
+        <div className='iterloop-auth-content'>{children}</div>
       </main>
 
-      <div className='border-t border-[#d6e2f3] px-5 py-4 text-center font-mono text-[11px] text-[#6d7a8e] sm:px-8 dark:border-white/10 dark:text-white/45'>
-        console.iter-loop.com
+      <div className='iterloop-auth-help'>
+        <div>
+          {t('Need help?')}{' '}
+          <Link to='/docs'>{t('View docs or contact support.')}</Link>
+        </div>
       </div>
+
+      <footer className='iterloop-auth-footer'>
+        <span>{t('Encrypted connection')}</span>
+        <Link to='/privacy-policy'>{t('Privacy Policy')}</Link>
+        <Link to='/user-agreement'>{t('Terms of Use')}</Link>
+        <Link to='/about'>{t('Running source')}</Link>
+      </footer>
     </div>
   )
 }

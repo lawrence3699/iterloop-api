@@ -21,6 +21,10 @@ import { useCallback, useEffect, useState, type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { Dialog } from '@/components/dialog'
+import {
+  ITERLOOP_BRAND_LOCKED,
+  IterLoopMark,
+} from '@/components/iterloop-mark'
 import { LanguageSwitcher } from '@/components/language-switcher'
 import { NotificationPopover } from '@/components/notification-popover'
 import { ProfileDropdown } from '@/components/profile-dropdown'
@@ -94,7 +98,9 @@ export function PublicHeader(props: PublicHeaderProps) {
 
   const user = auth.user
   const isAuthenticated = !!user
-  const displaySiteName = customSiteName || systemName
+  const displaySiteName = ITERLOOP_BRAND_LOCKED
+    ? 'IterLoop API'
+    : customSiteName || systemName
   const links = dynamicLinks.length > 0 ? dynamicLinks : navLinks
 
   useEffect(() => {
@@ -166,7 +172,9 @@ export function PublicHeader(props: PublicHeaderProps) {
   )
 
   let logoContent: ReactNode
-  if (loading) {
+  if (ITERLOOP_BRAND_LOCKED) {
+    logoContent = <IterLoopMark compact />
+  } else if (loading) {
     logoContent = <Skeleton className='size-full rounded-lg' />
   } else if (customLogo) {
     logoContent = customLogo
@@ -200,24 +208,28 @@ export function PublicHeader(props: PublicHeaderProps) {
 
   return (
     <>
-      <header className='bg-background/95 fixed inset-x-0 top-0 z-50 border-b backdrop-blur-md'>
-        <div className='mx-auto max-w-7xl px-4 md:px-6'>
-          <nav className='flex h-16 items-center justify-between'>
+      <header className='iterloop-public-header'>
+        <div className='iterloop-public-header-inner'>
+          <nav className='iterloop-public-nav'>
             {/* Logo */}
             <Link
               to={homeUrl}
-              className='group flex shrink-0 items-center gap-2.5'
+              className='group flex h-11 shrink-0 items-center gap-2'
             >
-              <div className='flex size-7 shrink-0 items-center justify-center transition-all duration-300 group-hover:scale-105'>
+              <div className='flex size-[22px] shrink-0 items-center justify-center'>
                 {logoContent}
               </div>
-              <span className='font-display text-sm font-semibold'>
-                {loading ? <Skeleton className='h-4 w-16' /> : displaySiteName}
+              <span className='text-xs font-semibold'>
+                {loading && !ITERLOOP_BRAND_LOCKED ? (
+                  <Skeleton className='h-4 w-16' />
+                ) : (
+                  displaySiteName
+                )}
               </span>
             </Link>
 
             {/* Desktop nav */}
-            <div className='hidden items-center gap-0.5 sm:flex'>
+            <div className='hidden h-11 items-center gap-0.5 sm:flex'>
               {links.map((link) => {
                 const isActive = pathname === link.href
                 if (link.external) {
@@ -231,7 +243,7 @@ export function PublicHeader(props: PublicHeaderProps) {
                       tabIndex={link.disabled ? -1 : undefined}
                       onClick={(event) => handleNavLinkClick(event, link)}
                       className={cn(
-                        'text-muted-foreground hover:text-foreground rounded-lg px-3 py-1.5 text-[13px] font-medium transition-colors duration-200',
+                        'text-muted-foreground hover:text-primary px-3 py-1.5 text-xs font-normal transition-colors duration-200',
                         link.disabled && 'pointer-events-none opacity-50'
                       )}
                     >
@@ -246,7 +258,7 @@ export function PublicHeader(props: PublicHeaderProps) {
                     disabled={link.disabled}
                     onClick={(event) => handleNavLinkClick(event, link)}
                     className={cn(
-                      'rounded-lg px-3 py-1.5 text-[13px] font-medium transition-colors duration-200',
+                      'px-3 py-1.5 text-xs font-normal transition-colors duration-200',
                       isActive
                         ? 'text-foreground'
                         : 'text-muted-foreground hover:text-foreground',
@@ -336,7 +348,7 @@ export function PublicHeader(props: PublicHeaderProps) {
             : 'pointer-events-none opacity-0'
         )}
       >
-        <div className='flex h-full flex-col justify-between px-8 pt-20 pb-10'>
+        <div className='flex h-full flex-col justify-between px-8 pt-16 pb-10'>
           <nav className='flex flex-col gap-1'>
             {links.map((link, i) => {
               const isActive = pathname === link.href

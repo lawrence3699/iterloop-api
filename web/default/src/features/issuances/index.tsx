@@ -647,8 +647,8 @@ export function Issuances() {
           <div className='mx-auto grid max-w-[1600px] gap-5'>
             <UpstreamStrip health={health} loading={healthQuery.isLoading} />
 
-            <div className='grid min-w-0 border lg:grid-cols-[minmax(0,0.88fr)_minmax(0,1.12fr)]'>
-              <section className='min-w-0 border-b p-4 sm:p-5 lg:border-r lg:border-b-0'>
+            <div className='grid min-w-0 border xl:grid-cols-[440px_minmax(0,1fr)]'>
+              <section className='min-w-0 border-b p-4 sm:p-5 xl:border-r xl:border-b-0'>
                 <div className='mb-5 flex items-start justify-between gap-4'>
                   <div>
                     <div className='iterloop-section-label'>
@@ -1055,7 +1055,7 @@ function UpstreamStrip(props: { health?: UpstreamHealth; loading: boolean }) {
           {t('Upstream management is not configured')}
         </div>
       ) : null}
-      <div className='grid grid-cols-2 lg:grid-cols-6'>
+      <div className='grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6'>
         {metrics.map((metric, index) => {
           const Icon = metric.icon
           return (
@@ -1064,8 +1064,15 @@ function UpstreamStrip(props: { health?: UpstreamHealth; loading: boolean }) {
               className={cn(
                 'min-w-0 p-4 sm:p-5',
                 index % 2 === 0 && 'border-r border-white/15',
-                index < 4 && 'border-b border-white/15 lg:border-b-0',
-                index !== metrics.length - 1 && 'lg:border-r lg:border-white/15'
+                index < 4 && 'border-b border-white/15',
+                index % 3 !== 2 && 'md:border-r md:border-white/15',
+                index % 3 === 2 && 'md:border-r-0',
+                index < 3 && 'md:border-b md:border-white/15',
+                index >= 3 && 'md:border-b-0',
+                'xl:border-b-0',
+                index !== metrics.length - 1 &&
+                  'xl:border-r xl:border-white/15',
+                index === metrics.length - 1 && 'xl:border-r-0'
               )}
             >
               <div className='flex items-center justify-between gap-3'>

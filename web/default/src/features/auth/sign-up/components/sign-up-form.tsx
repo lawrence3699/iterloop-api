@@ -50,19 +50,23 @@ import {
   saveAffiliateCode,
 } from '@/features/auth/lib/storage'
 import { useStatus } from '@/hooks/use-status'
+import { normalizeInterfaceLanguage } from '@/i18n/languages'
 import { cn } from '@/lib/utils'
 
 export function SignUpForm({
   className,
   ...props
 }: React.HTMLAttributes<HTMLFormElement>) {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const [isLoading, setIsLoading] = useState(false)
   const [verificationCode, setVerificationCode] = useState('')
   const [agreedToLegal, setAgreedToLegal] = useState(false)
   const [wechatCode, setWeChatCode] = useState('')
   const [isWeChatDialogOpen, setIsWeChatDialogOpen] = useState(false)
   const [isWeChatSubmitting, setIsWeChatSubmitting] = useState(false)
+  const [interfaceLanguage, setInterfaceLanguage] = useState(() =>
+    normalizeInterfaceLanguage(i18n.language)
+  )
   const legalConsentErrorMessage = t('Please agree to the legal terms first')
 
   const { status } = useStatus()
@@ -183,6 +187,11 @@ export function SignUpForm({
     await sendCode(emailValue || '')
   }
 
+  async function handleLanguageChange(value: string) {
+    setInterfaceLanguage(value)
+    await i18n.changeLanguage(value)
+  }
+
   const handleOpenWeChatDialog = () => {
     if (requiresLegalConsent && !agreedToLegal) {
       toast.error(legalConsentErrorMessage)
@@ -227,36 +236,98 @@ export function SignUpForm({
     <Form {...form}>
       <form
         onSubmit={form.handleSubmit(onSubmit)}
-        className={cn('grid gap-4', className)}
+        className={cn('iterloop-signup-form', className)}
         {...props}
       >
-        {oauthRegisterEnabled && (
-          <OAuthProviders
-            status={status}
-            disabled={isLoading || (requiresLegalConsent && !agreedToLegal)}
-            onWeChatLogin={hasWeChatLogin ? handleOpenWeChatDialog : undefined}
-            isWeChatLoading={isWeChatSubmitting}
-            separatorPosition='after'
-            className='pb-1'
+        <div className='iterloop-signup-first-row'>
+          <FormField
+            control={form.control}
+            name='username'
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>{t('Username')}</FormLabel>
+                <FormControl>
+                  <Input
+                    autoComplete='username'
+                    placeholder={t('Username')}
+                    className='iterloop-auth-input h-14'
+                    {...field}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
           />
-        )}
 
-        {/* Username Field */}
-        <FormField
-          control={form.control}
-          name='username'
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>{t('Username')}</FormLabel>
-              <FormControl>
-                <Input placeholder={t('Enter your username')} {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+          <FormField
+            control={form.control}
+            name='email'
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>
+                  {emailVerificationRequired ? t('Email') : t('Email (optional)')}
+                </FormLabel>
+                <FormControl>
+                  <Input
+                    autoComplete='email'
+                    placeholder={t('name@example.com')}
+                    type='email'
+                    className='iterloop-auth-input h-14'
+                    {...field}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
 
-        {/* Password Field */}
+        <div className='iterloop-signup-language'>
+          <Label htmlFor='interface-language'>{t('Default language')}</Label>
+          <select
+            id='interface-language'
+            value={interfaceLanguage}
+            onChange={(event) => void handleLanguageChange(event.target.value)}
+          >
+            <option value='zhCN'>简体中文</option>
+            <option value='en'>English</option>
+          </select>
+        </div>
+
+        {emailVerificationRequired ? (
+          <div className='iterloop-verification-row'>
+            <Input
+              aria-label={t('Verification code')}
+              placeholder={t('Verification code')}
+              value={verificationCode}
+              onChange={(event) => setVerificationCode(event.target.value)}
+              className='iterloop-auth-input h-14'
+            />
+            <Button
+              variant='outline'
+              type='button'
+              disabled={
+                isLoading ||
+                isSendingCode ||
+                isActive ||
+                !emailValue ||
+                !turnstileReady
+              }
+              onClick={handleSendVerificationCode}
+            >
+              {isActive ? (
+                t('Resend ({{seconds}}s)', { seconds: secondsLeft })
+              ) : isSendingCode ? (
+                <Loader2 className='h-4 w-4 animate-spin' />
+              ) : (
+                t('Send code')
+              )}
+            </Button>
+          </div>
+        ) : null}
+
+        <div className='iterloop-form-separator' />
+
         <FormField
           control={form.control}
           name='password'
@@ -265,7 +336,9 @@ export function SignUpForm({
               <FormLabel>{t('Password')}</FormLabel>
               <FormControl>
                 <PasswordInput
+                  autoComplete='new-password'
                   placeholder={t('Enter password (8-20 characters)')}
+                  inputClassName='iterloop-auth-input h-14'
                   {...field}
                 />
               </FormControl>
@@ -274,7 +347,6 @@ export function SignUpForm({
           )}
         />
 
-        {/* Confirm Password Field */}
         <FormField
           control={form.control}
           name='confirmPassword'
@@ -282,73 +354,22 @@ export function SignUpForm({
             <FormItem>
               <FormLabel>{t('Confirm password')}</FormLabel>
               <FormControl>
-                <PasswordInput placeholder={t('Confirm password')} {...field} />
+                <PasswordInput
+                  autoComplete='new-password'
+                  placeholder={t('Confirm password')}
+                  inputClassName='iterloop-auth-input h-14'
+                  {...field}
+                />
               </FormControl>
               <FormMessage />
             </FormItem>
           )}
         />
 
-        {/* Email Verification Section */}
-        {emailVerificationRequired && (
-          <>
-            {/* Email Field */}
-            <FormField
-              control={form.control}
-              name='email'
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>
-                    {t('Email (required for verification)')}
-                  </FormLabel>
-                  <FormControl>
-                    <Input
-                      placeholder={t('name@example.com')}
-                      type='email'
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+        <div className='iterloop-form-separator' />
 
-            {/* Verification Code Field */}
-            <div className='flex items-end gap-2'>
-              <div className='flex-1'>
-                <Input
-                  placeholder={t('Verification code')}
-                  value={verificationCode}
-                  onChange={(e) => setVerificationCode(e.target.value)}
-                />
-              </div>
-              <Button
-                variant='outline'
-                type='button'
-                disabled={
-                  isLoading ||
-                  isSendingCode ||
-                  isActive ||
-                  !emailValue ||
-                  !turnstileReady
-                }
-                onClick={handleSendVerificationCode}
-              >
-                {isActive ? (
-                  t('Resend ({{seconds}}s)', { seconds: secondsLeft })
-                ) : isSendingCode ? (
-                  <Loader2 className='h-4 w-4 animate-spin' />
-                ) : (
-                  t('Send code')
-                )}
-              </Button>
-            </div>
-          </>
-        )}
-
-        {/* Turnstile */}
         {isTurnstileEnabled && (
-          <div className='mt-2'>
+          <div>
             <Turnstile
               siteKey={turnstileSiteKey}
               onVerify={setTurnstileToken}
@@ -360,13 +381,11 @@ export function SignUpForm({
           status={status}
           checked={agreedToLegal}
           onCheckedChange={setAgreedToLegal}
-          className='mt-1'
         />
 
-        {/* Submit Button */}
         <Button
           type='submit'
-          className='mt-2 w-full justify-center gap-2'
+          className='iterloop-auth-primary'
           disabled={
             isLoading ||
             (requiresLegalConsent && !agreedToLegal) ||
@@ -376,6 +395,16 @@ export function SignUpForm({
           {isLoading ? <Loader2 className='h-4 w-4 animate-spin' /> : null}
           {t('Create account')}
         </Button>
+
+        {oauthRegisterEnabled ? (
+          <OAuthProviders
+            status={status}
+            disabled={isLoading || (requiresLegalConsent && !agreedToLegal)}
+            onWeChatLogin={hasWeChatLogin ? handleOpenWeChatDialog : undefined}
+            isWeChatLoading={isWeChatSubmitting}
+            separatorPosition='before'
+          />
+        ) : null}
       </form>
 
       {hasWeChatLogin && (

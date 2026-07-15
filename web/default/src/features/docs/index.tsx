@@ -70,13 +70,13 @@ export function IterLoopDocs() {
   const { t } = useTranslation()
   return (
     <PublicLayout showMainContainer={false}>
-      <main className='pt-16'>
-        <section className='border-b px-4 py-16 sm:px-6 sm:py-20'>
-          <div className='mx-auto max-w-7xl'>
-            <p className='font-mono text-xs text-[#ff7759] uppercase'>
+      <main className='pt-11'>
+        <section className='border-b px-4 py-10 sm:px-6'>
+          <div className='mx-auto max-w-[1320px]'>
+            <p className='font-mono text-xs text-[#0071e3] uppercase'>
               {t('IterLoop API documentation')}
             </p>
-            <h1 className='font-display mt-4 text-5xl sm:text-6xl'>
+            <h1 className='mt-3 text-4xl font-semibold'>
               {t('Connect Codex, Claude, and Grok')}
             </h1>
             <p className='text-muted-foreground mt-5 max-w-2xl text-base leading-7'>
@@ -96,25 +96,25 @@ export function IterLoopDocs() {
           </div>
         </section>
 
-        <section className='px-4 py-16 sm:px-6'>
-          <div className='mx-auto grid max-w-7xl gap-12 lg:grid-cols-[250px_minmax(0,1fr)]'>
-            <aside className='lg:sticky lg:top-24 lg:self-start'>
-              <div className='iterloop-section-label'>{t('On this page')}</div>
+        <section className='px-4 py-10 sm:px-6'>
+          <div className='mx-auto grid max-w-[1320px] gap-8 lg:grid-cols-[220px_minmax(0,1fr)] xl:grid-cols-[240px_minmax(600px,760px)_180px]'>
+            <aside className='lg:sticky lg:top-20 lg:self-start'>
+              <div className='iterloop-section-label'>Documentation</div>
               <nav className='mt-4 border-t text-sm'>
                 {[
-                  ['Endpoints', '#endpoints'],
+                  [t('Quick start'), '#endpoints'],
+                  [t('Compatible endpoints'), '#endpoints'],
                   ['Codex', '#codex'],
                   ['Claude Code', '#claude-code'],
                   ['Grok', '#grok'],
-                  ['Direct request', '#direct-request'],
-                  ['Troubleshooting', '#troubleshooting'],
+                  [t('Troubleshooting'), '#troubleshooting'],
                 ].map(([label, href]) => (
                   <a
-                    key={href}
+                    key={href + label}
                     href={href}
-                    className='text-muted-foreground hover:text-foreground block border-b py-3 transition-colors'
+                    className='text-muted-foreground hover:text-primary block border-b py-3 transition-colors'
                   >
-                    {t(label)}
+                    {label}
                   </a>
                 ))}
               </nav>
@@ -143,7 +143,7 @@ export function IterLoopDocs() {
                   ].map(([method, path, description]) => (
                     <div
                       key={path}
-                      className='grid gap-2 border-b py-4 sm:grid-cols-[70px_240px_minmax(0,1fr)] sm:items-center'
+                      className='grid gap-2 border-b py-4 sm:grid-cols-[70px_210px_minmax(0,1fr)] sm:items-center'
                     >
                       <Badge variant='outline' className='w-fit font-mono'>
                         {method}
@@ -181,7 +181,7 @@ export function IterLoopDocs() {
                     'Use a Grok-enabled key with the OpenAI SDK or the Codex Responses client. WebSocket and hosted search tools remain disabled.'
                   )}
                 </p>
-                <div className='grid gap-4 xl:grid-cols-2'>
+                <div className='grid gap-4'>
                   <CodeSample
                     title='Python · OpenAI SDK'
                     value={GROK_OPENAI_CONFIG}
@@ -228,9 +228,9 @@ export function IterLoopDocs() {
                     return (
                       <div
                         key={title as string}
-                        className='grid gap-3 border-b py-5 sm:grid-cols-[36px_200px_minmax(0,1fr)]'
+                        className='grid gap-3 border-b py-5 sm:grid-cols-[36px_180px_minmax(0,1fr)]'
                       >
-                        <ItemIcon className='size-5 text-[#1863dc]' />
+                        <ItemIcon className='text-primary size-5' />
                         <div className='text-sm font-medium'>
                           {t(title as string)}
                         </div>
@@ -247,12 +247,34 @@ export function IterLoopDocs() {
                 href='https://github.com/lawrence3699/iterloop-api'
                 target='_blank'
                 rel='noopener noreferrer'
-                className='mt-10 inline-flex items-center gap-2 text-sm text-[#1863dc] hover:underline'
+                className='text-primary mt-10 inline-flex items-center gap-2 text-sm hover:underline'
               >
                 {t('View the running AGPL source')}
                 <ExternalLink className='size-4' />
               </a>
             </div>
+
+            <aside className='hidden xl:sticky xl:top-20 xl:block xl:self-start'>
+              <div className='iterloop-section-label'>{t('On this page')}</div>
+              <nav className='mt-4 border-t text-sm'>
+                {[
+                  ['Endpoints', '#endpoints'],
+                  ['Codex', '#codex'],
+                  ['Claude Code', '#claude-code'],
+                  ['Grok', '#grok'],
+                  ['Direct request', '#direct-request'],
+                  ['Troubleshooting', '#troubleshooting'],
+                ].map(([label, href]) => (
+                  <a
+                    key={href}
+                    href={href}
+                    className='text-muted-foreground hover:text-primary block border-b py-3 transition-colors'
+                  >
+                    {t(label)}
+                  </a>
+                ))}
+              </nav>
+            </aside>
           </div>
         </section>
       </main>
@@ -270,8 +292,8 @@ function DocSection(props: {
   return (
     <section id={props.id} className='scroll-mt-24 border-b py-10 first:pt-0'>
       <div className='mb-6 flex items-baseline gap-4'>
-        <span className='font-mono text-xs text-[#ff7759]'>{props.label}</span>
-        <h2 className='font-display text-2xl sm:text-3xl'>{props.title}</h2>
+        <span className='text-primary font-mono text-xs'>{props.label}</span>
+        <h2 className='text-2xl font-semibold sm:text-3xl'>{props.title}</h2>
       </div>
       {props.children}
     </section>
