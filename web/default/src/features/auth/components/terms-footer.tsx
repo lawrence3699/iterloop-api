@@ -33,11 +33,12 @@ export function TermsFooter({
   className,
   status,
 }: TermsFooterProps) {
-  const { t } = useTranslation()
+  const { i18n, t } = useTranslation()
+  const period = i18n.resolvedLanguage?.startsWith('zh') ? '。' : '.'
   const text =
     variant === 'sign-in'
-      ? 'By clicking sign in, you agree to our'
-      : 'By creating an account, you agree to our'
+      ? t('By clicking sign in, you agree to our')
+      : t('By creating an account, you agree to our')
 
   const hasUserAgreement = Boolean(status?.user_agreement_enabled)
   const hasPrivacyPolicy = Boolean(status?.privacy_policy_enabled)
@@ -47,11 +48,11 @@ export function TermsFooter({
   }
 
   const agreementLink = {
-    label: 'User Agreement',
+    label: t('User Agreement'),
     href: '/user-agreement',
   }
   const privacyLink = {
-    label: 'Privacy Policy',
+    label: t('Privacy Policy'),
     href: '/privacy-policy',
   }
 
@@ -88,7 +89,7 @@ export function TermsFooter({
           </a>
         </>
       )}
-      .
+      {period}
     </p>
   )
 }

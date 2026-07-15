@@ -9,6 +9,7 @@ This deployment is intentionally independent from CLIProxyAPI, CodePrism, the ol
 - Existing upstream remains `127.0.0.1:28317 -> ai-mac:8317`
 - Scheduled tasks: `IterLoop API Shadow` and `IterLoop Tunnel Shadow`
 - A new Cloudflare Tunnel UUID and credentials file are required.
+- The same embedded frontend serves `iter-loop.com` and `console.iter-loop.com`; the public host exposes only public pages and anonymous read-only data.
 - The installer does not start tasks unless `-StartTasks` is supplied.
 
 ## Layout
@@ -34,13 +35,21 @@ C:\IterLoopAPI\
 3. Place the EXE and scripts in the layout above.
 4. Create `config\iterloop.env` from the example and replace every secret.
 5. Create a brand-new Cloudflare Tunnel and copy its new credential JSON into the isolated directory.
-6. Configure DNS for `console`, `api`, and `admin` on the new Tunnel.
+6. Configure DNS for `console`, `api`, and `admin` on the new Tunnel. Add `iter-loop.com` only during the approved homepage cutover; keep the existing GitHub Pages records available for rollback until the new frontend is stable.
 7. Protect `admin.iter-loop.com` with Cloudflare Access and allow only the designated Gmail identity. Require a second factor where available.
 8. Run `install-shadow.ps1` without `-StartTasks`. Inspect the two new tasks and confirm port `28517` is unused.
 9. Start only `IterLoop API Shadow`, then verify `http://127.0.0.1:28517/healthz`.
 10. Configure the existing CLIProxyAPI-compatible upstream as a New API channel using `http://127.0.0.1:28317` without changing that upstream process.
 11. Validate Claude/Codex normal and SSE calls, key model/IP/expiry rejection, and billing before starting the new Tunnel task.
 12. Start only `IterLoop Tunnel Shadow`, verify Cloudflare Access, and use test accounts before opening registration.
+
+## Public homepage cutover
+
+1. Build with `VITE_ITERLOOP_PUBLIC_ORIGIN=https://iter-loop.com` and `VITE_ITERLOOP_CONSOLE_ORIGIN=https://console.iter-loop.com`.
+2. Set `ITERLOOP_PUBLIC_HOSTS=iter-loop.com` and verify the candidate locally with `Host: iter-loop.com` before changing DNS.
+3. Add the apex hostname to the isolated Tunnel config, then switch only the `iter-loop.com` DNS records from GitHub Pages to the Tunnel.
+4. Configure `www.iter-loop.com` as a permanent redirect to the apex domain at Cloudflare; do not expose it as a second application host.
+5. Keep the previous executable and GitHub Pages DNS values for immediate rollback. Disable the old Pages workflow only after 48 stable hours.
 
 ## Grok phase 1
 

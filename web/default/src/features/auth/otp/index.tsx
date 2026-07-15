@@ -23,7 +23,9 @@ import { AuthLayout } from '../auth-layout'
 import { OtpForm } from './components/otp-form'
 
 export function Otp() {
-  const { t } = useTranslation()
+  const { i18n, t } = useTranslation()
+  const period = i18n.resolvedLanguage?.startsWith('zh') ? '。' : '.'
+
   return (
     <AuthLayout>
       <div className='w-full space-y-8'>
@@ -42,7 +44,7 @@ export function Otp() {
             >
               {t('Re-login')}
             </Link>
-            .
+            {period}
           </p>
         </div>
 

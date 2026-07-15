@@ -19,10 +19,7 @@ For commercial licensing, please contact support@quantumnous.com
 import { Link } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
 
-import {
-  ITERLOOP_BRAND_LOCKED,
-  IterLoopMark,
-} from '@/components/iterloop-mark'
+import { ITERLOOP_BRAND_LOCKED, IterLoopMark } from '@/components/iterloop-mark'
 import {
   SidebarMenu,
   SidebarMenuButton,

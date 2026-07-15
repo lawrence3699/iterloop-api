@@ -21,7 +21,7 @@ import LanguageDetector from 'i18next-browser-languagedetector'
 import { initReactI18next } from 'react-i18next'
 
 import { iterLoopZhCN } from './iterloop-translations'
-import { convertDetectedLanguage } from './languages'
+import { convertDetectedLanguage, toIntlLocale } from './languages'
 import en from './locales/en.json'
 import fr from './locales/fr.json'
 import ja from './locales/ja.json'
@@ -37,6 +37,11 @@ const initialLanguage = (() => {
     return 'zhCN'
   }
 })()
+
+function applyDocumentLanguage(language: string) {
+  if (typeof document === 'undefined') return
+  document.documentElement.lang = toIntlLocale(language) ?? 'en'
+}
 
 export const resources = {
   en,
@@ -72,5 +77,7 @@ i18n
   })
 
 i18n.addResourceBundle('zhCN', 'translation', iterLoopZhCN, true, true)
+i18n.on('languageChanged', applyDocumentLanguage)
+applyDocumentLanguage(i18n.resolvedLanguage || initialLanguage)
 
 export default i18n

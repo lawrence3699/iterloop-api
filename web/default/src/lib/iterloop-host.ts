@@ -27,6 +27,51 @@ const ADMIN_PATH_PREFIXES = [
   '/issuances',
 ]
 
+const LOCAL_HOSTS = new Set(['', 'localhost', '127.0.0.1', '::1'])
+
+export const ITERLOOP_PUBLIC_ORIGIN = (
+  import.meta.env.VITE_ITERLOOP_PUBLIC_ORIGIN || 'https://iter-loop.com'
+).replace(/\/$/, '')
+
+export const ITERLOOP_CONSOLE_ORIGIN = (
+  import.meta.env.VITE_ITERLOOP_CONSOLE_ORIGIN ||
+  'https://console.iter-loop.com'
+).replace(/\/$/, '')
+
+function currentHostname(hostname?: string): string {
+  return (
+    hostname ?? (typeof window === 'undefined' ? '' : window.location.hostname)
+  ).toLowerCase()
+}
+
+export function isIterLoopLocalHost(hostname?: string): boolean {
+  return LOCAL_HOSTS.has(currentHostname(hostname))
+}
+
+export function isIterLoopPublicHost(hostname?: string): boolean {
+  const host = currentHostname(hostname)
+  if (LOCAL_HOSTS.has(host)) return false
+  return host === new URL(ITERLOOP_PUBLIC_ORIGIN).hostname.toLowerCase()
+}
+
+export function isIterLoopConsoleHost(hostname?: string): boolean {
+  const host = currentHostname(hostname)
+  if (LOCAL_HOSTS.has(host)) return true
+  return host === new URL(ITERLOOP_CONSOLE_ORIGIN).hostname.toLowerCase()
+}
+
+export function iterLoopConsoleUrl(path = '/'): string {
+  const normalizedPath = path.startsWith('/') ? path : `/${path}`
+  if (isIterLoopLocalHost() || isIterLoopConsoleHost()) return normalizedPath
+  return `${ITERLOOP_CONSOLE_ORIGIN}${normalizedPath}`
+}
+
+export function iterLoopPublicUrl(path = '/'): string {
+  const normalizedPath = path.startsWith('/') ? path : `/${path}`
+  if (isIterLoopLocalHost() || isIterLoopPublicHost()) return normalizedPath
+  return `${ITERLOOP_PUBLIC_ORIGIN}${normalizedPath}`
+}
+
 export function isIterLoopAdminPath(pathname: string): boolean {
   if (
     pathname === '/dashboard/users' ||
@@ -40,10 +85,8 @@ export function isIterLoopAdminPath(pathname: string): boolean {
 }
 
 export function isIterLoopAdminHost(hostname?: string): boolean {
-  const host = (
-    hostname ?? (typeof window === 'undefined' ? '' : window.location.hostname)
-  ).toLowerCase()
-  if (!host || host === 'localhost' || host === '127.0.0.1' || host === '::1') {
+  const host = currentHostname(hostname)
+  if (LOCAL_HOSTS.has(host)) {
     return true
   }
   const configured = (

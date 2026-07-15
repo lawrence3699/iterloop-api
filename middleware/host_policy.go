@@ -10,6 +10,7 @@ import (
 )
 
 type iterLoopHosts struct {
+	public  map[string]struct{}
 	console string
 	api     string
 	admin   string
@@ -17,10 +18,22 @@ type iterLoopHosts struct {
 
 func configuredIterLoopHosts() iterLoopHosts {
 	return iterLoopHosts{
+		public:  normalizeHostList(os.Getenv("ITERLOOP_PUBLIC_HOSTS")),
 		console: normalizeHost(os.Getenv("ITERLOOP_CONSOLE_HOST")),
 		api:     normalizeHost(os.Getenv("ITERLOOP_API_HOST")),
 		admin:   normalizeHost(os.Getenv("ITERLOOP_ADMIN_HOST")),
 	}
+}
+
+func normalizeHostList(raw string) map[string]struct{} {
+	hosts := make(map[string]struct{})
+	for _, value := range strings.Split(raw, ",") {
+		host := normalizeHost(value)
+		if host != "" {
+			hosts[host] = struct{}{}
+		}
+	}
+	return hosts
 }
 
 func normalizeHost(raw string) string {
@@ -39,7 +52,12 @@ func requestHost(c *gin.Context) string {
 }
 
 func (hosts iterLoopHosts) configured() bool {
-	return hosts.console != "" || hosts.api != "" || hosts.admin != ""
+	return len(hosts.public) > 0 || hosts.console != "" || hosts.api != "" || hosts.admin != ""
+}
+
+func (hosts iterLoopHosts) isPublic(host string) bool {
+	_, ok := hosts.public[host]
+	return ok
 }
 
 func isLocalHost(host string) bool {
@@ -65,6 +83,52 @@ func apiHostPathAllowed(path string) bool {
 	default:
 		return false
 	}
+}
+
+func publicHostPathAllowed(method string, path string) bool {
+	if method == http.MethodOptions {
+		return true
+	}
+	if method != http.MethodGet && method != http.MethodHead {
+		return false
+	}
+	if hasPathPrefix(path, "/pricing", "/docs", "/about") {
+		return true
+	}
+	if hasPathPrefix(path, "/static", "/assets") {
+		return true
+	}
+	switch path {
+	case "/", "/favicon.ico", "/logo.png", "/iterloop-mark.svg", "/robots.txt", "/sitemap.xml",
+		"/privacy-policy", "/user-agreement", "/api/status", "/api/home_page_content", "/api/pricing":
+		return true
+	default:
+		return false
+	}
+}
+
+func publicConsoleRedirectPath(path string) bool {
+	return hasPathPrefix(
+		path,
+		"/sign-in",
+		"/sign-up",
+		"/login",
+		"/register",
+		"/forgot-password",
+		"/reset",
+		"/user",
+		"/otp",
+		"/oauth",
+		"/dashboard",
+		"/keys",
+		"/wallet",
+		"/usage-logs",
+		"/profile",
+		"/console",
+		"/playground",
+		"/chat",
+		"/chat2link",
+	)
 }
 
 func adminWebPath(path string) bool {
@@ -105,6 +169,19 @@ func EnforceIterLoopHostPolicy() gin.HandlerFunc {
 		host := requestHost(c)
 		if isLocalHost(host) {
 			c.Next()
+			return
+		}
+		if hosts.isPublic(host) {
+			if publicHostPathAllowed(c.Request.Method, c.Request.URL.Path) {
+				c.Next()
+				return
+			}
+			if hosts.console != "" && publicConsoleRedirectPath(c.Request.URL.Path) {
+				c.Redirect(http.StatusTemporaryRedirect, "https://"+hosts.console+c.Request.URL.RequestURI())
+				c.Abort()
+				return
+			}
+			rejectHostRequest(c, http.StatusNotFound, "route is not available on the public host")
 			return
 		}
 		switch host {

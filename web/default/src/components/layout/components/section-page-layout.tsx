@@ -92,9 +92,7 @@ export function SectionPageLayout(props: SectionPageLayoutProps) {
               <h1>{title}</h1>
             </div>
             {actions != null && (
-              <div className='iterloop-page-actions'>
-                {actions}
-              </div>
+              <div className='iterloop-page-actions'>{actions}</div>
             )}
           </div>
         </div>

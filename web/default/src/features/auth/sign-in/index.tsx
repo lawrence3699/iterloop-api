@@ -26,28 +26,24 @@ import { TermsFooter } from '../components/terms-footer'
 import { UserAuthForm } from './components/user-auth-form'
 
 export function SignIn() {
-  const { t } = useTranslation()
+  const { i18n, t } = useTranslation()
   const { redirect } = useSearch({ from: '/(auth)/sign-in' })
   const { status } = useStatus()
+  const period = i18n.resolvedLanguage?.startsWith('zh') ? '。' : '.'
 
   return (
-    <AuthLayout pageTitle={t('Sign in to access the console faster.')}> 
+    <AuthLayout pageTitle={t('Sign in to access the console faster.')}>
       <div className='iterloop-signin-panel'>
         <div className='iterloop-signin-heading'>
-          <h2>
-            {t('Sign in to IterLoop API')}
-          </h2>
+          <h2>{t('Sign in to IterLoop API')}</h2>
           {!status?.self_use_mode_enabled &&
             status?.register_enabled !== false && (
               <p>
                 {t("Don't have an account?")}{' '}
-                <Link
-                  to='/sign-up'
-                  className='iterloop-auth-link'
-                >
+                <Link to='/sign-up' className='iterloop-auth-link'>
                   {t('Sign up')}
                 </Link>
-                .
+                {period}
               </p>
             )}
         </div>

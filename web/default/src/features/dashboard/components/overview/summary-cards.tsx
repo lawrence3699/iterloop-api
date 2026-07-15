@@ -265,10 +265,7 @@ export function SummaryCards() {
           </div>
           <StaggerContainer className='divide-border grid grid-cols-1 divide-y sm:grid-cols-3 sm:divide-x sm:divide-y-0'>
             {items.map((it) => (
-              <StaggerItem
-                key={it.key}
-                className='px-2 py-3 sm:px-4'
-              >
+              <StaggerItem key={it.key} className='px-2 py-3 sm:px-4'>
                 <StatCard
                   title={it.title}
                   value={it.value}

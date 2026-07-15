@@ -30,7 +30,11 @@ export function IterLoopMark({ className, compact }: IterLoopMarkProps) {
   return (
     <span
       aria-hidden='true'
-      className={cn('iterloop-mark', compact && 'iterloop-mark-compact', className)}
+      className={cn(
+        'iterloop-mark',
+        compact && 'iterloop-mark-compact',
+        className
+      )}
     >
       <span />
       <span />

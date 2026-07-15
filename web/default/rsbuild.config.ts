@@ -61,9 +61,8 @@ export default defineConfig(({ envMode }) => {
         index: './src/main.tsx',
       },
       define: {
-        'import.meta.env.VITE_ITERLOOP_BRAND_LOCK': JSON.stringify(
-          iterLoopBrandLock
-        ),
+        'import.meta.env.VITE_ITERLOOP_BRAND_LOCK':
+          JSON.stringify(iterLoopBrandLock),
       },
     },
     resolve: {

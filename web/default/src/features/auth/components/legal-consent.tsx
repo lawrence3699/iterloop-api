@@ -37,7 +37,8 @@ export function LegalConsent({
   onCheckedChange,
   className,
 }: LegalConsentProps) {
-  const { t } = useTranslation()
+  const { i18n, t } = useTranslation()
+  const period = i18n.resolvedLanguage?.startsWith('zh') ? '。' : '.'
   const hasUserAgreement = Boolean(status?.user_agreement_enabled)
   const hasPrivacyPolicy = Boolean(status?.privacy_policy_enabled)
 
@@ -78,7 +79,7 @@ export function LegalConsent({
               {t('User Agreement')}
             </a>
           )}
-          {hasUserAgreement && hasPrivacyPolicy && ' and the '}
+          {hasUserAgreement && hasPrivacyPolicy && <> {t('and')} </>}
           {hasPrivacyPolicy && (
             <a
               href='/privacy-policy'
@@ -89,7 +90,7 @@ export function LegalConsent({
               {t('Privacy Policy')}
             </a>
           )}
-          .
+          {period}
         </span>
       </Label>
     </div>

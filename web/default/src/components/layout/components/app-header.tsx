@@ -29,13 +29,10 @@ import { ThemeSwitch } from '@/components/theme-switch'
 import { SidebarTrigger } from '@/components/ui/sidebar'
 import { useNotifications } from '@/hooks/use-notifications'
 import { useTopNavLinks } from '@/hooks/use-top-nav-links'
-import {
-  isIterLoopAdminHost,
-  isIterLoopAdminPath,
-} from '@/lib/iterloop-host'
+import { isIterLoopAdminHost, isIterLoopAdminPath } from '@/lib/iterloop-host'
 
 import { defaultTopNavLinks } from '../config/top-nav.config'
-import { type TopNavLink } from '../types'
+import type { TopNavLink } from '../types'
 import { SystemBrand } from './system-brand'
 import { TopNav } from './top-nav'
 
@@ -117,8 +114,7 @@ export function AppHeader({
   // Prioritize dynamically generated links from backend
   const dynamicLinks = useTopNavLinks()
   const links = dynamicLinks.length > 0 ? dynamicLinks : navLinks
-  const adminWorkspace =
-    isIterLoopAdminHost() || isIterLoopAdminPath(pathname)
+  const adminWorkspace = isIterLoopAdminHost() || isIterLoopAdminPath(pathname)
 
   // Notifications hook
   const notifications = useNotifications()
@@ -129,7 +125,10 @@ export function AppHeader({
         <div className='iterloop-app-global-inner'>
           <SystemBrand variant='inline' />
 
-          <nav className='iterloop-app-global-links' aria-label={t('Main navigation')}>
+          <nav
+            className='iterloop-app-global-links'
+            aria-label={t('Main navigation')}
+          >
             <Link to='/dashboard'>{t('Dashboard')}</Link>
             <Link to='/keys'>{t('API Keys')}</Link>
             <Link to='/usage-logs/$section' params={{ section: 'common' }}>
@@ -166,9 +165,7 @@ export function AppHeader({
       <div className='iterloop-app-local'>
         <div className='iterloop-app-local-title'>
           <SidebarTrigger variant='ghost' className='size-9' />
-          <span>
-            IterLoop {adminWorkspace ? t('Admin') : t('Console')}
-          </span>
+          <span>IterLoop {adminWorkspace ? t('Admin') : t('Console')}</span>
           {leftContent ? (
             <div className='ms-3 flex items-center'>{leftContent}</div>
           ) : null}

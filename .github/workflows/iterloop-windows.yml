@@ -39,6 +39,8 @@ jobs:
         env:
           VITE_ITERLOOP_ADMIN_HOST: admin.iter-loop.com
           VITE_ITERLOOP_API_BASE_URL: https://api.iter-loop.com/v1
+          VITE_ITERLOOP_PUBLIC_ORIGIN: https://iter-loop.com
+          VITE_ITERLOOP_CONSOLE_ORIGIN: https://console.iter-loop.com
           VITE_REACT_APP_VERSION: ${{ env.VERSION }}
         run: |
           cd web
@@ -89,4 +91,3 @@ jobs:
           files: |
             iterloop-api-windows-amd64-${{ env.VERSION }}.zip
             artifact/SHA256SUMS.txt
-

@@ -21,10 +21,7 @@ import { useCallback, useEffect, useState, type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { Dialog } from '@/components/dialog'
-import {
-  ITERLOOP_BRAND_LOCKED,
-  IterLoopMark,
-} from '@/components/iterloop-mark'
+import { ITERLOOP_BRAND_LOCKED, IterLoopMark } from '@/components/iterloop-mark'
 import { LanguageSwitcher } from '@/components/language-switcher'
 import { NotificationPopover } from '@/components/notification-popover'
 import { ProfileDropdown } from '@/components/profile-dropdown'
@@ -40,6 +37,7 @@ import { useAuthStore } from '@/stores/auth-store'
 import { defaultTopNavLinks } from '../config/top-nav.config'
 import type { TopNavLink } from '../types'
 import { HeaderLogo } from './header-logo'
+import { IterLoopPublicHeader } from './iterloop-public-header'
 
 const AUTH_PROMPT_SECONDS = 5
 
@@ -66,6 +64,21 @@ export interface PublicHeaderProps {
 }
 
 export function PublicHeader(props: PublicHeaderProps) {
+  if (ITERLOOP_BRAND_LOCKED) {
+    return (
+      <IterLoopPublicHeader
+        showThemeSwitch={props.showThemeSwitch}
+        showLanguageSwitcher={props.showLanguageSwitcher}
+        showAuthButtons={props.showAuthButtons}
+        className={props.className}
+      />
+    )
+  }
+
+  return <ConfigurablePublicHeader {...props} />
+}
+
+function ConfigurablePublicHeader(props: PublicHeaderProps) {
   const {
     navLinks = defaultTopNavLinks,
     showThemeSwitch = true,

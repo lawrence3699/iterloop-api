@@ -99,7 +99,7 @@ export function IterLoopDocs() {
         <section className='px-4 py-10 sm:px-6'>
           <div className='mx-auto grid max-w-[1320px] gap-8 lg:grid-cols-[220px_minmax(0,1fr)] xl:grid-cols-[240px_minmax(600px,760px)_180px]'>
             <aside className='lg:sticky lg:top-20 lg:self-start'>
-              <div className='iterloop-section-label'>Documentation</div>
+              <div className='iterloop-section-label'>{t('Docs')}</div>
               <nav className='mt-4 border-t text-sm'>
                 {[
                   [t('Quick start'), '#endpoints'],
@@ -301,6 +301,8 @@ function DocSection(props: {
 }
 
 function CodeSample(props: { title: string; value: string }) {
+  const { t } = useTranslation()
+
   return (
     <div className='overflow-hidden border bg-[#17171c] text-white'>
       <div className='flex items-center justify-between border-b border-white/10 px-4 py-2.5'>
@@ -310,7 +312,7 @@ function CodeSample(props: { title: string; value: string }) {
         <CopyButton
           value={props.value}
           className='text-white/65 hover:bg-white/10 hover:text-white'
-          tooltip={`Copy ${props.title}`}
+          tooltip={`${t('Copy')} ${props.title}`}
         />
       </div>
       <pre className='overflow-x-auto p-4 font-mono text-xs leading-6 text-white/75'>

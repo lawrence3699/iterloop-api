@@ -23,7 +23,9 @@ import { AuthLayout } from '../auth-layout'
 import { ForgotPasswordForm } from './components/forgot-password-form'
 
 export function ForgotPassword() {
-  const { t } = useTranslation()
+  const { i18n, t } = useTranslation()
+  const period = i18n.resolvedLanguage?.startsWith('zh') ? '。' : '.'
+
   return (
     <AuthLayout>
       <div className='w-full space-y-8'>
@@ -44,7 +46,7 @@ export function ForgotPassword() {
             >
               {t('Sign up')}
             </Link>
-            .
+            {period}
           </p>
         </div>
 

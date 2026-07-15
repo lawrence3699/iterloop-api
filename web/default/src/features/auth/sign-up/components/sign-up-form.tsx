@@ -18,7 +18,7 @@ For commercial licensing, please contact support@quantumnous.com
 */
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Loader2 } from 'lucide-react'
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState, type ReactNode } from 'react'
 import { useForm } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
@@ -176,7 +176,7 @@ export function SignUpForm({
       } else {
         toast.error(res?.message || t('Failed to create account'))
       }
-    } catch (_error) {
+    } catch {
       // Errors are handled by global interceptor
     } finally {
       setIsLoading(false)
@@ -225,11 +225,20 @@ export function SignUpForm({
       } else {
         toast.error(res?.message || t('Login failed'))
       }
-    } catch (_error) {
+    } catch {
       toast.error(t('Login failed'))
     } finally {
       setIsWeChatSubmitting(false)
     }
+  }
+
+  let verificationButtonContent: ReactNode = t('Send code')
+  if (isActive) {
+    verificationButtonContent = t('Resend ({{seconds}}s)', {
+      seconds: secondsLeft,
+    })
+  } else if (isSendingCode) {
+    verificationButtonContent = <Loader2 className='h-4 w-4 animate-spin' />
   }
 
   return (
@@ -265,7 +274,9 @@ export function SignUpForm({
             render={({ field }) => (
               <FormItem>
                 <FormLabel>
-                  {emailVerificationRequired ? t('Email') : t('Email (optional)')}
+                  {emailVerificationRequired
+                    ? t('Email')
+                    : t('Email (optional)')}
                 </FormLabel>
                 <FormControl>
                   <Input
@@ -315,13 +326,7 @@ export function SignUpForm({
               }
               onClick={handleSendVerificationCode}
             >
-              {isActive ? (
-                t('Resend ({{seconds}}s)', { seconds: secondsLeft })
-              ) : isSendingCode ? (
-                <Loader2 className='h-4 w-4 animate-spin' />
-              ) : (
-                t('Send code')
-              )}
+              {verificationButtonContent}
             </Button>
           </div>
         ) : null}

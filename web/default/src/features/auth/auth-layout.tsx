@@ -41,7 +41,11 @@ export function AuthLayout({
     <div className='iterloop-auth-shell'>
       <header className='iterloop-auth-global'>
         <div className='iterloop-auth-global-inner'>
-          <Link to='/' className='iterloop-auth-brand' aria-label='IterLoop API'>
+          <Link
+            to='/'
+            className='iterloop-auth-brand'
+            aria-label='IterLoop API'
+          >
             <IterLoopMark compact />
           </Link>
 
@@ -78,7 +82,9 @@ export function AuthLayout({
             : 'iterloop-auth-main iterloop-auth-main-signin'
         }
       >
-        {pageTitle ? <h1 className='iterloop-auth-page-title'>{pageTitle}</h1> : null}
+        {pageTitle ? (
+          <h1 className='iterloop-auth-page-title'>{pageTitle}</h1>
+        ) : null}
         <div className='iterloop-auth-content'>{children}</div>
       </main>
 

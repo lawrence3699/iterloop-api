@@ -26,26 +26,24 @@ import { TermsFooter } from '../components/terms-footer'
 import { SignUpForm } from './components/sign-up-form'
 
 export function SignUp() {
-  const { t } = useTranslation()
+  const { i18n, t } = useTranslation()
   const { status } = useStatus()
+  const period = i18n.resolvedLanguage?.startsWith('zh') ? '。' : '.'
 
   return (
     <AuthLayout variant='sign-up'>
       <div className='iterloop-signup-panel'>
         <div className='iterloop-signup-heading'>
-          <h2>
-            {t('Create an account')}
-          </h2>
-          <p>{t('Create your IterLoop Account to manage API access and usage.')}</p>
+          <h2>{t('Create an account')}</h2>
+          <p>
+            {t('Create your IterLoop Account to manage API access and usage.')}
+          </p>
           <p className='iterloop-signup-existing'>
             {t('Already have an account?')}{' '}
-            <Link
-              to='/sign-in'
-              className='iterloop-auth-link'
-            >
+            <Link to='/sign-in' className='iterloop-auth-link'>
               {t('Sign in')}
             </Link>
-            .
+            {period}
           </p>
         </div>
 
