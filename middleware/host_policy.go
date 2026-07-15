@@ -95,7 +95,7 @@ func publicHostPathAllowed(method string, path string) bool {
 	if hasPathPrefix(path, "/pricing", "/docs", "/about") {
 		return true
 	}
-	if hasPathPrefix(path, "/static", "/assets") {
+	if hasPathPrefix(path, "/static", "/assets", "/media") {
 		return true
 	}
 	switch path {
