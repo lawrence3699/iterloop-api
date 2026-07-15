@@ -18,14 +18,12 @@ For commercial licensing, please contact support@quantumnous.com
 */
 import { expect, test, type Page } from '@playwright/test'
 
-const STATUS_FIXTURE = {
-  system_name: 'IterLoop API',
-  logo: '/logo.png',
-  register_enabled: true,
-  password_login_enabled: true,
-  self_use_mode_enabled: false,
-  version: 'visual-test',
-}
+import {
+  DEMO_DATE,
+  DEMO_USER,
+  getDemoApiPayload,
+  type DemoLanguage,
+} from './iterloop-demo-fixtures'
 
 const VIEWPORTS = [
   { name: '1728x900', width: 1728, height: 900 },
@@ -46,39 +44,46 @@ const QA_STYLES = `
 
 async function preparePage(
   page: Page,
-  options: { language?: 'en' | 'zhCN'; theme?: 'dark' | 'light' } = {}
+  options: {
+    authenticated?: boolean
+    language?: DemoLanguage
+    theme?: 'dark' | 'light'
+  } = {}
 ) {
   const language = options.language ?? 'zhCN'
   const theme = options.theme ?? 'light'
+  await page.clock.setFixedTime(new Date(DEMO_DATE))
 
   await page.addInitScript(
-    ({ initialLanguage, initialTheme }) => {
+    ({ authenticated, initialLanguage, initialTheme, user }) => {
       if (!window.localStorage.getItem('i18nextLng')) {
         window.localStorage.setItem('i18nextLng', initialLanguage)
       }
       if (!document.cookie.includes('vite-ui-theme=')) {
         document.cookie = `vite-ui-theme=${initialTheme}; path=/; SameSite=Lax`
       }
+      if (authenticated) {
+        window.localStorage.setItem('user', JSON.stringify(user))
+      } else {
+        window.localStorage.removeItem('user')
+      }
     },
-    { initialLanguage: language, initialTheme: theme }
+    {
+      authenticated: options.authenticated ?? false,
+      initialLanguage: language,
+      initialTheme: theme,
+      user: DEMO_USER,
+    }
   )
   await page.route('**/api/**', async (route) => {
     const pathname = new URL(route.request().url()).pathname
-    let payload: { success: boolean; data: unknown } = {
-      success: true,
-      data: null,
-    }
-    if (pathname === '/api/status') {
-      payload = { success: true, data: STATUS_FIXTURE }
-    } else if (pathname === '/api/setup') {
-      payload = { success: true, data: { status: true } }
-    } else if (pathname === '/api/home_page_content') {
-      payload = { success: true, data: '' }
-    }
 
     await route.fulfill({
       contentType: 'application/json',
-      body: JSON.stringify(payload),
+      body: JSON.stringify({
+        success: true,
+        data: getDemoApiPayload(pathname, language),
+      }),
     })
   })
 }
@@ -87,6 +92,20 @@ async function settlePage(page: Page) {
   await page.addStyleTag({ content: QA_STYLES })
   await page.evaluate(async () => {
     await document.fonts.ready
+    const visibleImages = [...document.images].filter((image) => {
+      const rect = image.getBoundingClientRect()
+      return rect.bottom > 0 && rect.top < window.innerHeight
+    })
+    await Promise.all(
+      visibleImages.map(
+        (image) =>
+          image.complete ||
+          new Promise<void>((resolve) => {
+            image.addEventListener('load', () => resolve(), { once: true })
+            image.addEventListener('error', () => resolve(), { once: true })
+          })
+      )
+    )
   })
 }
 
@@ -265,15 +284,87 @@ test.describe('IterLoop public interactions', () => {
       )
       .toBe(true)
     await expect(story).toHaveClass(/is-reduced/)
-    await expect(story.locator('.iterloop-story-static article')).toHaveCount(3)
+    await expect(story.locator('.iterloop-story-static article')).toHaveCount(5)
     await expect(story.locator('.iterloop-story-sticky')).toHaveCount(0)
+  })
+})
+
+test.describe('IterLoop authenticated console', () => {
+  test('renders core user and issuance routes without console errors', async ({
+    page,
+  }) => {
+    await page.setViewportSize(VIEWPORTS[1])
+    await preparePage(page, { authenticated: true })
+    const errors: string[] = []
+    page.on('pageerror', (error) => errors.push(error.message))
+    page.on('console', (message) => {
+      if (message.type() === 'error') errors.push(message.text())
+    })
+
+    const routes = [
+      ['/dashboard', '概览'],
+      ['/keys', 'API Key'],
+      ['/usage-logs', '通用日志'],
+      ['/wallet', '钱包'],
+      ['/issuances', 'API 发放'],
+    ] as const
+
+    for (const [path, heading] of routes) {
+      errors.length = 0
+      await page.goto(path)
+      await expect(
+        page.getByRole('heading', { name: heading, exact: true }).first()
+      ).toBeVisible()
+      await settlePage(page)
+      expect(
+        await page.evaluate(
+          () => document.documentElement.scrollWidth === window.innerWidth
+        )
+      ).toBe(true)
+      expect(errors, `${path} emitted browser errors`).toEqual([])
+    }
+  })
+
+  test('Chinese light overview visual baseline', async ({ page }) => {
+    await page.setViewportSize(VIEWPORTS[1])
+    await preparePage(page, { authenticated: true })
+    await page.goto('/dashboard')
+    await expect(
+      page.getByRole('heading', { name: '概览', exact: true })
+    ).toBeVisible()
+    await settlePage(page)
+    await page.waitForTimeout(500)
+
+    await expect(page).toHaveScreenshot(
+      'authenticated-overview-zh-light-1440x900.png',
+      { animations: 'disabled', caret: 'hide', fullPage: false }
+    )
+  })
+
+  test('English dark API keys visual baseline', async ({ page }) => {
+    await page.setViewportSize(VIEWPORTS[1])
+    await preparePage(page, {
+      authenticated: true,
+      language: 'en',
+      theme: 'dark',
+    })
+    await page.goto('/keys')
+    await expect(
+      page.getByRole('heading', { name: 'API Keys', exact: true })
+    ).toBeVisible()
+    await settlePage(page)
+
+    await expect(page).toHaveScreenshot(
+      'authenticated-keys-en-dark-1440x900.png',
+      { animations: 'disabled', caret: 'hide', fullPage: false }
+    )
   })
 })
 
 test.describe('IterLoop scroll storytelling', () => {
   test.use({ reducedMotion: 'no-preference' })
 
-  test('activates the expected copy at start, middle, and end', async ({
+  test('activates the expected copy across all five scenes', async ({
     page,
   }) => {
     await page.setViewportSize(VIEWPORTS[1])
@@ -296,11 +387,15 @@ test.describe('IterLoop scroll storytelling', () => {
     }
 
     await scrollToProgress(0)
-    await expect.poll(copyOpacity).toEqual([1, 0, 0])
-    await scrollToProgress(0.5)
-    await expect.poll(copyOpacity).toEqual([0, 1, 0])
-    await scrollToProgress(0.88)
-    await expect.poll(copyOpacity).toEqual([0, 0, 1])
+    await expect.poll(copyOpacity).toEqual([1, 0, 0, 0, 0])
+    await scrollToProgress(0.28)
+    await expect.poll(copyOpacity).toEqual([0, 1, 0, 0, 0])
+    await scrollToProgress(0.48)
+    await expect.poll(copyOpacity).toEqual([0, 0, 1, 0, 0])
+    await scrollToProgress(0.68)
+    await expect.poll(copyOpacity).toEqual([0, 0, 0, 1, 0])
+    await scrollToProgress(0.9)
+    await expect.poll(copyOpacity).toEqual([0, 0, 0, 0, 1])
   })
 })
 

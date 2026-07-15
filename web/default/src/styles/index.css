@@ -2035,11 +2035,26 @@ For commercial licensing, please contact support@quantumnous.com
 
 .iterloop-product-console {
   position: absolute;
-  right: -122px;
-  bottom: 26px;
-  width: 610px;
-  transform: scale(0.55);
+  right: -96px;
+  bottom: 24px;
+  width: 760px;
+  transform: scale(0.52);
   transform-origin: bottom right;
+}
+
+.iterloop-story-media {
+  display: block;
+  width: 100%;
+  overflow: hidden;
+  background: #fff;
+}
+
+.iterloop-story-media img {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 16 / 10;
+  object-fit: cover;
 }
 
 .iterloop-product-messages {
@@ -2463,8 +2478,8 @@ For commercial licensing, please contact support@quantumnous.com
 
 .iterloop-scroll-story {
   position: relative;
-  height: 310vh;
-  min-height: 2200px;
+  height: 430vh;
+  min-height: 3200px;
   color: #f5f5f7;
   background: #000;
 }
@@ -2524,9 +2539,6 @@ For commercial licensing, please contact support@quantumnous.com
 }
 .iterloop-story-frame > div:first-child {
   position: relative;
-}
-.iterloop-story-frame .iterloop-console-preview {
-  border-color: #3a3a3c;
 }
 .iterloop-story-progress {
   position: absolute;
@@ -2990,16 +3002,8 @@ For commercial licensing, please contact support@quantumnous.com
   .iterloop-story-static article h2 {
     font-size: 29px;
   }
-  .iterloop-story-static .iterloop-console-preview {
-    min-width: 680px;
-    transform: scale(0.46);
-    transform-origin: top left;
-  }
   .iterloop-story-static article {
     overflow: hidden;
-  }
-  .iterloop-story-static article .iterloop-console-preview {
-    margin-bottom: -245px;
   }
   .iterloop-capability-grid {
     grid-template-columns: 1fr;

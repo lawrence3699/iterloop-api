@@ -32,7 +32,7 @@ import { useTranslation } from 'react-i18next'
 import { useCopyToClipboard } from '@/hooks/use-copy-to-clipboard'
 import { cn } from '@/lib/utils'
 
-import { HomeConsolePreview } from './home-console-preview'
+import { HomeStoryMedia } from './home-story-media'
 
 type ProductCard = {
   id: string
@@ -116,7 +116,7 @@ function ProductVisual(props: { id: string }) {
   if (props.id === 'console') {
     return (
       <div className='iterloop-product-console'>
-        <HomeConsolePreview scene='keys' />
+        <HomeStoryMedia scene='keys' priority sizes='390px' />
       </div>
     )
   }

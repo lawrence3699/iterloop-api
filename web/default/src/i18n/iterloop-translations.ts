@@ -349,17 +349,30 @@ export const iterLoopZhCN: Record<string, string> = {
   Workspace: '工作区',
   'A focused Claude lane for analysis and high-quality text work.':
     '为分析和高质量文本任务提供专用 Claude 通道。',
+  'Balance, request volume, model health, and uptime stay together in one operational view.':
+    '余额、请求量、模型健康和运行状态集中在同一个操作视图中。',
   'A key with exactly the access it needs.': '权限恰到好处的 Key。',
+  'Choose a profile, set quota and expiry, and deliver a sanitized client configuration in one flow.':
+    '选择方案、设置额度与有效期，并在一个流程中交付脱敏的客户端配置。',
   'Configuration that is ready to use.': '拿来即可使用的配置。',
+  'Issue access without manual setup.': '无需手工配置即可发放访问权限。',
   'Move from a verified model to Codex CLI, Claude Code, or an SDK with a few copied lines.':
     '从已验证模型出发，只需复制几行配置即可接入 Codex CLI、Claude Code 或 SDK。',
   'Inspect tokens, latency, cost, status, and Request ID without storing prompt or response bodies.':
     '查看 Token、延迟、费用、状态和 Request ID，同时不保存提示词或响应正文。',
   'Limit models, quota, expiry, and source IP without changing the client workflow.':
     '无需改变客户端工作流，即可限制模型、额度、有效期和来源 IP。',
-  '01 · CONTROL': '01 · 权限',
-  '02 · OBSERVE': '02 · 观察',
-  '03 · DELIVER': '03 · 交付',
+  'The whole service, understood at a glance.': '一眼看清整个服务。',
+  '01 · OVERVIEW': '01 · 概览',
+  '02 · CONTROL': '02 · 权限',
+  '03 · OBSERVE': '03 · 观察',
+  '04 · ISSUE': '04 · 发放',
+  '05 · DELIVER': '05 · 交付',
+  'IterLoop console overview': 'IterLoop 控制台概览',
+  'IterLoop API key management': 'IterLoop API Key 管理',
+  'IterLoop usage logs': 'IterLoop 调用日志',
+  'IterLoop API issuance': 'IterLoop API 发放',
+  'IterLoop client configuration documentation': 'IterLoop 客户端配置文档',
   'Chinese-first delivery': '中文优先交付',
   'Generate clear client settings without leaking infrastructure terminology.':
     '生成清楚的客户端配置，不泄漏基础设施术语。',
