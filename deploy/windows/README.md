@@ -51,6 +51,26 @@ C:\IterLoopAPI\
 4. Configure `www.iter-loop.com` as a permanent redirect to the apex domain at Cloudflare; do not expose it as a second application host.
 5. Keep the previous executable and GitHub Pages DNS values for immediate rollback. Disable the old Pages workflow only after 48 stable hours.
 
+## Updating an existing Shadow installation
+
+1. Download the workflow artifact and verify both the ZIP and `app/iterloop-api.exe` entries in `SHA256SUMS.txt`.
+2. Expand the artifact into a versioned staging directory under `C:\IterLoopAPI\staging`.
+3. Record the SHA256 of the currently installed EXE before changing anything.
+4. Run `scripts\update-shadow.ps1` with the candidate path, expected candidate SHA256, expected version, and recorded current SHA256.
+5. Verify local health, the public version header, Console pages, API authentication boundaries, and the public-host policy before removing staging files.
+
+Example:
+
+```powershell
+& C:\IterLoopAPI\scripts\update-shadow.ps1 `
+  -CandidateExe C:\IterLoopAPI\staging\<version>\app\iterloop-api.exe `
+  -ExpectedCandidateSha <sha256> `
+  -ExpectedVersion <version> `
+  -ExpectedCurrentSha <current-sha256>
+```
+
+The updater backs up the installed EXE, reloads only `IterLoop API Shadow`, waits for `127.0.0.1:28517/healthz`, verifies `X-New-Api-Version`, and restores the backup automatically if validation fails. It explicitly terminates only the process whose executable path is `C:\IterLoopAPI\app\iterloop-api.exe`; stopping the scheduled task alone can leave an orphaned process that continues to lock the EXE.
+
 ## Grok phase 1
 
 - Create a dedicated type `48` xAI channel for `grok-4.5,grok-4.3` at `https://api.x.ai/v1`.
