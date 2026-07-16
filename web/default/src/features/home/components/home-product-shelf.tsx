@@ -26,7 +26,7 @@ import {
   MessageSquare,
   Sparkles,
 } from 'lucide-react'
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useState, type WheelEvent } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { useCopyToClipboard } from '@/hooks/use-copy-to-clipboard'
@@ -47,10 +47,18 @@ const PRODUCTS: ProductCard[] = [
   {
     id: 'codex',
     eyebrow: 'CODEX',
-    title: 'gpt-5.5',
+    title: 'GPT-5.6 Sol',
     summary: 'Built for long tasks, code changes, and agent workflows.',
-    meta: 'Responses · 0.4x',
+    meta: 'Responses API',
     tone: 'dark',
+  },
+  {
+    id: 'claude',
+    eyebrow: 'CLAUDE',
+    title: 'Claude Fable 5',
+    summary: 'A focused Claude lane for analysis and high-quality text work.',
+    meta: 'Messages API',
+    tone: 'warm',
   },
   {
     id: 'console',
@@ -59,14 +67,6 @@ const PRODUCTS: ProductCard[] = [
     summary: 'Manage models, balances, keys, and requests in one workspace.',
     meta: 'api.iter-loop.com/v1',
     tone: 'light',
-  },
-  {
-    id: 'claude',
-    eyebrow: 'CLAUDE',
-    title: 'Sonnet 4.6',
-    summary: 'A focused Claude lane for analysis and high-quality text work.',
-    meta: 'Messages · 0.7x',
-    tone: 'warm',
   },
   {
     id: 'delivery',
@@ -103,7 +103,7 @@ function ProductVisual(props: { id: string }) {
           <i />
           <i />
         </span>
-        <code>$ codex --model gpt-5.5</code>
+        <code>$ codex --model gpt-5.6-sol</code>
         <strong>response.completed</strong>
         <p>18,420 tokens · 1.8s</p>
         <div>
@@ -116,7 +116,7 @@ function ProductVisual(props: { id: string }) {
   if (props.id === 'console') {
     return (
       <div className='iterloop-product-console'>
-        <HomeStoryMedia scene='keys' priority sizes='390px' />
+        <HomeStoryMedia scene='overview' priority sizes='430px' />
       </div>
     )
   }
@@ -143,26 +143,18 @@ function ProductVisual(props: { id: string }) {
   if (props.id === 'delivery') {
     return (
       <div className='iterloop-product-config'>
-        <div className='is-back' />
-        <div className='is-front'>
-          <span>model_provider</span>
-          <b>iterloop</b>
-          <span>base_url</span>
-          <b>api.iter-loop.com/v1</b>
-          <span>wire_api</span>
-          <b>responses</b>
-          <button
-            type='button'
-            onClick={() => copyToClipboard(DELIVERY_CONFIGURATION)}
-            aria-label={
-              copiedText === DELIVERY_CONFIGURATION
-                ? t('Copied')
-                : t('Copy configuration')
-            }
-          >
-            {copiedText === DELIVERY_CONFIGURATION ? <Check /> : <Copy />}
-          </button>
-        </div>
+        <HomeStoryMedia scene='config' sizes='620px' />
+        <button
+          type='button'
+          onClick={() => copyToClipboard(DELIVERY_CONFIGURATION)}
+          aria-label={
+            copiedText === DELIVERY_CONFIGURATION
+              ? t('Copied')
+              : t('Copy configuration')
+          }
+        >
+          {copiedText === DELIVERY_CONFIGURATION ? <Check /> : <Copy />}
+        </button>
       </div>
     )
   }
@@ -203,6 +195,17 @@ export function HomeProductShelf() {
     }
   }, [embla, syncControls])
 
+  const handleWheel = useCallback(
+    (event: WheelEvent<HTMLDivElement>) => {
+      if (!embla || Math.abs(event.deltaX) <= Math.abs(event.deltaY)) return
+      if (Math.abs(event.deltaX) < 8) return
+      event.preventDefault()
+      if (event.deltaX > 0) embla.scrollNext()
+      else embla.scrollPrev()
+    },
+    [embla]
+  )
+
   return (
     <section
       className='iterloop-home-section iterloop-product-section'
@@ -214,14 +217,25 @@ export function HomeProductShelf() {
           {t('Choose the model for the work in front of you.')}
         </h2>
       </div>
-      <div className='iterloop-shelf-shell'>
-        <div ref={viewportRef} className='iterloop-shelf-viewport'>
+      <div
+        className='iterloop-shelf-shell'
+        role='region'
+        aria-label={t('Available models and product capabilities')}
+      >
+        <div
+          ref={viewportRef}
+          className='iterloop-shelf-viewport'
+          onWheel={handleWheel}
+        >
           <div className='iterloop-shelf-track'>
-            {PRODUCTS.map((product) => (
+            {PRODUCTS.map((product, index) => (
               <div
                 className='iterloop-shelf-slide'
                 key={product.id}
                 id={product.id}
+                role='group'
+                aria-roledescription={t('Slide')}
+                aria-label={`${index + 1} / ${PRODUCTS.length}`}
               >
                 <article
                   className={cn(

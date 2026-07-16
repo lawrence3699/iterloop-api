@@ -50,23 +50,19 @@ import {
   saveAffiliateCode,
 } from '@/features/auth/lib/storage'
 import { useStatus } from '@/hooks/use-status'
-import { normalizeInterfaceLanguage } from '@/i18n/languages'
 import { cn } from '@/lib/utils'
 
 export function SignUpForm({
   className,
   ...props
 }: React.HTMLAttributes<HTMLFormElement>) {
-  const { t, i18n } = useTranslation()
+  const { t } = useTranslation()
   const [isLoading, setIsLoading] = useState(false)
   const [verificationCode, setVerificationCode] = useState('')
   const [agreedToLegal, setAgreedToLegal] = useState(false)
   const [wechatCode, setWeChatCode] = useState('')
   const [isWeChatDialogOpen, setIsWeChatDialogOpen] = useState(false)
   const [isWeChatSubmitting, setIsWeChatSubmitting] = useState(false)
-  const [interfaceLanguage, setInterfaceLanguage] = useState(() =>
-    normalizeInterfaceLanguage(i18n.language)
-  )
   const legalConsentErrorMessage = t('Please agree to the legal terms first')
 
   const { status } = useStatus()
@@ -187,11 +183,6 @@ export function SignUpForm({
     await sendCode(emailValue || '')
   }
 
-  async function handleLanguageChange(value: string) {
-    setInterfaceLanguage(value)
-    await i18n.changeLanguage(value)
-  }
-
   const handleOpenWeChatDialog = () => {
     if (requiresLegalConsent && !agreedToLegal) {
       toast.error(legalConsentErrorMessage)
@@ -291,18 +282,6 @@ export function SignUpForm({
               </FormItem>
             )}
           />
-        </div>
-
-        <div className='iterloop-signup-language'>
-          <Label htmlFor='interface-language'>{t('Default language')}</Label>
-          <select
-            id='interface-language'
-            value={interfaceLanguage}
-            onChange={(event) => void handleLanguageChange(event.target.value)}
-          >
-            <option value='zhCN'>简体中文</option>
-            <option value='en'>English</option>
-          </select>
         </div>
 
         {emailVerificationRequired ? (

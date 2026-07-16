@@ -223,13 +223,27 @@ test.describe('IterLoop public interactions', () => {
     ).toBe(true)
   })
 
+  test('sign-up does not ask for a default language', async ({ page }) => {
+    await page.setViewportSize(VIEWPORTS[1])
+    await preparePage(page)
+    await page.goto('/sign-up')
+
+    await expect(
+      page.getByRole('heading', { name: '创建一个账户' })
+    ).toBeVisible()
+    await expect(page.locator('#interface-language')).toHaveCount(0)
+  })
+
   test('shelf arrows and copy feedback work', async ({ context, page }) => {
     await context.grantPermissions(['clipboard-read', 'clipboard-write'])
     await page.setViewportSize(VIEWPORTS[1])
     await openHome(page)
 
-    const previousButton = page.getByRole('button', { name: '上一项' })
-    const nextButton = page.getByRole('button', { name: '下一项' })
+    const productShelf = page.getByRole('region', {
+      name: '可用模型与产品能力',
+    })
+    const previousButton = productShelf.locator('button[aria-label="上一项"]')
+    const nextButton = productShelf.locator('button[aria-label="下一项"]')
     await expect(previousButton).toBeDisabled()
     await nextButton.click()
     await expect(previousButton).toBeEnabled()
@@ -241,6 +255,96 @@ test.describe('IterLoop public interactions', () => {
     await expect(copyButton).toHaveAttribute('aria-label', '复制配置')
     await copyButton.click()
     await expect(copyButton).toHaveAttribute('aria-label', '已复制')
+  })
+
+  test('model shelf leads with GPT-5.6 Sol and Claude Fable 5', async ({
+    page,
+  }) => {
+    await page.setViewportSize(VIEWPORTS[1])
+    await openHome(page)
+
+    const titles = await page
+      .getByRole('region', { name: '可用模型与产品能力' })
+      .locator('.iterloop-product-card h3')
+      .allTextContents()
+
+    expect(titles.slice(0, 2)).toEqual(['GPT-5.6 Sol', 'Claude Fable 5'])
+
+    const shelf = page.locator('.iterloop-product-section')
+    await shelf.scrollIntoViewIfNeeded()
+    await expect(page).toHaveScreenshot('home-model-shelf-1440x900.png', {
+      animations: 'disabled',
+      caret: 'hide',
+      fullPage: false,
+    })
+  })
+
+  test('compact desktop keeps the three-scene sticky story', async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 883, height: 678 })
+    await page.emulateMedia({ reducedMotion: 'no-preference' })
+    await openHome(page)
+
+    const story = page.locator('.iterloop-scroll-story')
+    await expect(story.locator('.iterloop-story-sticky')).toBeVisible()
+    await expect(story.locator('.iterloop-story-mobile')).toBeHidden()
+    await expect(story.locator('.iterloop-story-copy')).toHaveCount(3)
+
+    await story.evaluate((element) => {
+      const top = (element as HTMLElement).offsetTop
+      const distance =
+        (element as HTMLElement).offsetHeight - window.innerHeight
+      window.scrollTo(0, top + distance * 0.5)
+    })
+    await expect(page).toHaveScreenshot('home-story-compact-883x678.png', {
+      animations: 'allow',
+      caret: 'hide',
+      fullPage: false,
+    })
+
+    await page.setViewportSize(VIEWPORTS[3])
+    await expect(story.locator('.iterloop-story-sticky')).toBeHidden()
+    await expect(story.locator('.iterloop-story-mobile')).toBeVisible()
+    await story.evaluate((element) => {
+      window.scrollTo(0, (element as HTMLElement).offsetTop)
+    })
+    await expect(page).toHaveScreenshot('home-story-mobile-390x844.png', {
+      animations: 'allow',
+      caret: 'hide',
+      fullPage: false,
+    })
+  })
+
+  test('connection shelf supports direct pointer dragging', async ({
+    page,
+  }) => {
+    await page.setViewportSize(VIEWPORTS[1])
+    await openHome(page)
+
+    const viewport = page.locator('.iterloop-connection-viewport')
+    const track = page.locator('.iterloop-connection-track')
+    await viewport.scrollIntoViewIfNeeded()
+    const box = await viewport.boundingBox()
+    if (!box) {
+      throw new Error('Connection shelf viewport has no bounding box')
+    }
+
+    const { x, y, width, height } = box
+
+    const transformBefore = await track.evaluate(
+      (element) => getComputedStyle(element).transform
+    )
+    await page.mouse.move(x + width * 0.78, y + height * 0.55)
+    await page.mouse.down()
+    await page.mouse.move(x + width * 0.28, y + height * 0.55, { steps: 12 })
+    await page.mouse.up()
+
+    await expect
+      .poll(() =>
+        track.evaluate((element) => getComputedStyle(element).transform)
+      )
+      .not.toBe(transformBefore)
   })
 
   test('language and theme persist after reload', async ({ page }) => {
@@ -268,7 +372,7 @@ test.describe('IterLoop public interactions', () => {
     await expect(page.locator('html')).toHaveClass(/dark/)
   })
 
-  test('reduced motion renders all story scenes statically', async ({
+  test('reduced motion renders all three story scenes statically', async ({
     page,
   }) => {
     await page.setViewportSize(VIEWPORTS[1])
@@ -284,7 +388,7 @@ test.describe('IterLoop public interactions', () => {
       )
       .toBe(true)
     await expect(story).toHaveClass(/is-reduced/)
-    await expect(story.locator('.iterloop-story-static article')).toHaveCount(5)
+    await expect(story.locator('.iterloop-story-static article')).toHaveCount(3)
     await expect(story.locator('.iterloop-story-sticky')).toHaveCount(0)
   })
 })
@@ -364,7 +468,7 @@ test.describe('IterLoop authenticated console', () => {
 test.describe('IterLoop scroll storytelling', () => {
   test.use({ reducedMotion: 'no-preference' })
 
-  test('activates the expected copy across all five scenes', async ({
+  test('activates the expected copy across all three scenes', async ({
     page,
   }) => {
     await page.setViewportSize(VIEWPORTS[1])
@@ -387,15 +491,28 @@ test.describe('IterLoop scroll storytelling', () => {
     }
 
     await scrollToProgress(0)
-    await expect.poll(copyOpacity).toEqual([1, 0, 0, 0, 0])
-    await scrollToProgress(0.28)
-    await expect.poll(copyOpacity).toEqual([0, 1, 0, 0, 0])
-    await scrollToProgress(0.48)
-    await expect.poll(copyOpacity).toEqual([0, 0, 1, 0, 0])
-    await scrollToProgress(0.68)
-    await expect.poll(copyOpacity).toEqual([0, 0, 0, 1, 0])
+    await expect.poll(copyOpacity).toEqual([1, 0, 0])
+    await expect(page).toHaveScreenshot('home-story-overview-1440x900.png', {
+      animations: 'allow',
+      caret: 'hide',
+      fullPage: false,
+    })
+
+    await scrollToProgress(0.5)
+    await expect.poll(copyOpacity).toEqual([0, 1, 0])
+    await expect(page).toHaveScreenshot('home-story-keys-1440x900.png', {
+      animations: 'allow',
+      caret: 'hide',
+      fullPage: false,
+    })
+
     await scrollToProgress(0.9)
-    await expect.poll(copyOpacity).toEqual([0, 0, 0, 0, 1])
+    await expect.poll(copyOpacity).toEqual([0, 0, 1])
+    await expect(page).toHaveScreenshot('home-story-logs-1440x900.png', {
+      animations: 'allow',
+      caret: 'hide',
+      fullPage: false,
+    })
   })
 })
 

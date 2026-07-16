@@ -16,28 +16,18 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
-import {
-  ArrowRight,
-  Check,
-  Code2,
-  Copy,
-  Gauge,
-  Globe2,
-  KeyRound,
-  LockKeyhole,
-  RadioTower,
-  ScrollText,
-  ShieldCheck,
-} from 'lucide-react'
+import { ArrowRight, Check } from 'lucide-react'
 import { motion, useReducedMotion } from 'motion/react'
 import { useTranslation } from 'react-i18next'
 
 import { Footer } from '@/components/layout/components/footer'
 import { Button } from '@/components/ui/button'
-import { useCopyToClipboard } from '@/hooks/use-copy-to-clipboard'
 import { iterLoopConsoleUrl, iterLoopPublicUrl } from '@/lib/iterloop-host'
 
 import { HomeCategoryStrip } from './home-category-strip'
+import { HomeConnectionShelf } from './home-connection-shelf'
+import { HomeDifferenceShelf } from './home-difference-shelf'
+import { HomeHeroMedia } from './home-hero-media'
 import { HomeProductShelf } from './home-product-shelf'
 import { HomeScrollStory } from './home-scroll-story'
 
@@ -65,195 +55,77 @@ function Hero(props: { isAuthenticated: boolean }) {
         </a>
       </div>
       <section className='iterloop-store-hero'>
-        <div className='iterloop-store-hero-copy'>
-          <motion.h1
+        <div className='iterloop-hero-stage'>
+          <motion.div
+            className='iterloop-store-hero-copy'
             initial={initial}
             animate={animate}
             transition={REVEAL_TRANSITION}
           >
-            IterLoop API
-          </motion.h1>
-          <motion.div
-            initial={initial}
-            animate={animate}
-            transition={{
-              ...REVEAL_TRANSITION,
-              delay: reduceMotion ? 0 : 0.08,
-            }}
-          >
-            <h2>{t('One key, connected to the models you need.')}</h2>
+            <span className='iterloop-hero-brand'>IterLoop API</span>
+            <h1 aria-label={t('One key, connected to the models you need.')}>
+              <span>{t('One key.')}</span>
+              {t('Connected to the models you need.')}
+            </h1>
             <p>
               {t(
-                'Pay for actual usage. Use verified Codex and Claude models through one controlled API surface.'
+                'Codex, Claude, and mainstream agents are ready after one configuration. Pay only for actual usage.'
               )}
             </p>
-            <div>
+            <div className='iterloop-hero-cta'>
+              <Button
+                size='lg'
+                render={
+                  <a
+                    href={iterLoopConsoleUrl(
+                      props.isAuthenticated ? '/dashboard' : '/sign-up'
+                    )}
+                  />
+                }
+              >
+                {props.isAuthenticated ? t('Open console') : t('Try it now')}
+                <ArrowRight />
+              </Button>
               <a href={iterLoopPublicUrl('/pricing')}>
                 {t('View models and pricing')} <ArrowRight aria-hidden='true' />
               </a>
-              <a href={iterLoopPublicUrl('/docs')}>
-                {t('Read integration docs')} <ArrowRight aria-hidden='true' />
-              </a>
+            </div>
+            <div className='iterloop-hero-proof'>
+              <span>
+                <Check aria-hidden='true' />
+                {t('Codex verified')}
+              </span>
+              <span>
+                <Check aria-hidden='true' />
+                {t('Claude verified')}
+              </span>
             </div>
           </motion.div>
+
+          <motion.div
+            className='iterloop-hero-media-wrap'
+            initial={reduceMotion ? false : { opacity: 0, x: 34, scale: 0.97 }}
+            animate={{ opacity: 1, x: 0, scale: 1 }}
+            transition={{
+              ...REVEAL_TRANSITION,
+              delay: reduceMotion ? 0 : 0.12,
+            }}
+          >
+            <HomeHeroMedia />
+          </motion.div>
         </div>
+
         <motion.div
           initial={reduceMotion ? false : { opacity: 0, y: 18 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ ...REVEAL_TRANSITION, delay: reduceMotion ? 0 : 0.16 }}
+          transition={{ ...REVEAL_TRANSITION, delay: reduceMotion ? 0 : 0.2 }}
+          className='iterloop-hero-categories'
         >
+          <p>{t('Works with the clients you already use.')}</p>
           <HomeCategoryStrip />
         </motion.div>
-        <div className='iterloop-hero-actions'>
-          <Button
-            size='lg'
-            render={
-              <a
-                href={iterLoopConsoleUrl(
-                  props.isAuthenticated ? '/dashboard' : '/sign-up'
-                )}
-              />
-            }
-          >
-            {props.isAuthenticated ? t('Open console') : t('Create account')}
-            <ArrowRight />
-          </Button>
-          <Button
-            size='lg'
-            variant='outline'
-            render={<a href={iterLoopPublicUrl('/docs')} />}
-          >
-            {t('API docs')}
-          </Button>
-        </div>
       </section>
     </>
-  )
-}
-
-function CapabilityGrid() {
-  const { t } = useTranslation()
-  const capabilities = [
-    {
-      icon: KeyRound,
-      title: 'Model-level permissions',
-      body: 'Create focused or combined keys with model, quota, expiry, and IP controls.',
-      span: 'is-wide',
-    },
-    {
-      icon: Gauge,
-      title: 'Independent balances',
-      body: 'Keep account and key usage visible without inventing subscription plans.',
-    },
-    {
-      icon: ShieldCheck,
-      title: 'No prompt storage',
-      body: 'Usage records keep operational metadata without request or response bodies.',
-    },
-    {
-      icon: RadioTower,
-      title: 'HTTP and SSE',
-      body: 'Use stable non-streaming and streaming paths with verified usage accounting.',
-    },
-    {
-      icon: Globe2,
-      title: 'Chinese-first delivery',
-      body: 'Generate clear client settings without leaking infrastructure terminology.',
-      span: 'is-wide',
-    },
-  ]
-
-  return (
-    <section className='iterloop-home-section iterloop-capability-section'>
-      <div className='iterloop-home-section-heading'>
-        <h2>
-          <span>{t('The IterLoop difference.')}</span>{' '}
-          {t('Control without adding friction.')}
-        </h2>
-      </div>
-      <div className='iterloop-capability-grid'>
-        {capabilities.map((capability) => {
-          const Icon = capability.icon
-          return (
-            <article key={capability.title} className={capability.span}>
-              <Icon aria-hidden='true' />
-              <h3>{t(capability.title)}</h3>
-              <p>{t(capability.body)}</p>
-            </article>
-          )
-        })}
-      </div>
-    </section>
-  )
-}
-
-function IntegrationSection() {
-  const { t } = useTranslation()
-  const { copiedText, copyToClipboard } = useCopyToClipboard()
-  const integrations = [
-    {
-      icon: Code2,
-      title: 'Codex CLI',
-      summary: 'Responses API with HTTP and SSE.',
-      code: 'model_provider = "iterloop"',
-    },
-    {
-      icon: ScrollText,
-      title: 'Claude Code',
-      summary: 'Anthropic-compatible Messages endpoint.',
-      code: 'ANTHROPIC_BASE_URL=https://api.iter-loop.com',
-    },
-    {
-      icon: LockKeyhole,
-      title: 'OpenAI and Anthropic SDKs',
-      summary: 'Keep familiar clients and replace only the API settings.',
-      code: 'base_url="https://api.iter-loop.com/v1"',
-    },
-  ]
-
-  return (
-    <section
-      className='iterloop-home-section iterloop-integration-section'
-      id='integrations'
-    >
-      <div className='iterloop-home-section-heading'>
-        <h2>
-          <span>{t('Ways to connect.')}</span>{' '}
-          {t('Keep the tools already in your workflow.')}
-        </h2>
-      </div>
-      <div className='iterloop-integration-grid'>
-        {integrations.map((integration) => {
-          const Icon = integration.icon
-          return (
-            <article key={integration.title}>
-              <div>
-                <Icon aria-hidden='true' />
-                <span>{t('Ready to copy')}</span>
-              </div>
-              <h3>{integration.title}</h3>
-              <p>{t(integration.summary)}</p>
-              <pre>{integration.code}</pre>
-              <button
-                type='button'
-                onClick={() => copyToClipboard(integration.code)}
-                aria-label={
-                  copiedText === integration.code
-                    ? t('Copied')
-                    : t('Copy configuration')
-                }
-              >
-                {copiedText === integration.code ? (
-                  <Check aria-hidden='true' />
-                ) : (
-                  <Copy aria-hidden='true' />
-                )}
-              </button>
-            </article>
-          )
-        })}
-      </div>
-    </section>
   )
 }
 
@@ -334,9 +206,9 @@ export function IterLoopHome(props: { isAuthenticated: boolean }) {
     <div className='iterloop-store-home'>
       <Hero isAuthenticated={props.isAuthenticated} />
       <HomeProductShelf />
+      <HomeConnectionShelf />
       <HomeScrollStory />
-      <CapabilityGrid />
-      <IntegrationSection />
+      <HomeDifferenceShelf />
       <TrustBand />
       <section className='iterloop-home-cta'>
         <div>

@@ -17,21 +17,17 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 import {
-  Activity,
+  ArrowRightLeft,
   Bot,
   Braces,
-  KeyRound,
+  BrainCircuit,
   MessageSquare,
-  RadioTower,
-  ScrollText,
-  Sparkles,
+  Monitor,
   SquareTerminal,
-  Ticket,
-  Workflow,
 } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
-import { iterLoopConsoleUrl, iterLoopPublicUrl } from '@/lib/iterloop-host'
+import { iterLoopPublicUrl } from '@/lib/iterloop-host'
 
 type Category = {
   id: string
@@ -39,91 +35,57 @@ type Category = {
   icon: typeof SquareTerminal
   tone: string
   href: string
-  console?: boolean
-  preparing?: boolean
 }
 
 const CATEGORIES: Category[] = [
   {
+    id: 'claude-code',
+    label: 'Claude Code',
+    icon: Bot,
+    tone: 'blue',
+    href: '/#integrations',
+  },
+  {
+    id: 'claude-desktop',
+    label: 'Claude Desktop',
+    icon: Monitor,
+    tone: 'orange',
+    href: '/#integrations',
+  },
+  {
     id: 'codex',
     label: 'Codex',
     icon: SquareTerminal,
-    tone: 'blue',
-    href: '/#codex',
-  },
-  {
-    id: 'claude',
-    label: 'Claude',
-    icon: MessageSquare,
-    tone: 'orange',
-    href: '/#claude',
-  },
-  {
-    id: 'grok',
-    label: 'Grok',
-    icon: Sparkles,
-    tone: 'gray',
-    href: '/#grok',
-    preparing: true,
-  },
-  {
-    id: 'responses',
-    label: 'Responses',
-    icon: Braces,
     tone: 'cyan',
     href: '/#integrations',
   },
   {
-    id: 'messages',
-    label: 'Messages',
-    icon: Workflow,
+    id: 'hermes',
+    label: 'Hermes',
+    icon: BrainCircuit,
     tone: 'violet',
     href: '/#integrations',
   },
   {
-    id: 'sse',
-    label: 'HTTP / SSE',
-    icon: RadioTower,
+    id: 'cc-switch',
+    label: 'CC Switch',
+    icon: ArrowRightLeft,
     tone: 'green',
-    href: '/docs',
+    href: '/#integrations',
   },
   {
-    id: 'keys',
-    label: 'API Key',
-    icon: KeyRound,
-    tone: 'blue',
-    href: '/keys',
-    console: true,
-  },
-  {
-    id: 'logs',
-    label: 'Usage logs',
-    icon: Activity,
-    tone: 'orange',
-    href: '/usage-logs/common',
-    console: true,
-  },
-  {
-    id: 'claude-code',
-    label: 'Claude Code',
-    icon: Bot,
+    id: 'openai-sdk',
+    label: 'OpenAI SDK',
+    icon: Braces,
     tone: 'sand',
     href: '/docs',
   },
   {
-    id: 'codex-cli',
-    label: 'Codex CLI',
-    icon: ScrollText,
+    id: 'anthropic-sdk',
+    label: 'Anthropic SDK',
+    icon: MessageSquare,
     tone: 'gray',
     href: '/docs',
-  },
-  {
-    id: 'credit',
-    label: 'Redeem credit',
-    icon: Ticket,
-    tone: 'pink',
-    href: '/wallet',
-    console: true,
   },
 ]
 
@@ -135,16 +97,13 @@ export function HomeCategoryStrip() {
       <div className='iterloop-category-track'>
         {CATEGORIES.map((category) => {
           const Icon = category.icon
-          const href = category.console
-            ? iterLoopConsoleUrl(category.href)
-            : iterLoopPublicUrl(category.href)
+          const href = iterLoopPublicUrl(category.href)
           return (
             <a key={category.id} href={href} className='iterloop-category-item'>
               <span className={`iterloop-category-icon tone-${category.tone}`}>
                 <Icon aria-hidden='true' />
               </span>
               <strong>{t(category.label)}</strong>
-              {category.preparing && <small>{t('Preparing')}</small>}
             </a>
           )
         })}

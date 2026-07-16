@@ -32,10 +32,14 @@ type Story = {
   scene: HomeStoryScene
   label: string
   title: string
+  titleLines: [string, string]
   body: string
   inputRange: number[]
   opacityRange: number[]
   yRange: number[]
+  mediaInputRange: number[]
+  mediaScaleRange: number[]
+  mediaYRange: number[]
 }
 
 const STORIES: Story[] = [
@@ -43,46 +47,40 @@ const STORIES: Story[] = [
     scene: 'overview',
     label: '01 · OVERVIEW',
     title: 'The whole service, understood at a glance.',
+    titleLines: ['The whole service,', 'understood at a glance.'],
     body: 'Balance, request volume, model health, and uptime stay together in one operational view.',
-    inputRange: [0, 0.14, 0.22, 1],
+    inputRange: [0, 0.26, 0.38, 1],
     opacityRange: [1, 1, 0, 0],
     yRange: [0, 0, -20, -20],
+    mediaInputRange: [0, 0.16, 0.3, 1],
+    mediaScaleRange: [0.98, 1, 1.015, 1.015],
+    mediaYRange: [16, 0, -6, -6],
   },
   {
     scene: 'keys',
     label: '02 · CONTROL',
     title: 'A key with exactly the access it needs.',
+    titleLines: ['A key with', 'exactly the access it needs.'],
     body: 'Limit models, quota, expiry, and source IP without changing the client workflow.',
-    inputRange: [0, 0.14, 0.22, 0.34, 0.42, 1],
+    inputRange: [0, 0.28, 0.4, 0.6, 0.72, 1],
     opacityRange: [0, 0, 1, 1, 0, 0],
     yRange: [24, 24, 0, 0, -20, -20],
+    mediaInputRange: [0, 0.28, 0.4, 0.6, 0.72, 1],
+    mediaScaleRange: [1.02, 1.02, 1, 1.015, 1.025, 1.025],
+    mediaYRange: [12, 12, 0, -6, -10, -10],
   },
   {
     scene: 'logs',
     label: '03 · OBSERVE',
     title: 'Every request stays understandable.',
+    titleLines: ['Every request', 'stays understandable.'],
     body: 'Inspect tokens, latency, cost, status, and Request ID without storing prompt or response bodies.',
-    inputRange: [0, 0.34, 0.42, 0.54, 0.62, 1],
-    opacityRange: [0, 0, 1, 1, 0, 0],
-    yRange: [24, 24, 0, 0, -20, -20],
-  },
-  {
-    scene: 'issuance',
-    label: '04 · ISSUE',
-    title: 'Issue access without manual setup.',
-    body: 'Choose a profile, set quota and expiry, and deliver a sanitized client configuration in one flow.',
-    inputRange: [0, 0.54, 0.62, 0.74, 0.82, 1],
-    opacityRange: [0, 0, 1, 1, 0, 0],
-    yRange: [24, 24, 0, 0, -20, -20],
-  },
-  {
-    scene: 'config',
-    label: '05 · DELIVER',
-    title: 'Configuration that is ready to use.',
-    body: 'Move from a verified model to Codex CLI, Claude Code, or an SDK with a few copied lines.',
-    inputRange: [0, 0.74, 0.82, 1],
+    inputRange: [0, 0.62, 0.74, 1],
     opacityRange: [0, 0, 1, 1],
     yRange: [24, 24, 0, 0],
+    mediaInputRange: [0, 0.62, 0.74, 1],
+    mediaScaleRange: [1.02, 1.02, 1, 1.015],
+    mediaYRange: [12, 12, 0, -6],
   },
 ]
 
@@ -105,7 +103,11 @@ function AnimatedStoryCopy(props: {
   return (
     <motion.div className='iterloop-story-copy' style={{ opacity, y }}>
       <span>{t(props.story.label)}</span>
-      <h2>{t(props.story.title)}</h2>
+      <h2 aria-label={t(props.story.title)}>
+        {props.story.titleLines.map((line) => (
+          <span key={line}>{t(line)}</span>
+        ))}
+      </h2>
       <p>{t(props.story.body)}</p>
     </motion.div>
   )
@@ -121,9 +123,22 @@ function AnimatedStoryMedia(props: {
     props.story.inputRange,
     props.story.opacityRange
   )
+  const scale = useTransform(
+    props.progress,
+    props.story.mediaInputRange,
+    props.story.mediaScaleRange
+  )
+  const y = useTransform(
+    props.progress,
+    props.story.mediaInputRange,
+    props.story.mediaYRange
+  )
 
   return (
-    <motion.div style={{ opacity }}>
+    <motion.div
+      className='iterloop-story-media-layer'
+      style={{ opacity, scale, y }}
+    >
       <HomeStoryMedia scene={props.story.scene} priority={props.priority} />
     </motion.div>
   )
@@ -137,7 +152,11 @@ function StaticStories() {
         <article key={story.scene}>
           <div>
             <span>{t(story.label)}</span>
-            <h2>{t(story.title)}</h2>
+            <h2 aria-label={t(story.title)}>
+              {story.titleLines.map((line) => (
+                <span key={line}>{t(line)}</span>
+              ))}
+            </h2>
             <p>{t(story.body)}</p>
           </div>
           <HomeStoryMedia scene={story.scene} priority={index === 0} />
@@ -156,16 +175,22 @@ export function HomeScrollStory() {
   })
   const frameScale = useTransform(
     scrollYProgress,
-    [0, 0.16, 0.84, 1],
-    [0.86, 1, 1, 0.92]
+    [0, 0.14, 0.88, 1],
+    [0.92, 1, 1, 0.96]
   )
   const frameY = useTransform(
     scrollYProgress,
-    [0, 0.16, 0.84, 1],
-    [54, 0, 0, -36]
+    [0, 0.14, 0.88, 1],
+    [38, 0, 0, -22]
   )
-  const frameRadius = useTransform(scrollYProgress, [0, 0.18], [28, 16])
-  const indicatorWidth = useTransform(scrollYProgress, [0, 1], ['0%', '100%'])
+  const frameRadius = useTransform(scrollYProgress, [0, 0.16], [24, 18])
+  const firstProgress = useTransform(scrollYProgress, [0, 0.32], [0, 1])
+  const secondProgress = useTransform(
+    scrollYProgress,
+    [0, 0.32, 0.66, 1],
+    [0, 0, 1, 1]
+  )
+  const thirdProgress = useTransform(scrollYProgress, [0, 0.66, 1], [0, 0, 1])
 
   if (reduceMotion) {
     return (
@@ -203,8 +228,16 @@ export function HomeScrollStory() {
             />
           ))}
         </motion.div>
-        <div className='iterloop-story-progress'>
-          <motion.span style={{ width: indicatorWidth }} />
+        <div className='iterloop-story-progress' aria-hidden='true'>
+          <i>
+            <motion.span style={{ scaleX: firstProgress }} />
+          </i>
+          <i>
+            <motion.span style={{ scaleX: secondProgress }} />
+          </i>
+          <i>
+            <motion.span style={{ scaleX: thirdProgress }} />
+          </i>
         </div>
       </div>
     </section>

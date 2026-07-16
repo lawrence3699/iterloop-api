@@ -22,7 +22,6 @@ export const iterLoopZhCN: Record<string, string> = {
   'API docs': 'API 文档',
   'Create your IterLoop Account to manage API access and usage.':
     '创建 IterLoop 账户，用于管理 API 访问权限与用量。',
-  'Default language': '默认语言',
   'Email (optional)': '邮箱（可选）',
   'Encrypted connection': '加密连接',
   FAQ: '常见问题',
@@ -267,32 +266,53 @@ export const iterLoopZhCN: Record<string, string> = {
   'API status': 'API 状态',
   'Available balance': '可用余额',
   'Available now.': '现在可用。',
+  'Available models and product capabilities': '可用模型与产品能力',
+  'Anthropic SDK': 'Anthropic SDK',
   'Built for long tasks, code changes, and agent workflows.':
     '为长任务、代码修改和代理工作流准备。',
   'By clicking sign in, you agree to our': '登录即表示你同意我们的',
   'By creating an account, you agree to our': '创建账户即表示你同意我们的',
   'Choose the model for the work in front of you.': '选择适合当前任务的模型。',
   'Client configuration': '客户端配置',
+  Client: '客户端',
+  'Claude Desktop': 'Claude Desktop',
+  'Claude verified': 'Claude 已验证',
   'Codex and Claude are verified. Grok official access is preparing.':
     'Codex 与 Claude 已完成可用性验证。Grok 官方渠道准备中。',
+  'Codex verified': 'Codex 已验证',
+  'Codex, Claude, and mainstream agents are ready after one configuration. Pay only for actual usage.':
+    'Codex、Claude 与主流 Agent，一次配置即可使用。按实际用量计费。',
+  Connected: '已连接',
+  'Connected to the models you need.': '连接你需要的模型。',
   'Connect your tools': '接入你的工具',
   Connect: '接入',
   'Control without adding friction.': '在不增加负担的前提下保持控制。',
+  'CONTROLLED ISSUE': '受控发放',
   'Copy and use': '复制即可使用',
   'Copy configuration': '复制配置',
+  'Choose a client': '选客户端',
+  'Choose Claude Code, Claude Desktop, Codex, or Hermes as the client you want to connect.':
+    'Claude Code / Claude Desktop / Codex / Hermes，选你要接入的客户端。',
   'Create focused or combined keys with model, quota, expiry, and IP controls.':
     '创建专用或混合 Key，并限制模型、额度、有效期和 IP。',
   'Create key': '创建 Key',
   'DIRECT DELIVERY': '直接交付',
   'Every request stays understandable.': '每次调用都清楚可查。',
+  'Every request': '每次调用',
+  'stays understandable.': '都清楚可查。',
   Explore: '浏览',
   'Expires in 12 days': '12 天后到期',
   'Generate settings for Codex CLI, Claude Code, and your SDK.':
     '为 Codex CLI、Claude Code 和 SDK 生成可直接使用的配置。',
+  'Give me a short API example.': '给我一个简短的 API 示例。',
   'Grok official access is shown only after the funded official channel passes verification.':
     'Grok 仅在有余额的官方渠道通过验证后开放。',
   'Grok preparing': 'Grok 准备中',
   'Independent balances': '独立额度',
+  'Import this key': '导入这个 Key',
+  'Import with CC Switch': 'CC Switch 导入',
+  'Choose one-click connection on the token row, select the client and model, then open CC Switch.':
+    '在令牌行点一键接入，选客户端和模型后打开 CC Switch。',
   'Keep account and key usage visible without inventing subscription plans.':
     '清楚展示账户和 Key 用量，不虚构订阅套餐。',
   'Keep familiar clients and replace only the API settings.':
@@ -304,6 +324,9 @@ export const iterLoopZhCN: Record<string, string> = {
   'Manage models, balances, keys, and requests in one workspace.':
     '在一个工作区管理模型、余额、Key 和调用。',
   'Metadata only': '仅记录元数据',
+  'Metadata-only logging': '仅记录元数据',
+  'Mainstream agents can be configured in one flow.':
+    '主流 Agent 均可一键配置。',
   'Mobile navigation': '移动端导航',
   'Model-level permissions': '模型级权限',
   Models: '模型',
@@ -312,6 +335,10 @@ export const iterLoopZhCN: Record<string, string> = {
     '用量记录仅保留运行元数据，不保存请求或响应正文。',
   'Official channel': '官方渠道',
   'One key, connected to the models you need.': '一个 Key，连接你需要的模型。',
+  'One key.': '一个 Key。',
+  'One key, from IterLoop to your client.':
+    '一个 Key，从 IterLoop 直达客户端。',
+  'OpenAI SDK': 'OpenAI SDK',
   'ONE CONSOLE': '统一控制台',
   'Open menu': '打开菜单',
   Operational: '运行正常',
@@ -328,6 +355,8 @@ export const iterLoopZhCN: Record<string, string> = {
   'Read integration docs': '阅读接入文档',
   'View models and pricing': '查看模型与价格',
   'Ready to copy': '可直接复制',
+  'Ready to import': '可以导入',
+  'Ready to open': '可以打开',
   'Redeem credit': '兑换额度',
   Resources: '资源',
   Result: '结果',
@@ -337,21 +366,32 @@ export const iterLoopZhCN: Record<string, string> = {
   Status: '状态',
   'Shown only after the funded official channel passes verification.':
     '仅在有余额的官方渠道通过验证后显示。',
+  Slide: '幻灯片',
+  'Start using it': '开始用',
+  'Return to the client and send a message. A normal reply means the connection is ready.':
+    '回到客户端发一条消息，能正常回复就已经接入成功。',
   'Start with a verified model and a key that fits the job.':
     '从经过验证的模型和恰到好处的 Key 开始。',
   'The IterLoop difference.': 'IterLoop 的不同。',
+  'Three steps, ready to use.': '三步上桌。',
+  'Three-step connection guide': '三步接入指南',
+  'From sign-up to first reply in under two minutes.':
+    '从注册到能用，不超过两分钟。',
   'Toggle password visibility': '切换密码可见性',
   Time: '时间',
   Tokens: 'Token',
   'Use stable non-streaming and streaming paths with verified usage accounting.':
     '使用经过计费验证的普通请求和 SSE 流式请求。',
   'Ways to connect.': '接入方式。',
+  'Works with the clients you already use.': '支持你已经在使用的客户端。',
   Workspace: '工作区',
   'A focused Claude lane for analysis and high-quality text work.':
     '为分析和高质量文本任务提供专用 Claude 通道。',
   'Balance, request volume, model health, and uptime stay together in one operational view.':
     '余额、请求量、模型健康和运行状态集中在同一个操作视图中。',
   'A key with exactly the access it needs.': '权限恰到好处的 Key。',
+  'A key with': '权限恰到好处的',
+  'exactly the access it needs.': 'Key。',
   'Choose a profile, set quota and expiry, and deliver a sanitized client configuration in one flow.':
     '选择方案、设置额度与有效期，并在一个流程中交付脱敏的客户端配置。',
   'Configuration that is ready to use.': '拿来即可使用的配置。',
@@ -363,6 +403,8 @@ export const iterLoopZhCN: Record<string, string> = {
   'Limit models, quota, expiry, and source IP without changing the client workflow.':
     '无需改变客户端工作流，即可限制模型、额度、有效期和来源 IP。',
   'The whole service, understood at a glance.': '一眼看清整个服务。',
+  'The whole service,': '一眼看清',
+  'understood at a glance.': '整个服务。',
   '01 · OVERVIEW': '01 · 概览',
   '02 · CONTROL': '02 · 权限',
   '03 · OBSERVE': '03 · 观察',
@@ -380,4 +422,8 @@ export const iterLoopZhCN: Record<string, string> = {
   'OpenAI and Anthropic SDKs': 'OpenAI 与 Anthropic SDK',
   'Responses API with HTTP and SSE.': '使用 Responses API 与 HTTP/SSE。',
   'Anthropic-compatible Messages endpoint.': '兼容 Anthropic Messages 的接口。',
+  'Reply received. Connection ready.': '已收到回复，接入成功。',
+  'Try it now': '立即体验',
+  You: '你',
+  Hermes: 'Hermes',
 }
