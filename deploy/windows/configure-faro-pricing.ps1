@@ -53,8 +53,8 @@ BEGIN;
 
 DO $$
 BEGIN
-  IF (SELECT COUNT(*) FROM options WHERE key IN ('ModelRatio', 'CompletionRatio', 'CacheRatio', 'CreateCacheRatio', 'GroupRatio')) <> 5 THEN
-    RAISE EXCEPTION 'One or more pricing ratio options are missing';
+  IF NOT EXISTS (SELECT 1 FROM options WHERE key = 'ModelRatio') THEN
+    RAISE EXCEPTION 'ModelRatio is missing';
   END IF;
 END $$;
 

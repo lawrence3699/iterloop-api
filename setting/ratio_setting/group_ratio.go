@@ -13,8 +13,8 @@ var defaultGroupRatio = map[string]float64{
 	"default":           1,
 	"vip":               1,
 	"svip":              1,
-	"codex-standard":    0.4,
-	"claude-standard":   0.7,
+	"codex-standard":    1,
+	"claude-standard":   1,
 	"grok-standard":     1,
 	"combined-standard": 1,
 }

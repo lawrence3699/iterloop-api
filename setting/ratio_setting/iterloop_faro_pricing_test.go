@@ -20,6 +20,10 @@ func floatPointer(value float64) *float64 {
 
 func TestIterLoopFaroPricingDefaults(t *testing.T) {
 	InitRatioSettings()
+	assert.Equal(t, 1.0, GetGroupRatio("codex-standard"))
+	assert.Equal(t, 1.0, GetGroupRatio("claude-standard"))
+	assert.Equal(t, 1.0, GetGroupRatio("combined-standard"))
+
 	expected := map[string]faroPriceExpectation{
 		"codex-auto-review":          {0.787, 4.722, 0.263, nil},
 		"gpt-5.4":                    {0.787, 4.722, 0.263, nil},
