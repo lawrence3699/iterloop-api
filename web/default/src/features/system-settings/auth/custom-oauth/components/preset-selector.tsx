@@ -72,8 +72,9 @@ export function PresetSelector(props: PresetSelectorProps) {
       shouldDirty: true,
     })
 
-    // Apply base URL if already entered
-    if (baseUrl) {
+    // Hosted providers have complete endpoints in the preset. Self-hosted
+    // providers still need the operator's base URL.
+    if (!preset.needsBaseUrl || baseUrl) {
       applyEndpoints(preset, baseUrl)
     }
   }
@@ -83,7 +84,7 @@ export function PresetSelector(props: PresetSelectorProps) {
     if (!selectedPreset) return
 
     const preset = OAUTH_PRESETS.find((p) => p.key === selectedPreset)
-    if (!preset) return
+    if (!preset || !preset.needsBaseUrl) return
 
     applyEndpoints(preset, url)
   }
@@ -92,7 +93,7 @@ export function PresetSelector(props: PresetSelectorProps) {
     preset: (typeof OAUTH_PRESETS)[number],
     url: string
   ) => {
-    const cleanUrl = url.replace(/\/+$/, '')
+    const cleanUrl = preset.needsBaseUrl ? url.replace(/\/+$/, '') : ''
     props.form.setValue(
       'authorization_endpoint',
       cleanUrl + preset.authorization_endpoint,
@@ -141,6 +142,10 @@ export function PresetSelector(props: PresetSelectorProps) {
           <Input
             placeholder={t('https://your-server.example.com')}
             value={baseUrl}
+            disabled={Boolean(
+              selectedPreset &&
+              !OAUTH_PRESETS.find((p) => p.key === selectedPreset)?.needsBaseUrl
+            )}
             onChange={(e) => handleBaseUrlChange(e.target.value)}
           />
         </div>

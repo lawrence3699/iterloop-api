@@ -45,6 +45,7 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip'
 import { api } from '@/lib/api'
+import { getLobeIcon } from '@/lib/lobe-icon'
 
 import {
   getUser,
@@ -145,18 +146,9 @@ const BUILTIN_BINDINGS: ReadonlyArray<{
   },
 ]
 
-function CustomProviderIcon(props: { iconUrl?: string }) {
-  if (!props.iconUrl) return <Link2 className='h-4 w-4' />
-  return (
-    <img
-      src={props.iconUrl}
-      alt=''
-      className='h-4 w-4 rounded-sm object-contain'
-      onError={(e) => {
-        e.currentTarget.style.display = 'none'
-      }}
-    />
-  )
+function CustomProviderIcon(props: { iconName?: string }) {
+  if (!props.iconName) return <Link2 className='h-4 w-4' />
+  return getLobeIcon(props.iconName, 16)
 }
 
 export function UserBindingDialog(props: Props) {
@@ -249,7 +241,7 @@ export function UserBindingDialog(props: Props) {
       items.push({
         key: `oauth_${provider.id}`,
         label: provider.name || provider.id,
-        icon: <CustomProviderIcon iconUrl={provider.icon} />,
+        icon: <CustomProviderIcon iconName={provider.icon} />,
         value: binding?.external_id || '',
         type: 'custom',
         providerId: String(provider.id),
