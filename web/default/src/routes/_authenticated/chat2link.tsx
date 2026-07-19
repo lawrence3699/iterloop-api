@@ -20,11 +20,14 @@ import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { Loader2 } from 'lucide-react'
 import { useEffect, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
-import { toast } from 'sonner'
 
 import { useActiveChatKey } from '@/features/chat/hooks/use-active-chat-key'
 import { useChatPresets } from '@/features/chat/hooks/use-chat-presets'
 import { resolveChatUrl } from '@/features/chat/lib/chat-links'
+
+function showError(message: string) {
+  void import('sonner').then(({ toast }) => toast.error(message))
+}
 
 export const Route = createFileRoute('/_authenticated/chat2link')({
   component: Chat2LinkPage,
@@ -47,7 +50,7 @@ function Chat2LinkPage() {
   useEffect(() => {
     if (!firstWebPreset) {
       if (chatPresets.length > 0) {
-        toast.error(t('No available Web chat links'))
+        showError(t('No available Web chat links'))
       }
       return
     }
@@ -59,7 +62,7 @@ function Chat2LinkPage() {
         keyError instanceof Error
           ? keyError.message
           : t('No enabled tokens available')
-      toast.error(message)
+      showError(message)
       navigate({ to: '/keys' })
       return
     }

@@ -1,0 +1,74 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="900" viewBox="0 0 1400 900" role="img" aria-labelledby="title desc">
+  <title id="title">IterLoop Desktop dashboard</title>
+  <desc id="desc">IterLoop Desktop showing local coding agent connections, usage status, and configuration actions.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#fffefb"/><stop offset="1" stop-color="#f2e9df"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#bd4824"/><stop offset="1" stop-color="#ef8a32"/>
+    </linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="150%">
+      <feDropShadow dx="0" dy="24" stdDeviation="28" flood-color="#35190d" flood-opacity=".16"/>
+    </filter>
+  </defs>
+  <rect width="1400" height="900" fill="#efe7dd"/>
+  <circle cx="1160" cy="75" r="340" fill="#ee8b45" opacity=".12"/>
+  <g filter="url(#shadow)">
+    <rect x="70" y="54" width="1260" height="792" rx="26" fill="url(#bg)" stroke="#d9cdc2"/>
+    <path d="M70 80a26 26 0 0 1 26-26h1208a26 26 0 0 1 26 26v50H70z" fill="#fbf7f1"/>
+    <path d="M70 130h1260" stroke="#dfd4ca"/>
+    <circle cx="108" cy="92" r="7" fill="#df6655"/><circle cx="132" cy="92" r="7" fill="#e2ad42"/><circle cx="156" cy="92" r="7" fill="#58a26b"/>
+    <rect x="190" y="76" width="26" height="26" rx="7" fill="url(#accent)"/>
+    <path d="M197 90c4-8 10-8 14 0M197 90c4 8 10 8 14 0" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round"/>
+    <text x="230" y="98" fill="#17120f" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif" font-size="18" font-weight="650">IterLoop Desktop</text>
+    <rect x="1148" y="76" width="142" height="32" rx="16" fill="#f0e9e2"/>
+    <circle cx="1170" cy="92" r="5" fill="#36845a"/>
+    <text x="1183" y="97" fill="#5d514a" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif" font-size="12">Service healthy</text>
+    <rect x="70" y="130" width="240" height="716" fill="#f7f2eb"/>
+    <path d="M310 130v716" stroke="#dfd4ca"/>
+    <text x="100" y="175" fill="#8b7b70" font-family="ui-monospace,monospace" font-size="10" letter-spacing="1.4">WORKSPACE</text>
+    <rect x="88" y="194" width="204" height="48" rx="12" fill="#f8e4d7" stroke="#e8bba4"/>
+    <rect x="101" y="207" width="24" height="24" rx="7" fill="url(#accent)" opacity=".95"/>
+    <path d="M107 219h12M113 213v12" stroke="#fff" stroke-width="2" stroke-linecap="round"/>
+    <text x="138" y="224" fill="#2a1d17" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif" font-size="14" font-weight="600">Connections</text>
+    <g fill="#7c6e65" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif" font-size="14">
+      <text x="138" y="282">Usage</text><text x="138" y="338">Diagnostics</text><text x="138" y="394">Settings</text>
+    </g>
+    <g fill="none" stroke="#9d8d82" stroke-width="2">
+      <circle cx="113" cy="276" r="10"/><path d="M107 276h12M113 270v12"/>
+      <path d="M103 330h20v15h-20zM108 326h10"/><path d="M103 386h20v16h-20zM108 382h10"/>
+    </g>
+    <rect x="88" y="744" width="204" height="72" rx="14" fill="#fffdf9" stroke="#dfd4ca"/>
+    <circle cx="111" cy="769" r="6" fill="#36845a"/><text x="126" y="774" fill="#2a1d17" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif" font-size="12" font-weight="600">Local helper running</text>
+    <text x="101" y="797" fill="#8b7b70" font-family="ui-monospace,monospace" font-size="10">127.0.0.1 · secure store</text>
+    <text x="352" y="188" fill="#17120f" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif" font-size="30" font-weight="650">Your coding agents, connected.</text>
+    <text x="352" y="220" fill="#786a61" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif" font-size="14">Configure supported tools without copying keys into config files.</text>
+    <g>
+      <rect x="352" y="260" width="286" height="132" rx="16" fill="#fffdf9" stroke="#dfd4ca"/>
+      <circle cx="387" cy="297" r="18" fill="#191613"/><text x="378" y="303" fill="#fff" font-family="ui-monospace,monospace" font-size="13" font-weight="700">C</text>
+      <text x="419" y="293" fill="#17120f" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif" font-size="15" font-weight="650">Codex Desktop</text>
+      <text x="419" y="314" fill="#36845a" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif" font-size="11">Connected</text>
+      <rect x="374" y="345" width="242" height="28" rx="8" fill="#f4eee7"/><text x="391" y="364" fill="#72645b" font-family="ui-monospace,monospace" font-size="10">gpt-5.5 · Responses API</text>
+      <rect x="660" y="260" width="286" height="132" rx="16" fill="#fffdf9" stroke="#dfd4ca"/>
+      <circle cx="695" cy="297" r="18" fill="#d66f3a"/><text x="687" y="303" fill="#fff" font-family="ui-monospace,monospace" font-size="13" font-weight="700">CC</text>
+      <text x="727" y="293" fill="#17120f" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif" font-size="15" font-weight="650">Claude Code</text>
+      <text x="727" y="314" fill="#36845a" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif" font-size="11">Connected</text>
+      <rect x="682" y="345" width="242" height="28" rx="8" fill="#f4eee7"/><text x="699" y="364" fill="#72645b" font-family="ui-monospace,monospace" font-size="10">Claude Fable 5 · Messages</text>
+      <rect x="968" y="260" width="286" height="132" rx="16" fill="#fffdf9" stroke="#dfd4ca"/>
+      <circle cx="1003" cy="297" r="18" fill="#eee6de"/><path d="M995 297h16M1003 289v16" stroke="#8b7b70" stroke-width="2"/>
+      <text x="1035" y="293" fill="#17120f" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif" font-size="15" font-weight="650">More tools</text>
+      <text x="1035" y="314" fill="#8b7b70" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif" font-size="11">Ready to configure</text>
+      <rect x="990" y="345" width="242" height="28" rx="8" fill="#f4eee7"/><text x="1007" y="364" fill="#72645b" font-family="ui-monospace,monospace" font-size="10">OpenAI-compatible clients</text>
+    </g>
+    <rect x="352" y="426" width="902" height="346" rx="18" fill="#fffdf9" stroke="#dfd4ca"/>
+    <text x="380" y="468" fill="#17120f" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif" font-size="16" font-weight="650">Connection activity</text>
+    <text x="380" y="491" fill="#8b7b70" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif" font-size="11">Last 24 hours · metadata only</text>
+    <g transform="translate(380 528)">
+      <path d="M0 150H830M0 100H830M0 50H830M0 0H830" stroke="#ebe3dc"/>
+      <path d="M0 137 C74 128 102 82 166 96 S264 132 332 77 S430 40 498 66 S598 111 664 54 S760 30 830 38" fill="none" stroke="url(#accent)" stroke-width="4" stroke-linecap="round"/>
+      <path d="M0 137 C74 128 102 82 166 96 S264 132 332 77 S430 40 498 66 S598 111 664 54 S760 30 830 38 L830 166 L0 166Z" fill="#e97435" opacity=".08"/>
+    </g>
+    <g fill="#8b7b70" font-family="ui-monospace,monospace" font-size="9"><text x="380" y="731">00:00</text><text x="775" y="731">12:00</text><text x="1175" y="731">NOW</text></g>
+  </g>
+</svg>

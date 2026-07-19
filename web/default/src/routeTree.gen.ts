@@ -19,6 +19,8 @@ import { Route as PricingIndexRouteImport } from './routes/pricing/index'
 import { Route as DocsIndexRouteImport } from './routes/docs/index'
 import { Route as AboutIndexRouteImport } from './routes/about/index'
 import { Route as OauthProviderRouteImport } from './routes/oauth/$provider'
+import { Route as DocsInstallCodexDesktopRouteImport } from './routes/docs/install-codex-desktop'
+import { Route as DocsApiIntegrationRouteImport } from './routes/docs/api-integration'
 import { Route as ConsoleTopupRouteImport } from './routes/console/topup'
 import { Route as ConsoleLogRouteImport } from './routes/console/log'
 import { Route as AuthenticatedChat2linkRouteImport } from './routes/_authenticated/chat2link'
@@ -118,6 +120,16 @@ const AboutIndexRoute = AboutIndexRouteImport.update({
 const OauthProviderRoute = OauthProviderRouteImport.update({
   id: '/oauth/$provider',
   path: '/oauth/$provider',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DocsInstallCodexDesktopRoute = DocsInstallCodexDesktopRouteImport.update({
+  id: '/docs/install-codex-desktop',
+  path: '/docs/install-codex-desktop',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DocsApiIntegrationRoute = DocsApiIntegrationRouteImport.update({
+  id: '/docs/api-integration',
+  path: '/docs/api-integration',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ConsoleTopupRoute = ConsoleTopupRouteImport.update({
@@ -433,6 +445,8 @@ export interface FileRoutesByFullPath {
   '/chat2link': typeof AuthenticatedChat2linkRoute
   '/console/log': typeof ConsoleLogRoute
   '/console/topup': typeof ConsoleTopupRoute
+  '/docs/api-integration': typeof DocsApiIntegrationRoute
+  '/docs/install-codex-desktop': typeof DocsInstallCodexDesktopRoute
   '/oauth/$provider': typeof OauthProviderRoute
   '/about/': typeof AboutIndexRoute
   '/docs/': typeof DocsIndexRoute
@@ -494,6 +508,8 @@ export interface FileRoutesByTo {
   '/chat2link': typeof AuthenticatedChat2linkRoute
   '/console/log': typeof ConsoleLogRoute
   '/console/topup': typeof ConsoleTopupRoute
+  '/docs/api-integration': typeof DocsApiIntegrationRoute
+  '/docs/install-codex-desktop': typeof DocsInstallCodexDesktopRoute
   '/oauth/$provider': typeof OauthProviderRoute
   '/about': typeof AboutIndexRoute
   '/docs': typeof DocsIndexRoute
@@ -559,6 +575,8 @@ export interface FileRoutesById {
   '/_authenticated/chat2link': typeof AuthenticatedChat2linkRoute
   '/console/log': typeof ConsoleLogRoute
   '/console/topup': typeof ConsoleTopupRoute
+  '/docs/api-integration': typeof DocsApiIntegrationRoute
+  '/docs/install-codex-desktop': typeof DocsInstallCodexDesktopRoute
   '/oauth/$provider': typeof OauthProviderRoute
   '/about/': typeof AboutIndexRoute
   '/docs/': typeof DocsIndexRoute
@@ -623,6 +641,8 @@ export interface FileRouteTypes {
     | '/chat2link'
     | '/console/log'
     | '/console/topup'
+    | '/docs/api-integration'
+    | '/docs/install-codex-desktop'
     | '/oauth/$provider'
     | '/about/'
     | '/docs/'
@@ -684,6 +704,8 @@ export interface FileRouteTypes {
     | '/chat2link'
     | '/console/log'
     | '/console/topup'
+    | '/docs/api-integration'
+    | '/docs/install-codex-desktop'
     | '/oauth/$provider'
     | '/about'
     | '/docs'
@@ -748,6 +770,8 @@ export interface FileRouteTypes {
     | '/_authenticated/chat2link'
     | '/console/log'
     | '/console/topup'
+    | '/docs/api-integration'
+    | '/docs/install-codex-desktop'
     | '/oauth/$provider'
     | '/about/'
     | '/docs/'
@@ -803,6 +827,8 @@ export interface RootRouteChildren {
   errors503Route: typeof errors503Route
   ConsoleLogRoute: typeof ConsoleLogRoute
   ConsoleTopupRoute: typeof ConsoleTopupRoute
+  DocsApiIntegrationRoute: typeof DocsApiIntegrationRoute
+  DocsInstallCodexDesktopRoute: typeof DocsInstallCodexDesktopRoute
   OauthProviderRoute: typeof OauthProviderRoute
   AboutIndexRoute: typeof AboutIndexRoute
   DocsIndexRoute: typeof DocsIndexRoute
@@ -881,6 +907,20 @@ declare module '@tanstack/react-router' {
       path: '/oauth/$provider'
       fullPath: '/oauth/$provider'
       preLoaderRoute: typeof OauthProviderRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/docs/install-codex-desktop': {
+      id: '/docs/install-codex-desktop'
+      path: '/docs/install-codex-desktop'
+      fullPath: '/docs/install-codex-desktop'
+      preLoaderRoute: typeof DocsInstallCodexDesktopRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/docs/api-integration': {
+      id: '/docs/api-integration'
+      path: '/docs/api-integration'
+      fullPath: '/docs/api-integration'
+      preLoaderRoute: typeof DocsApiIntegrationRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/console/topup': {
@@ -1399,6 +1439,8 @@ const rootRouteChildren: RootRouteChildren = {
   errors503Route: errors503Route,
   ConsoleLogRoute: ConsoleLogRoute,
   ConsoleTopupRoute: ConsoleTopupRoute,
+  DocsApiIntegrationRoute: DocsApiIntegrationRoute,
+  DocsInstallCodexDesktopRoute: DocsInstallCodexDesktopRoute,
   OauthProviderRoute: OauthProviderRoute,
   AboutIndexRoute: AboutIndexRoute,
   DocsIndexRoute: DocsIndexRoute,

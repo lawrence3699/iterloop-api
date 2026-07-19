@@ -16,10 +16,21 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
-import { DirectionProvider as BaseDirectionProvider } from '@base-ui/react/direction-provider'
-import { createContext, useContext, useEffect, useState } from 'react'
+import {
+  createContext,
+  lazy,
+  Suspense,
+  useContext,
+  useEffect,
+  useState,
+} from 'react'
 
 import { getCookie, setCookie, removeCookie } from '@/lib/cookies'
+
+const BaseDirectionProvider = lazy(async () => {
+  const module = await import('./base-direction-provider')
+  return { default: module.BaseDirectionProvider }
+})
 
 export type Direction = 'ltr' | 'rtl'
 
@@ -65,7 +76,15 @@ export function DirectionProvider({ children }: { children: React.ReactNode }) {
         resetDir,
       }}
     >
-      <BaseDirectionProvider direction={dir}>{children}</BaseDirectionProvider>
+      {dir === 'rtl' ? (
+        <Suspense fallback={children}>
+          <BaseDirectionProvider direction={dir}>
+            {children}
+          </BaseDirectionProvider>
+        </Suspense>
+      ) : (
+        children
+      )}
     </DirectionContext>
   )
 }

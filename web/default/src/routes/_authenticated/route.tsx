@@ -18,8 +18,7 @@ For commercial licensing, please contact support@quantumnous.com
 */
 import { createFileRoute, redirect } from '@tanstack/react-router'
 
-import { AuthenticatedLayout } from '@/components/layout'
-import { getSelf } from '@/lib/api'
+import { AuthenticatedLayout } from '@/components/layout/components/authenticated-layout'
 import { isIterLoopAdminHost, isIterLoopAdminPath } from '@/lib/iterloop-host'
 import { useAuthStore } from '@/stores/auth-store'
 
@@ -45,6 +44,7 @@ export const Route = createFileRoute('/_authenticated')({
     // 本地有用户信息，但需要验证 session 是否有效（每个会话只验证一次）
     if (!sessionVerified) {
       // 仅 401 视为 session 失效；网络错误/超时/5xx 返回 null 放行，下次导航重验
+      const { getSelf } = await import('@/lib/api')
       const res = await getSelf().catch((err: unknown) =>
         (err as { response?: { status?: number } })?.response?.status === 401
           ? { success: false }

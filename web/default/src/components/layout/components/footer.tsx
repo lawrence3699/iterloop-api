@@ -256,7 +256,7 @@ export function Footer(props: FooterProps) {
               </span>
             </Link>
             <p className='text-muted-foreground/60 mt-3 max-w-[200px] text-xs leading-relaxed'>
-              {t('Governed Codex, Claude, and Grok access.')}
+              {t('Governed Codex and Claude access.')}
             </p>
           </div>
 

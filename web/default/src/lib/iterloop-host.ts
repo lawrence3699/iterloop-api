@@ -38,6 +38,10 @@ export const ITERLOOP_CONSOLE_ORIGIN = (
   'https://console.iter-loop.com'
 ).replace(/\/$/, '')
 
+export const ITERLOOP_ADMIN_ORIGIN = (
+  import.meta.env.VITE_ITERLOOP_ADMIN_ORIGIN || 'https://admin.iter-loop.com'
+).replace(/\/$/, '')
+
 function currentHostname(hostname?: string): string {
   return (
     hostname ?? (typeof window === 'undefined' ? '' : window.location.hostname)
@@ -70,6 +74,12 @@ export function iterLoopPublicUrl(path = '/'): string {
   const normalizedPath = path.startsWith('/') ? path : `/${path}`
   if (isIterLoopLocalHost() || isIterLoopPublicHost()) return normalizedPath
   return `${ITERLOOP_PUBLIC_ORIGIN}${normalizedPath}`
+}
+
+export function iterLoopAdminUrl(path = '/'): string {
+  const normalizedPath = path.startsWith('/') ? path : `/${path}`
+  if (isIterLoopLocalHost() || isIterLoopAdminHost()) return normalizedPath
+  return `${ITERLOOP_ADMIN_ORIGIN}${normalizedPath}`
 }
 
 export function isIterLoopAdminPath(pathname: string): boolean {

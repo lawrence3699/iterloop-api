@@ -16,22 +16,59 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
+import { useLocation } from '@tanstack/react-router'
+
 import { AnimatedOutlet } from '@/components/page-transition'
 import { SkipToMain } from '@/components/skip-to-main'
 import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar'
 import { LayoutProvider } from '@/context/layout-provider'
 import { SearchProvider } from '@/context/search-provider'
 import { getCookie } from '@/lib/cookies'
+import {
+  isIterLoopAdminHost,
+  isIterLoopAdminPath,
+  isIterLoopLocalHost,
+} from '@/lib/iterloop-host'
 import { cn } from '@/lib/utils'
 
 import { AppHeader } from './app-header'
 import { AppSidebar } from './app-sidebar'
+import {
+  IterLoopConsoleHeader,
+  IterLoopConsoleMobileTabs,
+  IterLoopConsoleSidebar,
+} from './iterloop-console-shell'
 
 type AuthenticatedLayoutProps = {
   children?: React.ReactNode
 }
 
 export function AuthenticatedLayout(props: AuthenticatedLayoutProps) {
+  const pathname = useLocation({ select: (location) => location.pathname })
+  const adminWorkspace =
+    isIterLoopAdminPath(pathname) ||
+    (!isIterLoopLocalHost() && isIterLoopAdminHost())
+
+  if (!adminWorkspace) {
+    return (
+      <LayoutProvider>
+        <SearchProvider>
+          <div className='iterloop-console-shell'>
+            <SkipToMain />
+            <IterLoopConsoleHeader />
+            <IterLoopConsoleMobileTabs />
+            <div className='iterloop-console-body'>
+              <IterLoopConsoleSidebar />
+              <main id='content' className='iterloop-console-main'>
+                {props.children ?? <AnimatedOutlet />}
+              </main>
+            </div>
+          </div>
+        </SearchProvider>
+      </LayoutProvider>
+    )
+  }
+
   const defaultOpen = getCookie('sidebar_state') !== 'false'
 
   return (

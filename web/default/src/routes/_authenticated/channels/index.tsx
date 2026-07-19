@@ -17,21 +17,39 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 import { createFileRoute, redirect } from '@tanstack/react-router'
-import z from 'zod'
 
 import { Channels } from '@/features/channels'
 import { ROLE } from '@/lib/roles'
+import {
+  optionalNumber,
+  optionalString,
+  searchRecord,
+  stringArray,
+} from '@/lib/search-params'
 import { useAuthStore } from '@/stores/auth-store'
 
-const channelsSearchSchema = z.object({
-  page: z.number().optional().catch(1),
-  pageSize: z.number().optional().catch(undefined),
-  filter: z.string().optional().catch(''),
-  status: z.array(z.string()).optional().catch([]),
-  type: z.array(z.string()).optional().catch([]),
-  group: z.array(z.string()).optional().catch([]),
-  model: z.string().optional().catch(''),
-})
+const channelsSearchSchema = (
+  value: unknown
+): Partial<{
+  page: number
+  pageSize: number
+  filter: string
+  status: string[]
+  type: string[]
+  group: string[]
+  model: string
+}> => {
+  const search = searchRecord(value)
+  return {
+    page: optionalNumber(search.page, 1),
+    pageSize: optionalNumber(search.pageSize),
+    filter: optionalString(search.filter, ''),
+    status: stringArray(search.status),
+    type: stringArray(search.type),
+    group: stringArray(search.group),
+    model: optionalString(search.model, ''),
+  }
+}
 
 export const Route = createFileRoute('/_authenticated/channels/')({
   beforeLoad: () => {

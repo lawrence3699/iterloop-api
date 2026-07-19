@@ -16,8 +16,6 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
-import { api } from '@/lib/api'
-
 import type { PricingData } from './types'
 
 // ----------------------------------------------------------------------------
@@ -26,6 +24,12 @@ import type { PricingData } from './types'
 
 // Get model pricing data
 export async function getPricing(): Promise<PricingData> {
-  const res = await api.get('/api/pricing')
-  return res.data
+  const response = await fetch('/api/pricing', {
+    credentials: 'same-origin',
+    headers: { Accept: 'application/json' },
+  })
+  if (!response.ok) {
+    throw new Error(`Pricing request failed: ${response.status}`)
+  }
+  return response.json() as Promise<PricingData>
 }

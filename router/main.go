@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/QuantumNous/new-api/common"
+	"github.com/QuantumNous/new-api/controller"
 	"github.com/QuantumNous/new-api/middleware"
 
 	"github.com/gin-gonic/gin"
@@ -14,6 +15,13 @@ import (
 
 func SetRouter(router *gin.Engine, assets ThemeAssets) {
 	router.Use(middleware.EnforceIterLoopHostPolicy())
+	router.Use(func(c *gin.Context) {
+		if controller.HandleDesktopOAuthBrowserCallback(c) {
+			c.Abort()
+			return
+		}
+		c.Next()
+	})
 	SetIterLoopRouter(router)
 	SetApiRouter(router)
 	SetDashboardRouter(router)

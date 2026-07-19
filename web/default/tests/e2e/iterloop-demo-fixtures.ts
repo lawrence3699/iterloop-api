@@ -176,6 +176,113 @@ const QUOTA_DATA = Array.from({ length: 12 }, (_, index) => {
   }
 })
 
+const ANALYTICS_DATA = {
+  totals: {
+    input_tokens: 286_400,
+    output_tokens: 74_820,
+    cached_tokens: 118_600,
+    requests: 1_284,
+    quota: 5_138_000,
+  },
+  trend: Array.from({ length: 12 }, (_, index) => ({
+    timestamp: DEMO_NOW - (11 - index) * 7_200,
+    input_tokens: 14_000 + index * 1_800,
+    output_tokens: 3_200 + index * 480,
+    cached_tokens: 6_100 + index * 700,
+    requests: 62 + index * 7,
+    quota: 260_000 + index * 31_000,
+  })),
+  models: [
+    {
+      model_name: 'gpt-5.5',
+      input_tokens: 142_000,
+      output_tokens: 38_000,
+      cached_tokens: 62_000,
+      requests: 640,
+      quota: 2_620_000,
+    },
+    {
+      model_name: 'claude-fable-5',
+      input_tokens: 86_000,
+      output_tokens: 22_000,
+      cached_tokens: 36_000,
+      requests: 382,
+      quota: 1_548_000,
+    },
+    {
+      model_name: 'gpt-5.4',
+      input_tokens: 58_400,
+      output_tokens: 14_820,
+      cached_tokens: 20_600,
+      requests: 262,
+      quota: 970_000,
+    },
+  ],
+  by_token: [
+    { token_id: 101, requests: 640, quota: 2_620_000 },
+    { token_id: 102, requests: 382, quota: 1_548_000 },
+    { token_id: 103, requests: 262, quota: 970_000 },
+  ],
+}
+
+const PRODUCTION_MODEL_NAMES = [
+  'codex-auto-review',
+  'gpt-5.4',
+  'gpt-5.4-mini',
+  'gpt-5.5',
+  'gpt-5.6-luna',
+  'gpt-5.6-sol',
+  'gpt-5.6-terra',
+  'claude-fable-5',
+  'claude-haiku-4-5-20251001',
+  'claude-opus-4-5-20251101',
+  'claude-opus-4-6',
+  'claude-opus-4-7',
+  'claude-opus-4-8',
+  'claude-sonnet-4-5-20250929',
+  'claude-sonnet-4-6',
+  'claude-sonnet-5',
+]
+
+export const DEMO_PRICING_RESPONSE = {
+  success: true,
+  data: PRODUCTION_MODEL_NAMES.map((modelName, index) => {
+    const anthropic = modelName.startsWith('claude-')
+    return {
+      model_name: modelName,
+      vendor_id: anthropic ? 2 : 1,
+      quota_type: 0,
+      model_ratio: anthropic ? 1.5 + index * 0.04 : 1 + index * 0.04,
+      completion_ratio: anthropic ? 5 : 4,
+      cache_ratio: 0.1,
+      create_cache_ratio: 1.25,
+      enable_groups: ['all'],
+      official_price: {
+        input_usd: anthropic ? 5 : 2.5,
+        output_usd: anthropic ? 25 : 15,
+        cache_read_usd: anthropic ? 0.5 : 0.25,
+        source_model: modelName,
+        source_url: anthropic
+          ? 'https://platform.claude.com/docs/en/about-claude/pricing'
+          : 'https://developers.openai.com/api/docs/pricing',
+      },
+    }
+  }),
+  vendors: [
+    { id: 1, name: 'OpenAI' },
+    { id: 2, name: 'Anthropic' },
+  ],
+  group_ratio: { default: 1 },
+  usable_group: { default: { desc: 'Default', ratio: 1 } },
+  supported_endpoint: {},
+  auto_groups: [],
+  pricing_currency: {
+    base_currency: 'USD',
+    chinese: { currency: 'CNY', symbol: '¥', exchange_rate: 7.3 },
+    english: { currency: 'AUD', symbol: 'A$', exchange_rate: 1.52 },
+  },
+}
+
 function getProfiles(language: DemoLanguage) {
   const isChinese = language === 'zhCN'
   return [
@@ -291,6 +398,7 @@ export function getDemoApiPayload(
     return { items: API_KEYS, total: API_KEYS.length, page: 1, page_size: 10 }
   }
   if (pathname === '/api/data/self') return QUOTA_DATA
+  if (pathname === '/api/data/self/analytics') return ANALYTICS_DATA
   if (pathname === '/api/perf-metrics/summary') {
     return {
       models: [

@@ -99,9 +99,9 @@ func publicHostPathAllowed(method string, path string) bool {
 		return true
 	}
 	switch path {
-	case "/", "/favicon.ico", "/logo.png", "/iterloop-mark.svg", "/robots.txt", "/sitemap.xml",
+	case "/", "/favicon.ico", "/logo.png", "/iterloop-mark.svg", "/iterloop-desktop-preview.svg", "/robots.txt", "/sitemap.xml",
 		"/privacy-policy", "/user-agreement", "/api/privacy-policy", "/api/user-agreement",
-		"/api/status", "/api/home_page_content", "/api/pricing":
+		"/api/status", "/api/setup", "/api/home_page_content", "/api/pricing":
 		return true
 	default:
 		return false

@@ -17,7 +17,6 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 import { createFileRoute, redirect } from '@tanstack/react-router'
-import z from 'zod'
 
 import { Models } from '@/features/models'
 import {
@@ -25,20 +24,42 @@ import {
   MODELS_DEFAULT_SECTION,
 } from '@/features/models/section-registry'
 import { ROLE } from '@/lib/roles'
+import {
+  optionalNumber,
+  optionalString,
+  searchRecord,
+  stringArray,
+} from '@/lib/search-params'
 import { useAuthStore } from '@/stores/auth-store'
 
-const modelsSearchSchema = z.object({
-  page: z.number().optional().catch(1),
-  pageSize: z.number().optional().catch(10),
-  filter: z.string().optional().catch(''),
-  vendor: z.array(z.string()).optional().catch([]),
-  status: z.array(z.string()).optional().catch([]),
-  sync: z.array(z.string()).optional().catch([]),
-  dPage: z.number().optional().catch(1),
-  dPageSize: z.number().optional().catch(10),
-  dFilter: z.string().optional().catch(''),
-  dStatus: z.array(z.string()).optional().catch([]),
-})
+const modelsSearchSchema = (
+  value: unknown
+): Partial<{
+  page: number
+  pageSize: number
+  filter: string
+  vendor: string[]
+  status: string[]
+  sync: string[]
+  dPage: number
+  dPageSize: number
+  dFilter: string
+  dStatus: string[]
+}> => {
+  const search = searchRecord(value)
+  return {
+    page: optionalNumber(search.page, 1),
+    pageSize: optionalNumber(search.pageSize, 10),
+    filter: optionalString(search.filter, ''),
+    vendor: stringArray(search.vendor),
+    status: stringArray(search.status),
+    sync: stringArray(search.sync),
+    dPage: optionalNumber(search.dPage, 1),
+    dPageSize: optionalNumber(search.dPageSize, 10),
+    dFilter: optionalString(search.dFilter, ''),
+    dStatus: stringArray(search.dStatus),
+  }
+}
 
 export const Route = createFileRoute('/_authenticated/models/$section')({
   beforeLoad: ({ params }) => {

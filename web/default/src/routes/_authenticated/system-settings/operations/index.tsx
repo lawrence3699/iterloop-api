@@ -18,7 +18,7 @@ For commercial licensing, please contact support@quantumnous.com
 */
 import { createFileRoute, redirect } from '@tanstack/react-router'
 
-import { OPERATIONS_DEFAULT_SECTION } from '@/features/system-settings/operations/section-registry.tsx'
+import { SYSTEM_SETTINGS_ROUTE_SECTIONS } from '@/features/system-settings/route-sections'
 
 export const Route = createFileRoute(
   '/_authenticated/system-settings/operations/'
@@ -26,7 +26,9 @@ export const Route = createFileRoute(
   beforeLoad: () => {
     throw redirect({
       to: '/system-settings/operations/$section',
-      params: { section: OPERATIONS_DEFAULT_SECTION },
+      params: {
+        section: SYSTEM_SETTINGS_ROUTE_SECTIONS.operations.defaultSection,
+      },
     })
   },
 })

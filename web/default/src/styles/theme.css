@@ -19,7 +19,9 @@ For commercial licensing, please contact support@quantumnous.com
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
-  --font-sans: 'Public Sans', sans-serif;
+  --font-sans:
+    'IBM Plex Sans Variable', 'IBM Plex Sans', 'PingFang SC', 'Microsoft YaHei',
+    'Noto Sans CJK SC', sans-serif;
   --font-display:
     'Space Grotesk Variable', 'Space Grotesk', 'Public Sans', sans-serif;
   --font-mono:
@@ -102,20 +104,20 @@ For commercial licensing, please contact support@quantumnous.com
  * rule-driven visual language. */
 html:root {
   --radius: 0.5rem;
-  --background: #ffffff;
-  --foreground: #1d1d1f;
-  --card: #ffffff;
-  --card-foreground: #1d1d1f;
-  --popover: #ffffff;
-  --popover-foreground: #1d1d1f;
-  --primary: #0071e3;
+  --background: #fffefb;
+  --foreground: #14110f;
+  --card: #fffefb;
+  --card-foreground: #14110f;
+  --popover: #fffefb;
+  --popover-foreground: #14110f;
+  --primary: #c95128;
   --primary-foreground: #ffffff;
-  --secondary: #f5f5f7;
-  --secondary-foreground: #1d1d1f;
-  --muted: #f5f5f7;
-  --muted-foreground: #6e6e73;
-  --accent: #eaf3ff;
-  --accent-foreground: #0066cc;
+  --secondary: #f5f0e9;
+  --secondary-foreground: #2b211c;
+  --muted: #f5f0e9;
+  --muted-foreground: #74675f;
+  --accent: #fbe8dc;
+  --accent-foreground: #9d3818;
   --destructive: #d70015;
   --destructive-foreground: #ffffff;
   --success: #248a3d;
@@ -126,10 +128,10 @@ html:root {
   --info-foreground: #ffffff;
   --neutral: #86868b;
   --neutral-foreground: #1d1d1f;
-  --border: #d2d2d7;
-  --input: #86868b;
-  --ring: #0071e3;
-  --chart-1: #0071e3;
+  --border: #e4dbd2;
+  --input: #aa9c91;
+  --ring: #cf5a2e;
+  --chart-1: #cf5a2e;
   --chart-2: #248a3d;
   --chart-3: #ff7759;
   --chart-4: #071829;
@@ -137,33 +139,33 @@ html:root {
   --overview-accent-1: #0071e3;
   --overview-accent-2: #248a3d;
   --overview-accent-3: #ff7759;
-  --sidebar: #f5f5f7;
-  --sidebar-foreground: #1d1d1f;
-  --sidebar-primary: #0071e3;
+  --sidebar: #f8f4ee;
+  --sidebar-foreground: #14110f;
+  --sidebar-primary: #c95128;
   --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #eaf3ff;
-  --sidebar-accent-foreground: #0066cc;
-  --sidebar-border: #d2d2d7;
-  --sidebar-ring: #0071e3;
+  --sidebar-accent: #fbe8dc;
+  --sidebar-accent-foreground: #9d3818;
+  --sidebar-border: #e4dbd2;
+  --sidebar-ring: #cf5a2e;
   --skeleton-base: #f0f0f2;
   --skeleton-highlight: #fbfbfd;
 }
 
 html.dark {
-  --background: #000000;
-  --foreground: #f5f5f7;
-  --card: #1c1c1e;
-  --card-foreground: #f5f5f7;
-  --popover: #2c2c2e;
-  --popover-foreground: #f5f5f7;
-  --primary: #2997ff;
+  --background: #17130f;
+  --foreground: #fffaf4;
+  --card: #211b17;
+  --card-foreground: #fffaf4;
+  --popover: #2b231e;
+  --popover-foreground: #fffaf4;
+  --primary: #ef7d3f;
   --primary-foreground: #ffffff;
-  --secondary: #2c2c2e;
+  --secondary: #2b231e;
   --secondary-foreground: #f5f5f7;
-  --muted: #2c2c2e;
-  --muted-foreground: #aeaeb2;
-  --accent: rgba(41, 151, 255, 0.16);
-  --accent-foreground: #2997ff;
+  --muted: #2b231e;
+  --muted-foreground: #c0afa4;
+  --accent: rgb(239 125 63 / 16%);
+  --accent-foreground: #ff9c62;
   --destructive: #ff453a;
   --destructive-foreground: #ffffff;
   --success: #30d158;
@@ -174,29 +176,29 @@ html.dark {
   --info-foreground: #ffffff;
   --neutral: #8e8e93;
   --neutral-foreground: #f5f5f7;
-  --border: #3a3a3c;
-  --input: #636366;
-  --ring: #2997ff;
-  --chart-1: #2997ff;
+  --border: #493a32;
+  --input: #6d5b50;
+  --ring: #ef7d3f;
+  --chart-1: #ef7d3f;
   --chart-2: #30d158;
   --chart-3: #ff9a82;
   --chart-4: #bf5af2;
   --chart-5: #aeaeb2;
-  --sidebar: #1c1c1e;
-  --sidebar-foreground: #f5f5f7;
-  --sidebar-primary: #2997ff;
+  --sidebar: #1d1814;
+  --sidebar-foreground: #fffaf4;
+  --sidebar-primary: #ef7d3f;
   --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: rgba(41, 151, 255, 0.16);
-  --sidebar-accent-foreground: #2997ff;
-  --sidebar-border: #3a3a3c;
-  --sidebar-ring: #2997ff;
+  --sidebar-accent: rgb(239 125 63 / 16%);
+  --sidebar-accent-foreground: #ff9c62;
+  --sidebar-border: #493a32;
+  --sidebar-ring: #ef7d3f;
   --skeleton-base: #2c2c2e;
   --skeleton-highlight: #3a3a3c;
 }
 
 :root {
   --radius: 1rem;
-  --app-header-height: 6rem;
+  --app-header-height: 76px;
   /* Static build-channel fallback consumed when JS hasn't booted yet. */
   --app-rev: '2k6e8r7p';
   /* Currently active body font. The font axis swaps this between

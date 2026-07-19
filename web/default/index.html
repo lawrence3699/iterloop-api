@@ -2,12 +2,30 @@
 <html lang="zh-CN">
   <head>
     <meta charset="UTF-8" />
+    <script>
+      try {
+        if (window.location.pathname === '/') {
+          document.documentElement.classList.add('iterloop-static-home')
+          if (window.localStorage.getItem('user')) {
+            document.documentElement.classList.add('iterloop-static-auth')
+          }
+        }
+        var initialLanguage =
+          window.localStorage.getItem('i18nextLng') || 'zhCN'
+        document.documentElement.lang = initialLanguage
+          .toLowerCase()
+          .startsWith('zh')
+          ? 'zh-CN'
+          : 'en'
+      } catch (_) {}
+    </script>
     <link rel="icon" type="image/png" href="/logo.png" />
     <link
       rel="preload"
       as="image"
-      type="image/avif"
-      href="/media/home/story/story-keys-zh-768.avif"
+      type="image/svg+xml"
+      href="/iterloop-desktop-preview.svg"
+      media="(min-width: 768px)"
     />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="google" content="notranslate" />
@@ -26,6 +44,92 @@
   </head>
 
   <body>
+    <section
+      id="iterloop-static-hero"
+      class="iterloop-download-hero"
+      aria-label="IterLoop Desktop"
+    >
+      <div class="iterloop-download-hero-copy">
+        <span>◉ IterLoop Desktop</span>
+        <h1>
+          <span class="iterloop-static-zh">你的编码代理，一键连接。</span>
+          <span class="iterloop-static-en"
+            >Your coding agents. Connected in one click.</span
+          >
+        </h1>
+        <p>
+          <span class="iterloop-static-zh"
+            >用一个安全的 IterLoop 账户配置 Codex Desktop、Codex CLI 与 Claude
+            Code；无需存储提示词或响应正文，也能查看用量和费用。</span
+          >
+          <span class="iterloop-static-en"
+            >Configure Codex Desktop, Codex CLI, and Claude Code with one secure
+            IterLoop account. See usage and cost without storing prompt or
+            response content.</span
+          >
+        </p>
+        <div class="iterloop-download-actions">
+          <button type="button" class="iterloop-download-button" disabled>
+            ↓ macOS
+            <small
+              ><span class="iterloop-static-zh">即将推出</span
+              ><span class="iterloop-static-en">Coming soon</span></small
+            >
+          </button>
+          <button type="button" class="iterloop-download-button" disabled>
+            ↓ Windows
+            <small
+              ><span class="iterloop-static-zh">即将推出</span
+              ><span class="iterloop-static-en">Coming soon</span></small
+            >
+          </button>
+        </div>
+        <div class="iterloop-download-secondary">
+          <a
+            class="iterloop-static-guest-link"
+            href="https://console.iter-loop.com/sign-up"
+          >
+            <span class="iterloop-static-zh">创建账户</span
+            ><span class="iterloop-static-en">Create an account</span> →
+          </a>
+          <a
+            class="iterloop-static-auth-link"
+            href="https://console.iter-loop.com/dashboard"
+          >
+            <span class="iterloop-static-zh">打开控制台</span
+            ><span class="iterloop-static-en">Open console</span> →
+          </a>
+          <a href="/docs/install-codex-desktop">
+            <span class="iterloop-static-zh">阅读配置指南</span
+            ><span class="iterloop-static-en">Read the setup guide</span>
+          </a>
+        </div>
+        <div class="iterloop-download-meta">
+          <span
+            ><span class="iterloop-static-zh">安全凭据存储</span
+            ><span class="iterloop-static-en"
+              >Secure credential storage</span
+            ></span
+          >
+          <span>Windows &amp; macOS</span>
+          <span
+            ><span class="iterloop-static-zh">始终支持手动配置</span
+            ><span class="iterloop-static-en"
+              >Manual setup always available</span
+            ></span
+          >
+        </div>
+      </div>
+      <figure class="iterloop-desktop-preview">
+        <img
+          src="/iterloop-desktop-preview.svg"
+          alt="IterLoop Desktop connections dashboard"
+          width="1400"
+          height="900"
+          loading="eager"
+        />
+      </figure>
+    </section>
     <div id="root" translate="no" class="notranslate"></div>
   </body>
 </html>

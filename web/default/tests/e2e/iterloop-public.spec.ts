@@ -20,6 +20,7 @@ import { expect, test, type Page } from '@playwright/test'
 
 import {
   DEMO_DATE,
+  DEMO_PRICING_RESPONSE,
   DEMO_USER,
   getDemoApiPayload,
   type DemoLanguage,
@@ -34,12 +35,8 @@ const VIEWPORTS = [
 
 const QA_STYLES = `
   button[aria-label='Open Tanstack query devtools'],
-  button[aria-label='Open TanStack Router Devtools'] {
-    display: none !important;
-  }
-  * {
-    caret-color: transparent !important;
-  }
+  button[aria-label='Open TanStack Router Devtools'] { display: none !important; }
+  * { caret-color: transparent !important; }
 `
 
 async function preparePage(
@@ -53,15 +50,10 @@ async function preparePage(
   const language = options.language ?? 'zhCN'
   const theme = options.theme ?? 'light'
   await page.clock.setFixedTime(new Date(DEMO_DATE))
-
   await page.addInitScript(
     ({ authenticated, initialLanguage, initialTheme, user }) => {
-      if (!window.localStorage.getItem('i18nextLng')) {
-        window.localStorage.setItem('i18nextLng', initialLanguage)
-      }
-      if (!document.cookie.includes('vite-ui-theme=')) {
-        document.cookie = `vite-ui-theme=${initialTheme}; path=/; SameSite=Lax`
-      }
+      window.localStorage.setItem('i18nextLng', initialLanguage)
+      document.cookie = `vite-ui-theme=${initialTheme}; path=/; SameSite=Lax`
       if (authenticated) {
         window.localStorage.setItem('user', JSON.stringify(user))
       } else {
@@ -77,27 +69,26 @@ async function preparePage(
   )
   await page.route('**/api/**', async (route) => {
     const pathname = new URL(route.request().url()).pathname
-
+    const responseBody =
+      pathname === '/api/pricing'
+        ? DEMO_PRICING_RESPONSE
+        : { success: true, data: getDemoApiPayload(pathname, language) }
     await route.fulfill({
       contentType: 'application/json',
-      body: JSON.stringify({
-        success: true,
-        data: getDemoApiPayload(pathname, language),
-      }),
+      body: JSON.stringify(responseBody),
     })
   })
 }
 
 async function settlePage(page: Page) {
+  await page.waitForFunction(
+    () => document.documentElement.dataset.iterloopReady === 'true'
+  )
   await page.addStyleTag({ content: QA_STYLES })
   await page.evaluate(async () => {
     await document.fonts.ready
-    const visibleImages = [...document.images].filter((image) => {
-      const rect = image.getBoundingClientRect()
-      return rect.bottom > 0 && rect.top < window.innerHeight
-    })
     await Promise.all(
-      visibleImages.map(
+      [...document.images].map(
         (image) =>
           image.complete ||
           new Promise<void>((resolve) => {
@@ -111,472 +102,266 @@ async function settlePage(page: Page) {
 
 async function openHome(
   page: Page,
-  options: { language?: 'en' | 'zhCN'; theme?: 'dark' | 'light' } = {}
+  options: { language?: DemoLanguage; theme?: 'dark' | 'light' } = {}
 ) {
   await preparePage(page, options)
   await page.goto('/')
   const heading =
     options.language === 'en'
-      ? 'One key, connected to the models you need.'
-      : '一个 Key，连接你需要的模型。'
+      ? 'Your coding agents. Connected in one click.'
+      : '你的编码代理，一键连接。'
   await expect(page.getByRole('heading', { name: heading })).toBeVisible()
   await settlePage(page)
 }
 
-test.describe('IterLoop public visual baselines', () => {
+test.describe('Download-first public experience', () => {
   for (const viewport of VIEWPORTS) {
     test(`Chinese light homepage at ${viewport.name}`, async ({ page }) => {
       await page.setViewportSize(viewport)
       await openHome(page)
-
+      if (viewport.width === 390) {
+        expect(
+          await page.evaluate(
+            () => document.documentElement.scrollWidth === window.innerWidth
+          )
+        ).toBe(true)
+      }
       await expect(page).toHaveScreenshot(
-        `home-zh-light-${viewport.name}.png`,
-        { animations: 'disabled', caret: 'hide', fullPage: false }
+        `download-home-zh-light-${viewport.name}.png`,
+        {
+          animations: 'disabled',
+          caret: 'hide',
+          fullPage: false,
+        }
       )
     })
   }
 
-  for (const viewport of [VIEWPORTS[1], VIEWPORTS[3]]) {
-    test(`English dark homepage at ${viewport.name}`, async ({ page }) => {
-      await page.setViewportSize(viewport)
-      await openHome(page, { language: 'en', theme: 'dark' })
-      await expect(page.locator('html')).toHaveClass(/dark/)
-
-      await expect(page).toHaveScreenshot(`home-en-dark-${viewport.name}.png`, {
-        animations: 'disabled',
-        caret: 'hide',
-        fullPage: false,
-      })
-    })
-  }
-
-  for (const viewport of [VIEWPORTS[1], VIEWPORTS[3]]) {
-    test(`Chinese sign-in at ${viewport.name}`, async ({ page }) => {
-      await page.setViewportSize(viewport)
-      await preparePage(page)
-      await page.goto('/sign-in')
-      await expect(
-        page.getByRole('heading', { name: '登录 IterLoop API' })
-      ).toBeVisible()
-      await settlePage(page)
-
-      await expect(page).toHaveScreenshot(
-        `sign-in-zh-light-${viewport.name}.png`,
-        { animations: 'disabled', caret: 'hide', fullPage: false }
-      )
-    })
-  }
-
-  test('Chinese docs desktop', async ({ page }) => {
+  test('English dark homepage', async ({ page }) => {
     await page.setViewportSize(VIEWPORTS[1])
-    await preparePage(page)
-    await page.goto('/docs')
-    await expect(
-      page.getByRole('heading', { name: '接入 Codex、Claude 与 Grok' })
-    ).toBeVisible()
-    await settlePage(page)
-
-    await expect(page).toHaveScreenshot('docs-zh-light-1440x900.png', {
+    await openHome(page, { language: 'en', theme: 'dark' })
+    await expect(page.locator('html')).toHaveClass(/dark/)
+    await expect(page).toHaveScreenshot('download-home-en-dark-1440x900.png', {
       animations: 'disabled',
       caret: 'hide',
       fullPage: false,
     })
   })
-})
 
-test.describe('IterLoop public interactions', () => {
-  test('desktop Mega Menu opens and Escape restores focus', async ({
+  test('shows only the 16 production models and no disabled providers', async ({
     page,
   }) => {
     await page.setViewportSize(VIEWPORTS[1])
-    await openHome(page)
-
-    const modelsButton = page.getByRole('button', { name: '模型' })
-    await modelsButton.click()
-    await expect(modelsButton).toHaveAttribute('aria-expanded', 'true')
-    await expect(page.locator('.iterloop-mega-menu')).toHaveClass(/is-open/)
-    await modelsButton.press('Escape')
-    await expect(modelsButton).toHaveAttribute('aria-expanded', 'false')
-    await expect(modelsButton).toBeFocused()
+    await openHome(page, { language: 'en' })
+    const pricing = page.getByRole('region', {
+      name: 'Production model pricing',
+    })
+    await pricing.scrollIntoViewIfNeeded()
+    await expect(pricing.locator('article')).toHaveCount(16)
+    const text = await page.locator('body').innerText()
+    expect(text).not.toMatch(/Google|DeepSeek|GLM|Grok/)
+    expect(text).not.toContain('Codex and Claude are verified')
   })
 
-  test('mobile menu opens without horizontal page overflow', async ({
+  test('download channels are explicitly coming soon', async ({ page }) => {
+    await openHome(page, { language: 'en' })
+    await expect(
+      page.getByRole('button', { name: /macOS.*Coming soon/ })
+    ).toBeDisabled()
+    await expect(
+      page.getByRole('button', { name: /Windows.*Coming soon/ })
+    ).toBeDisabled()
+  })
+})
+
+test.describe('Documentation', () => {
+  test('redirects /docs to Codex Desktop and opens the screenshot lightbox', async ({
+    page,
+  }) => {
+    await page.setViewportSize(VIEWPORTS[1])
+    await preparePage(page, { language: 'en' })
+    await page.goto('/docs')
+    await expect(page).toHaveURL(/\/docs\/install-codex-desktop$/)
+    await expect(
+      page.getByRole('heading', { name: 'Connect Codex Desktop to IterLoop' })
+    ).toBeVisible()
+    await page.getByRole('button', { name: /Open screenshot/ }).click()
+    await expect(
+      page.getByRole('dialog', { name: 'IterLoop Desktop screenshot' })
+    ).toBeVisible()
+    await page.keyboard.press('Escape')
+    await expect(page.getByRole('dialog')).toHaveCount(0)
+  })
+
+  test('API integration keeps Codex CLI and Claude Code without Grok content', async ({
+    page,
+  }) => {
+    await preparePage(page, { language: 'en' })
+    await page.goto('/docs/api-integration')
+    await expect(
+      page.getByRole('heading', { name: /Connect Codex CLI/ })
+    ).toBeVisible()
+    await expect(
+      page.getByRole('heading', { name: 'Claude Code', exact: true, level: 2 })
+    ).toBeVisible()
+    await expect(page.getByText('Grok', { exact: true })).toHaveCount(0)
+  })
+
+  for (const viewport of VIEWPORTS) {
+    test(`Codex Desktop docs baseline at ${viewport.name}`, async ({
+      page,
+    }) => {
+      await page.setViewportSize(viewport)
+      await preparePage(page)
+      await page.goto('/docs/install-codex-desktop')
+      await expect(
+        page.getByRole('heading', { name: '将 Codex Desktop 接入 IterLoop' })
+      ).toBeVisible()
+      await settlePage(page)
+      await expect(page).toHaveScreenshot(
+        `docs-desktop-zh-light-${viewport.name}.png`,
+        {
+          animations: 'disabled',
+          caret: 'hide',
+          fullPage: false,
+        }
+      )
+    })
+  }
+})
+
+test.describe('Five-tab authenticated console', () => {
+  test.beforeEach(async ({ page }) => {
+    await page.setViewportSize(VIEWPORTS[1])
+    await preparePage(page, { authenticated: true, language: 'en' })
+  })
+
+  test('switches all five tabs without browser errors', async ({ page }) => {
+    const errors: string[] = []
+    page.on('pageerror', (error) => errors.push(error.message))
+    await page.goto('/dashboard')
+    for (const tab of ['Billing', 'Routing', 'API Keys', 'Usage', 'Cost']) {
+      await page.getByRole('link', { name: tab, exact: true }).click()
+      await expect(
+        page.getByRole('heading', { name: tab, exact: true, level: 1 })
+      ).toBeVisible()
+    }
+    expect(errors).toEqual([])
+  })
+
+  test('redirects legacy URLs to the matching tabs', async ({ page }) => {
+    for (const [path, tab] of [
+      ['/wallet', 'billing'],
+      ['/keys', 'api-keys'],
+      ['/usage-logs/common', 'usage'],
+      ['/dashboard/overview', 'billing'],
+    ] as const) {
+      await page.goto(path)
+      await expect(page).toHaveURL(new RegExp(`/dashboard\\?tab=${tab}$`))
+    }
+  })
+
+  test('persists Flat and Bento layout choice', async ({ page }) => {
+    await page.goto('/dashboard?tab=billing')
+    await page.getByRole('button', { name: 'Flat' }).click()
+    await expect(page.locator('.iterloop-dashboard')).toHaveClass(/is-flat/)
+    await page.reload()
+    await expect(page.locator('.iterloop-dashboard')).toHaveClass(/is-flat/)
+    await page.getByRole('button', { name: 'Bento' }).click()
+    await expect(page.locator('.iterloop-dashboard')).toHaveClass(/is-bento/)
+  })
+
+  test('Routing is read-only with Curated selected', async ({ page }) => {
+    await page.goto('/dashboard?tab=routing')
+    await expect(
+      page.getByText('Curated Routing', { exact: true })
+    ).toBeVisible()
+    await expect(
+      page.getByRole('button', { name: 'Current strategy' })
+    ).toBeDisabled()
+    await expect(
+      page.getByRole('button', { name: 'Not available with one channel' })
+    ).toHaveCount(2)
+  })
+
+  test('API Keys exposes protocol copy and key creation entry', async ({
+    context,
+    page,
+  }) => {
+    await context.grantPermissions(['clipboard-read', 'clipboard-write'])
+    await page.goto('/dashboard?tab=api-keys')
+    await page.getByRole('button', { name: 'Anthropic' }).click()
+    await expect(
+      page.getByText('https://api.iter-loop.com', { exact: true })
+    ).toBeVisible()
+    await page.getByRole('button', { name: 'Copy Base URL' }).click()
+    await expect
+      .poll(() => page.evaluate(() => navigator.clipboard.readText()))
+      .toBe('https://api.iter-loop.com')
+    await page.getByRole('button', { name: 'Create API Key' }).click()
+    await expect(
+      page.getByText('Create API Key', { exact: true }).last()
+    ).toBeVisible()
+  })
+
+  test('Usage and Cost filters query by date and key', async ({ page }) => {
+    await page.goto('/dashboard?tab=usage')
+    await expect(page.getByLabel('Filter by API Key')).toBeVisible()
+    await page.getByLabel('Filter by API Key').selectOption('101')
+    await page.getByLabel('Start date').fill('2026-07-01')
+    await expect(page.getByText('Input tokens')).toBeVisible()
+    await page.goto('/dashboard?tab=cost')
+    await expect(page.getByText('Total cost')).toBeVisible()
+    await expect(page.getByText('Model distribution')).toBeVisible()
+  })
+
+  test('avatar menu contains preferences and admin workspace', async ({
+    page,
+  }) => {
+    await page.goto('/dashboard')
+    await page
+      .locator('.iterloop-console-header [data-slot="dropdown-menu-trigger"]')
+      .click()
+    await expect(
+      page.getByText('Admin workspace', { exact: true })
+    ).toBeVisible()
+    await expect(page.getByText('Language', { exact: true })).toBeVisible()
+    await expect(page.getByText('Theme', { exact: true })).toBeVisible()
+  })
+
+  for (const tab of [
+    'billing',
+    'routing',
+    'api-keys',
+    'usage',
+    'cost',
+  ] as const) {
+    test(`${tab} console baseline`, async ({ page }) => {
+      await page.goto(`/dashboard?tab=${tab}`)
+      await settlePage(page)
+      await expect(page).toHaveScreenshot(
+        `console-${tab}-en-light-1440x900.png`,
+        {
+          animations: 'disabled',
+          caret: 'hide',
+          fullPage: false,
+        }
+      )
+    })
+  }
+
+  test('mobile console has horizontal tabs and no overflow', async ({
     page,
   }) => {
     await page.setViewportSize(VIEWPORTS[3])
-    await openHome(page)
-
-    const menuButton = page.getByRole('button', { name: '打开菜单' })
-    await menuButton.click()
-    await expect(page.locator('.iterloop-mobile-menu')).toHaveClass(/is-open/)
+    await page.goto('/dashboard?tab=usage')
     await expect(
-      page.getByRole('navigation', { name: '移动端导航' })
+      page.locator('.iterloop-console-navigation-mobile')
     ).toBeVisible()
-    await page.keyboard.press('Escape')
-    await expect(page.locator('.iterloop-mobile-menu')).not.toHaveClass(
-      /is-open/
-    )
     expect(
       await page.evaluate(
         () => document.documentElement.scrollWidth === window.innerWidth
       )
     ).toBe(true)
-  })
-
-  test('sign-up does not ask for a default language', async ({ page }) => {
-    await page.setViewportSize(VIEWPORTS[1])
-    await preparePage(page)
-    await page.goto('/sign-up')
-
-    await expect(
-      page.getByRole('heading', { name: '创建一个账户' })
-    ).toBeVisible()
-    await expect(page.locator('#interface-language')).toHaveCount(0)
-  })
-
-  test('shelf arrows and copy feedback work', async ({ context, page }) => {
-    await context.grantPermissions(['clipboard-read', 'clipboard-write'])
-    await page.setViewportSize(VIEWPORTS[1])
-    await openHome(page)
-
-    const productShelf = page.getByRole('region', {
-      name: '可用模型与产品能力',
-    })
-    const previousButton = productShelf.locator('button[aria-label="上一项"]')
-    const nextButton = productShelf.locator('button[aria-label="下一项"]')
-    await expect(previousButton).toBeDisabled()
-    await nextButton.click()
-    await expect(previousButton).toBeEnabled()
-
-    const deliveryCard = page
-      .locator('.iterloop-product-card')
-      .filter({ hasText: '客户端配置' })
-    const copyButton = deliveryCard.locator('button')
-    await expect(copyButton).toHaveAttribute('aria-label', '复制配置')
-    await copyButton.click()
-    await expect(copyButton).toHaveAttribute('aria-label', '已复制')
-  })
-
-  test('model shelf leads with GPT-5.6 Sol and Claude Fable 5', async ({
-    page,
-  }) => {
-    await page.setViewportSize(VIEWPORTS[1])
-    await openHome(page)
-
-    const titles = await page
-      .getByRole('region', { name: '可用模型与产品能力' })
-      .locator('.iterloop-product-card h3')
-      .allTextContents()
-
-    expect(titles.slice(0, 2)).toEqual(['GPT-5.6 Sol', 'Claude Fable 5'])
-
-    const shelf = page.locator('.iterloop-product-section')
-    await shelf.scrollIntoViewIfNeeded()
-    await expect(page).toHaveScreenshot('home-model-shelf-1440x900.png', {
-      animations: 'disabled',
-      caret: 'hide',
-      fullPage: false,
-    })
-  })
-
-  test('compact desktop keeps the three-scene sticky story', async ({
-    page,
-  }) => {
-    await page.setViewportSize({ width: 883, height: 678 })
-    await page.emulateMedia({ reducedMotion: 'no-preference' })
-    await openHome(page)
-
-    const story = page.locator('.iterloop-scroll-story')
-    await expect(story.locator('.iterloop-story-sticky')).toBeVisible()
-    await expect(story.locator('.iterloop-story-mobile')).toBeHidden()
-    await expect(story.locator('.iterloop-story-copy')).toHaveCount(3)
-
-    await story.evaluate((element) => {
-      const top = (element as HTMLElement).offsetTop
-      const distance =
-        (element as HTMLElement).offsetHeight - window.innerHeight
-      window.scrollTo(0, top + distance * 0.5)
-    })
-    await expect(page).toHaveScreenshot('home-story-compact-883x678.png', {
-      animations: 'allow',
-      caret: 'hide',
-      fullPage: false,
-    })
-
-    await page.setViewportSize(VIEWPORTS[3])
-    await expect(story.locator('.iterloop-story-sticky')).toBeHidden()
-    await expect(story.locator('.iterloop-story-mobile')).toBeVisible()
-    await story.evaluate((element) => {
-      window.scrollTo(0, (element as HTMLElement).offsetTop)
-    })
-    await expect(page).toHaveScreenshot('home-story-mobile-390x844.png', {
-      animations: 'allow',
-      caret: 'hide',
-      fullPage: false,
-    })
-  })
-
-  test('connection shelf supports direct pointer dragging', async ({
-    page,
-  }) => {
-    await page.setViewportSize(VIEWPORTS[1])
-    await openHome(page)
-
-    const viewport = page.locator('.iterloop-connection-viewport')
-    const track = page.locator('.iterloop-connection-track')
-    await viewport.scrollIntoViewIfNeeded()
-    const box = await viewport.boundingBox()
-    if (!box) {
-      throw new Error('Connection shelf viewport has no bounding box')
-    }
-
-    const { x, y, width, height } = box
-
-    const transformBefore = await track.evaluate(
-      (element) => getComputedStyle(element).transform
-    )
-    await page.mouse.move(x + width * 0.78, y + height * 0.55)
-    await page.mouse.down()
-    await page.mouse.move(x + width * 0.28, y + height * 0.55, { steps: 12 })
-    await page.mouse.up()
-
-    await expect
-      .poll(() =>
-        track.evaluate((element) => getComputedStyle(element).transform)
-      )
-      .not.toBe(transformBefore)
-  })
-
-  test('language and theme persist after reload', async ({ page }) => {
-    await page.setViewportSize(VIEWPORTS[1])
-    await openHome(page)
-
-    await page.getByRole('button', { name: '更改语言' }).click()
-    await page.getByRole('menuitem', { name: 'English' }).click()
-    await expect(
-      page.getByRole('heading', {
-        name: 'One key, connected to the models you need.',
-      })
-    ).toBeVisible()
-    await page.reload()
-    await expect(
-      page.getByRole('heading', {
-        name: 'One key, connected to the models you need.',
-      })
-    ).toBeVisible()
-
-    await page.getByRole('button', { name: 'Toggle theme' }).click()
-    await page.getByRole('menuitem', { name: 'Dark' }).click()
-    await expect(page.locator('html')).toHaveClass(/dark/)
-    await page.reload()
-    await expect(page.locator('html')).toHaveClass(/dark/)
-  })
-
-  test('reduced motion renders all three story scenes statically', async ({
-    page,
-  }) => {
-    await page.setViewportSize(VIEWPORTS[1])
-    await page.emulateMedia({ reducedMotion: 'reduce' })
-    await openHome(page)
-
-    const story = page.locator('.iterloop-scroll-story')
-    await expect
-      .poll(() =>
-        page.evaluate(
-          () => window.matchMedia('(prefers-reduced-motion: reduce)').matches
-        )
-      )
-      .toBe(true)
-    await expect(story).toHaveClass(/is-reduced/)
-    await expect(story.locator('.iterloop-story-static article')).toHaveCount(3)
-    await expect(story.locator('.iterloop-story-sticky')).toHaveCount(0)
-  })
-})
-
-test.describe('IterLoop authenticated console', () => {
-  test('renders core user and issuance routes without console errors', async ({
-    page,
-  }) => {
-    await page.setViewportSize(VIEWPORTS[1])
-    await preparePage(page, { authenticated: true })
-    const errors: string[] = []
-    page.on('pageerror', (error) => errors.push(error.message))
-    page.on('console', (message) => {
-      if (message.type() === 'error') errors.push(message.text())
-    })
-
-    const routes = [
-      ['/dashboard', '概览'],
-      ['/keys', 'API Key'],
-      ['/usage-logs', '通用日志'],
-      ['/wallet', '钱包'],
-      ['/issuances', 'API 发放'],
-    ] as const
-
-    for (const [path, heading] of routes) {
-      errors.length = 0
-      await page.goto(path)
-      await expect(
-        page.getByRole('heading', { name: heading, exact: true }).first()
-      ).toBeVisible()
-      await settlePage(page)
-      expect(
-        await page.evaluate(
-          () => document.documentElement.scrollWidth === window.innerWidth
-        )
-      ).toBe(true)
-      expect(errors, `${path} emitted browser errors`).toEqual([])
-    }
-  })
-
-  test('Chinese light overview visual baseline', async ({ page }) => {
-    await page.setViewportSize(VIEWPORTS[1])
-    await preparePage(page, { authenticated: true })
-    await page.goto('/dashboard')
-    await expect(
-      page.getByRole('heading', { name: '概览', exact: true })
-    ).toBeVisible()
-    await settlePage(page)
-    await page.waitForTimeout(500)
-
-    await expect(page).toHaveScreenshot(
-      'authenticated-overview-zh-light-1440x900.png',
-      { animations: 'disabled', caret: 'hide', fullPage: false }
-    )
-  })
-
-  test('English dark API keys visual baseline', async ({ page }) => {
-    await page.setViewportSize(VIEWPORTS[1])
-    await preparePage(page, {
-      authenticated: true,
-      language: 'en',
-      theme: 'dark',
-    })
-    await page.goto('/keys')
-    await expect(
-      page.getByRole('heading', { name: 'API Keys', exact: true })
-    ).toBeVisible()
-    await settlePage(page)
-
-    await expect(page).toHaveScreenshot(
-      'authenticated-keys-en-dark-1440x900.png',
-      { animations: 'disabled', caret: 'hide', fullPage: false }
-    )
-  })
-})
-
-test.describe('IterLoop scroll storytelling', () => {
-  test.use({ reducedMotion: 'no-preference' })
-
-  test('activates the expected copy across all three scenes', async ({
-    page,
-  }) => {
-    await page.setViewportSize(VIEWPORTS[1])
-    await openHome(page)
-
-    const story = page.locator('.iterloop-scroll-story')
-    const copyOpacity = async () =>
-      story
-        .locator('.iterloop-story-copy')
-        .evaluateAll((elements) =>
-          elements.map((element) => Number(getComputedStyle(element).opacity))
-        )
-    const scrollToProgress = async (progress: number) => {
-      await story.evaluate((element, nextProgress) => {
-        const top = (element as HTMLElement).offsetTop
-        const distance =
-          (element as HTMLElement).offsetHeight - window.innerHeight
-        window.scrollTo(0, top + distance * nextProgress)
-      }, progress)
-    }
-
-    await scrollToProgress(0)
-    await expect.poll(copyOpacity).toEqual([1, 0, 0])
-    await expect(page).toHaveScreenshot('home-story-overview-1440x900.png', {
-      animations: 'allow',
-      caret: 'hide',
-      fullPage: false,
-    })
-
-    await scrollToProgress(0.5)
-    await expect.poll(copyOpacity).toEqual([0, 1, 0])
-    await expect(page).toHaveScreenshot('home-story-keys-1440x900.png', {
-      animations: 'allow',
-      caret: 'hide',
-      fullPage: false,
-    })
-
-    await scrollToProgress(0.9)
-    await expect.poll(copyOpacity).toEqual([0, 0, 1])
-    await expect(page).toHaveScreenshot('home-story-logs-1440x900.png', {
-      animations: 'allow',
-      caret: 'hide',
-      fullPage: false,
-    })
-  })
-})
-
-test.describe('IterLoop local performance guard', () => {
-  test('homepage stays within the LCP and CLS acceptance targets', async ({
-    page,
-  }) => {
-    await page.setViewportSize(VIEWPORTS[1])
-    await page.addInitScript(() => {
-      const vitals = { cls: 0, lcp: 0 }
-      ;(
-        window as Window & {
-          __iterloopVitals?: { cls: number; lcp: number }
-        }
-      ).__iterloopVitals = vitals
-
-      if (
-        PerformanceObserver.supportedEntryTypes.includes(
-          'largest-contentful-paint'
-        )
-      ) {
-        new PerformanceObserver((list) => {
-          const entries = list.getEntries()
-          const latest = entries.at(-1)
-          if (latest) vitals.lcp = latest.startTime
-        }).observe({ type: 'largest-contentful-paint', buffered: true })
-      }
-
-      if (PerformanceObserver.supportedEntryTypes.includes('layout-shift')) {
-        new PerformanceObserver((list) => {
-          for (const entry of list.getEntries()) {
-            const shift = entry as PerformanceEntry & {
-              hadRecentInput: boolean
-              value: number
-            }
-            if (!shift.hadRecentInput) vitals.cls += shift.value
-          }
-        }).observe({ type: 'layout-shift', buffered: true })
-      }
-    })
-    await openHome(page)
-
-    await expect
-      .poll(() =>
-        page.evaluate(
-          () =>
-            (
-              window as Window & {
-                __iterloopVitals?: { cls: number; lcp: number }
-              }
-            ).__iterloopVitals?.lcp ?? 0
-        )
-      )
-      .toBeGreaterThan(0)
-
-    const vitals = await page.evaluate(
-      () =>
-        (
-          window as Window & {
-            __iterloopVitals?: { cls: number; lcp: number }
-          }
-        ).__iterloopVitals
-    )
-    expect(vitals?.lcp).toBeLessThanOrEqual(2500)
-    expect(vitals?.cls).toBeLessThanOrEqual(0.1)
   })
 })
