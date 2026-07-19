@@ -25,82 +25,86 @@ const (
 
 var defaultModelRatio = map[string]float64{
 	//"midjourney":                50,
-	"gpt-4-gizmo-*":                             15,
-	"gpt-4o-gizmo-*":                            2.5,
-	"gpt-4-all":                                 15,
-	"gpt-4o-all":                                15,
-	"gpt-4":                                     15,
-	"gpt-4-0613":                                15,
-	"gpt-4-32k":                                 30,
-	"gpt-4-32k-0613":                            30,
-	"gpt-4-1106-preview":                        5,    // $10 / 1M tokens
-	"gpt-4-0125-preview":                        5,    // $10 / 1M tokens
-	"gpt-4-turbo-preview":                       5,    // $10 / 1M tokens
-	"gpt-4-vision-preview":                      5,    // $10 / 1M tokens
-	"gpt-4-1106-vision-preview":                 5,    // $10 / 1M tokens
-	"chatgpt-4o-latest":                         2.5,  // $5 / 1M tokens
-	"gpt-4o":                                    1.25, // $2.5 / 1M tokens
-	"gpt-4o-audio-preview":                      1.25, // $2.5 / 1M tokens
-	"gpt-4o-audio-preview-2024-10-01":           1.25, // $2.5 / 1M tokens
-	"gpt-4o-2024-05-13":                         2.5,  // $5 / 1M tokens
-	"gpt-4o-2024-08-06":                         1.25, // $2.5 / 1M tokens
-	"gpt-4o-2024-11-20":                         1.25, // $2.5 / 1M tokens
-	"gpt-4o-realtime-preview":                   2.5,
-	"gpt-4o-realtime-preview-2024-10-01":        2.5,
-	"gpt-4o-realtime-preview-2024-12-17":        2.5,
-	"gpt-4o-mini-realtime-preview":              0.3,
-	"gpt-4o-mini-realtime-preview-2024-12-17":   0.3,
-	"gpt-4.1":                                   1.0,  // $2 / 1M tokens
-	"gpt-4.1-2025-04-14":                        1.0,  // $2 / 1M tokens
-	"gpt-4.1-mini":                              0.2,  // $0.4 / 1M tokens
-	"gpt-4.1-mini-2025-04-14":                   0.2,  // $0.4 / 1M tokens
-	"gpt-4.1-nano":                              0.05, // $0.1 / 1M tokens
-	"gpt-4.1-nano-2025-04-14":                   0.05, // $0.1 / 1M tokens
-	"gpt-image-1":                               2.5,  // $5 / 1M tokens
-	"o1":                                        7.5,  // $15 / 1M tokens
-	"o1-2024-12-17":                             7.5,  // $15 / 1M tokens
-	"o1-preview":                                7.5,  // $15 / 1M tokens
-	"o1-preview-2024-09-12":                     7.5,  // $15 / 1M tokens
-	"o1-mini":                                   0.55, // $1.1 / 1M tokens
-	"o1-mini-2024-09-12":                        0.55, // $1.1 / 1M tokens
-	"o1-pro":                                    75.0, // $150 / 1M tokens
-	"o1-pro-2025-03-19":                         75.0, // $150 / 1M tokens
-	"o3-mini":                                   0.55,
-	"o3-mini-2025-01-31":                        0.55,
-	"o3-mini-high":                              0.55,
-	"o3-mini-2025-01-31-high":                   0.55,
-	"o3-mini-low":                               0.55,
-	"o3-mini-2025-01-31-low":                    0.55,
-	"o3-mini-medium":                            0.55,
-	"o3-mini-2025-01-31-medium":                 0.55,
-	"o3":                                        1.0,  // $2 / 1M tokens
-	"o3-2025-04-16":                             1.0,  // $2 / 1M tokens
-	"o3-pro":                                    10.0, // $20 / 1M tokens
-	"o3-pro-2025-06-10":                         10.0, // $20 / 1M tokens
-	"o3-deep-research":                          5.0,  // $10 / 1M tokens
-	"o3-deep-research-2025-06-26":               5.0,  // $10 / 1M tokens
-	"o4-mini":                                   0.55, // $1.1 / 1M tokens
-	"o4-mini-2025-04-16":                        0.55, // $1.1 / 1M tokens
-	"o4-mini-deep-research":                     1.0,  // $2 / 1M tokens
-	"o4-mini-deep-research-2025-06-26":          1.0,  // $2 / 1M tokens
-	"gpt-4o-mini":                               0.075,
-	"gpt-4o-mini-2024-07-18":                    0.075,
-	"gpt-4-turbo":                               5, // $0.01 / 1K tokens
-	"gpt-4-turbo-2024-04-09":                    5, // $0.01 / 1K tokens
-	"gpt-4.5-preview":                           37.5,
-	"gpt-4.5-preview-2025-02-27":                37.5,
-	"gpt-5":                                     0.625,
-	"gpt-5-2025-08-07":                          0.625,
-	"gpt-5-chat-latest":                         0.625,
-	"gpt-5-mini":                                0.125,
-	"gpt-5-mini-2025-08-07":                     0.125,
-	"gpt-5-nano":                                0.025,
-	"gpt-5-nano-2025-08-07":                     0.025,
-	"gpt-5.4":                                   2.5,
-	"gpt-5.5":                                   2.5, // $5 / 1M tokens
-	"gpt-5.6-sol":                               2.5,
-	"gpt-5.6-terra":                             1.25,
-	"gpt-5.6-luna":                              0.5,
+	"gpt-4-gizmo-*":                           15,
+	"gpt-4o-gizmo-*":                          2.5,
+	"gpt-4-all":                               15,
+	"gpt-4o-all":                              15,
+	"gpt-4":                                   15,
+	"gpt-4-0613":                              15,
+	"gpt-4-32k":                               30,
+	"gpt-4-32k-0613":                          30,
+	"gpt-4-1106-preview":                      5,    // $10 / 1M tokens
+	"gpt-4-0125-preview":                      5,    // $10 / 1M tokens
+	"gpt-4-turbo-preview":                     5,    // $10 / 1M tokens
+	"gpt-4-vision-preview":                    5,    // $10 / 1M tokens
+	"gpt-4-1106-vision-preview":               5,    // $10 / 1M tokens
+	"chatgpt-4o-latest":                       2.5,  // $5 / 1M tokens
+	"gpt-4o":                                  1.25, // $2.5 / 1M tokens
+	"gpt-4o-audio-preview":                    1.25, // $2.5 / 1M tokens
+	"gpt-4o-audio-preview-2024-10-01":         1.25, // $2.5 / 1M tokens
+	"gpt-4o-2024-05-13":                       2.5,  // $5 / 1M tokens
+	"gpt-4o-2024-08-06":                       1.25, // $2.5 / 1M tokens
+	"gpt-4o-2024-11-20":                       1.25, // $2.5 / 1M tokens
+	"gpt-4o-realtime-preview":                 2.5,
+	"gpt-4o-realtime-preview-2024-10-01":      2.5,
+	"gpt-4o-realtime-preview-2024-12-17":      2.5,
+	"gpt-4o-mini-realtime-preview":            0.3,
+	"gpt-4o-mini-realtime-preview-2024-12-17": 0.3,
+	"gpt-4.1":                                 1.0,  // $2 / 1M tokens
+	"gpt-4.1-2025-04-14":                      1.0,  // $2 / 1M tokens
+	"gpt-4.1-mini":                            0.2,  // $0.4 / 1M tokens
+	"gpt-4.1-mini-2025-04-14":                 0.2,  // $0.4 / 1M tokens
+	"gpt-4.1-nano":                            0.05, // $0.1 / 1M tokens
+	"gpt-4.1-nano-2025-04-14":                 0.05, // $0.1 / 1M tokens
+	"gpt-image-1":                             2.5,  // $5 / 1M tokens
+	"o1":                                      7.5,  // $15 / 1M tokens
+	"o1-2024-12-17":                           7.5,  // $15 / 1M tokens
+	"o1-preview":                              7.5,  // $15 / 1M tokens
+	"o1-preview-2024-09-12":                   7.5,  // $15 / 1M tokens
+	"o1-mini":                                 0.55, // $1.1 / 1M tokens
+	"o1-mini-2024-09-12":                      0.55, // $1.1 / 1M tokens
+	"o1-pro":                                  75.0, // $150 / 1M tokens
+	"o1-pro-2025-03-19":                       75.0, // $150 / 1M tokens
+	"o3-mini":                                 0.55,
+	"o3-mini-2025-01-31":                      0.55,
+	"o3-mini-high":                            0.55,
+	"o3-mini-2025-01-31-high":                 0.55,
+	"o3-mini-low":                             0.55,
+	"o3-mini-2025-01-31-low":                  0.55,
+	"o3-mini-medium":                          0.55,
+	"o3-mini-2025-01-31-medium":               0.55,
+	"o3":                                      1.0,  // $2 / 1M tokens
+	"o3-2025-04-16":                           1.0,  // $2 / 1M tokens
+	"o3-pro":                                  10.0, // $20 / 1M tokens
+	"o3-pro-2025-06-10":                       10.0, // $20 / 1M tokens
+	"o3-deep-research":                        5.0,  // $10 / 1M tokens
+	"o3-deep-research-2025-06-26":             5.0,  // $10 / 1M tokens
+	"o4-mini":                                 0.55, // $1.1 / 1M tokens
+	"o4-mini-2025-04-16":                      0.55, // $1.1 / 1M tokens
+	"o4-mini-deep-research":                   1.0,  // $2 / 1M tokens
+	"o4-mini-deep-research-2025-06-26":        1.0,  // $2 / 1M tokens
+	"gpt-4o-mini":                             0.075,
+	"gpt-4o-mini-2024-07-18":                  0.075,
+	"gpt-4-turbo":                             5, // $0.01 / 1K tokens
+	"gpt-4-turbo-2024-04-09":                  5, // $0.01 / 1K tokens
+	"gpt-4.5-preview":                         37.5,
+	"gpt-4.5-preview-2025-02-27":              37.5,
+	"gpt-5":                                   0.625,
+	"gpt-5-2025-08-07":                        0.625,
+	"gpt-5-chat-latest":                       0.625,
+	"gpt-5-mini":                              0.125,
+	"gpt-5-mini-2025-08-07":                   0.125,
+	"gpt-5-nano":                              0.025,
+	"gpt-5-nano-2025-08-07":                   0.025,
+	// IterLoop public pricing follows the Faro reference catalog. Ratios are
+	// half of the USD input price per 1M tokens because the billing base is $2.
+	"codex-auto-review":                         0.3935, // fallback: gpt-5.4 ($0.787 input)
+	"gpt-5.4":                                   0.3935, // $0.787 input
+	"gpt-5.4-mini":                              0.3935, // fallback: gpt-5.4
+	"gpt-5.5":                                   0.7,    // $1.40 input
+	"gpt-5.6-sol":                               0.7,    // $1.40 input
+	"gpt-5.6-terra":                             0.3935, // $0.787 input
+	"gpt-5.6-luna":                              0.175,  // $0.35 input
 	"gpt-3.5-turbo":                             0.25,
 	"gpt-3.5-turbo-0613":                        0.75,
 	"gpt-3.5-turbo-16k":                         1.5, // $0.003 / 1K tokens
@@ -128,28 +132,30 @@ var defaultModelRatio = map[string]float64{
 	"text-moderation-latest":                    0.1,
 	"claude-3-haiku-20240307":                   0.125, // $0.25 / 1M tokens
 	"claude-3-5-haiku-20241022":                 0.5,   // $1 / 1M tokens
-	"claude-haiku-4-5-20251001":                 0.5,   // $1 / 1M tokens
+	"claude-haiku-4-5-20251001":                 0.7,   // Faro: $1.40 input
 	"claude-3-sonnet-20240229":                  1.5,   // $3 / 1M tokens
 	"claude-3-5-sonnet-20240620":                1.5,
 	"claude-3-5-sonnet-20241022":                1.5,
 	"claude-3-7-sonnet-20250219":                1.5,
 	"claude-3-7-sonnet-20250219-thinking":       1.5,
 	"claude-sonnet-4-20250514":                  1.5,
-	"claude-sonnet-4-5-20250929":                1.5,
-	"claude-sonnet-4-6":                         1.5,
-	"claude-opus-4-5-20251101":                  2.5,
-	"claude-opus-4-6":                           2.5,
+	"claude-fable-5":                            6.0, // Faro: $12 input
+	"claude-sonnet-4-5-20250929":                2.1, // fallback: Sonnet 4.6
+	"claude-sonnet-4-6":                         2.1, // Faro: $4.20 input
+	"claude-sonnet-5":                           2.1, // Faro: $4.20 input
+	"claude-opus-4-5-20251101":                  3.5, // fallback: Opus 4.6
+	"claude-opus-4-6":                           3.5, // Faro: $7 input
 	"claude-opus-4-6-max":                       2.5,
 	"claude-opus-4-6-high":                      2.5,
 	"claude-opus-4-6-medium":                    2.5,
 	"claude-opus-4-6-low":                       2.5,
-	"claude-opus-4-7":                           2.5,
+	"claude-opus-4-7":                           3.5,
 	"claude-opus-4-7-max":                       2.5,
 	"claude-opus-4-7-xhigh":                     2.5,
 	"claude-opus-4-7-high":                      2.5,
 	"claude-opus-4-7-medium":                    2.5,
 	"claude-opus-4-7-low":                       2.5,
-	"claude-opus-4-8":                           2.5,
+	"claude-opus-4-8":                           3.5,
 	"claude-opus-4-8-max":                       2.5,
 	"claude-opus-4-8-xhigh":                     2.5,
 	"claude-opus-4-8-high":                      2.5,
@@ -332,6 +338,14 @@ var defaultCompletionRatio = map[string]float64{
 	"gpt-4o-gizmo-*": 3,
 	"gpt-4-all":      2,
 	"gpt-image-1":    8,
+	// Faro reference output/input ratios for IterLoop catalog models.
+	"codex-auto-review": 6,
+	"gpt-5.5":           8,
+	"gpt-5.6-luna":      8,
+	"gpt-5.6-sol":       8,
+	"gpt-5.6-terra":     6.3 / 0.787,
+	"claude-fable-5":    5,
+	"claude-sonnet-5":   5,
 }
 
 // InitRatioSettings initializes all model related settings maps

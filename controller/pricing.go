@@ -59,6 +59,7 @@ func GetPricing(c *gin.Context) {
 
 	usableGroup = service.GetUserUsableGroups(group)
 	pricing = filterPricingByUsableGroups(pricing, usableGroup)
+	pricing = attachOfficialPrices(pricing)
 	// check groupRatio contains usableGroup
 	for group := range ratio_setting.GetGroupRatioCopy() {
 		if _, ok := usableGroup[group]; !ok {
@@ -79,10 +80,21 @@ func GetPricing(c *gin.Context) {
 			},
 			"grok-standard": gin.H{"grok": iterLoopPricing.GrokRatio},
 		},
+		"pricing_currency": gin.H{
+			"base_currency": "USD",
+			"chinese": gin.H{
+				"currency": "CNY", "symbol": "¥", "exchange_rate": iterLoopPricing.CNYExchangeRate,
+			},
+			"english": gin.H{
+				"currency": "AUD", "symbol": "A$", "exchange_rate": iterLoopPricing.AUDExchangeRate,
+			},
+			"reference_url":  iterLoopPricing.ReferenceURL,
+			"reference_date": iterLoopPricing.ReferenceDate,
+		},
 		"usable_group":       usableGroup,
 		"supported_endpoint": model.GetSupportedEndpointMap(),
 		"auto_groups":        service.GetUserAutoGroup(group),
-		"pricing_version":    "iterloop-grok-2026-07-14",
+		"pricing_version":    "iterloop-official-vs-faro-localized-2026-07-19",
 	})
 }
 

@@ -372,6 +372,7 @@ export const STATIC_I18N_KEYS = [
   'Invalidated',
   'Plan',
   'Price',
+  'Prices in {{currency}}',
   'Priority',
   'Payment Channel',
   'No Upgrade',
