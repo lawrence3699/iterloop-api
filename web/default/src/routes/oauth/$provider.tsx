@@ -171,6 +171,26 @@ function OAuthCallback() {
         const res = await api.get(`/api/oauth/${provider}`, config)
         if (res?.data?.success) {
           const { message } = res.data
+          const desktopCallbackUrl = res.data?.data?.desktop_callback_url
+          if (
+            typeof desktopCallbackUrl === 'string' &&
+            typeof window !== 'undefined'
+          ) {
+            const callback = new URL(desktopCallbackUrl)
+            const isLoopback =
+              callback.hostname === '127.0.0.1' ||
+              callback.hostname === 'localhost' ||
+              callback.hostname === '::1'
+            if (
+              callback.protocol === 'http:' &&
+              callback.pathname === '/iterloop-oauth' &&
+              isLoopback
+            ) {
+              window.location.replace(callback.toString())
+              return
+            }
+            throw new Error('Invalid desktop OAuth callback')
+          }
           const loginUser = (res.data?.data ?? null) as AuthUser | null
           // Check if this is a bind operation
           if (message === 'bind') {

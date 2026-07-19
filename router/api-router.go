@@ -56,6 +56,9 @@ func SetApiRouter(router *gin.Engine) {
 		desktopRoute := apiRouter.Group("/desktop")
 		{
 			desktopRoute.GET("/bootstrap", controller.GetDesktopBootstrap)
+			desktopRoute.POST("/oauth/prepare", middleware.CriticalRateLimit(), anonymousRequestBodyLimit, controller.PrepareDesktopOAuth)
+			desktopRoute.GET("/oauth/start", middleware.CriticalRateLimit(), controller.StartDesktopOAuth)
+			desktopRoute.POST("/oauth/exchange", middleware.CriticalRateLimit(), anonymousRequestBodyLimit, controller.ExchangeDesktopOAuth)
 			desktopRoute.GET("/turnstile", controller.GetDesktopTurnstilePage)
 			desktopRoute.GET("/verification", middleware.EmailVerificationRateLimit(), middleware.TurnstileCheck(), controller.SendDesktopVerification)
 			desktopRoute.POST("/enroll", middleware.CriticalRateLimit(), anonymousRequestBodyLimit, controller.EnrollDesktop)

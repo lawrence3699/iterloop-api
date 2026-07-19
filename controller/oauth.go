@@ -67,7 +67,7 @@ func HandleOAuth(c *gin.Context) {
 
 	// 2. Check if user is already logged in (bind flow)
 	username := session.Get("username")
-	if username != nil {
+	if username != nil && !desktopOAuthRequested(session) {
 		handleOAuthBind(c, provider)
 		return
 	}
@@ -127,6 +127,9 @@ func HandleOAuth(c *gin.Context) {
 	// 8. Check user status
 	if user.Status != common.UserStatusEnabled {
 		common.ApiErrorI18n(c, i18n.MsgOAuthUserBanned)
+		return
+	}
+	if completeDesktopOAuth(user, providerName, c) {
 		return
 	}
 
