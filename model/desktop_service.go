@@ -645,7 +645,18 @@ func ExchangeDesktopOAuthCode(profile *IssuanceProfile, rawCode string, verifier
 		if err := linkDesktopUserWithTx(tx, profile, user, input, refreshToken, result); err != nil {
 			return err
 		}
-		if err := tx.Model(code).Update("consumed_time", now).Error; err != nil {
+		if err := tx.Model(code).Updates(map[string]any{
+			"user_id":                 user.Id,
+			"consumed_time":           now,
+			"oauth_provider_id":       0,
+			"oauth_provider_user_id":  "",
+			"oauth_username":          "",
+			"oauth_display_name":      "",
+			"oauth_email":             "",
+			"oauth_username_prefix":   "",
+			"oauth_registration_open": false,
+			"code_challenge":          "",
+		}).Error; err != nil {
 			return err
 		}
 		createdUser = created

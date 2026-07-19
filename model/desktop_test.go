@@ -2,6 +2,7 @@ package model
 
 import (
 	"errors"
+	"fmt"
 	"strings"
 	"testing"
 
@@ -111,6 +112,18 @@ func desktopOAuthIdentityFixture() DesktopOAuthIdentityInput {
 	}
 }
 
+func assertDesktopOAuthIdentityCleared(t *testing.T, code DesktopOAuthCode) {
+	t.Helper()
+	assert.Zero(t, code.OAuthProviderId)
+	assert.Empty(t, code.OAuthProviderUserId)
+	assert.Empty(t, code.OAuthUsername)
+	assert.Empty(t, code.OAuthDisplayName)
+	assert.Empty(t, code.OAuthEmail)
+	assert.Empty(t, code.OAuthUsernamePrefix)
+	assert.False(t, code.OAuthRegistrationOpen)
+	assert.Empty(t, code.CodeChallenge)
+}
+
 func TestPendingDesktopOAuthCreatesAtomicallyAndReusesStarterGrant(t *testing.T) {
 	profile := setupDesktopTest(t)
 	verifier := strings.Repeat("v", 64)
@@ -124,6 +137,11 @@ func TestPendingDesktopOAuthCreatesAtomicallyAndReusesStarterGrant(t *testing.T)
 	require.NoError(t, err)
 	assert.Equal(t, "google@example.com", first.User.Email)
 	assert.Contains(t, first.Credential.ApiKey, "sk-")
+	var consumedCode DesktopOAuthCode
+	require.NoError(t, DB.Where("code_hash = ?", HashDesktopToken(code)).First(&consumedCode).Error)
+	assert.Equal(t, first.User.Id, consumedCode.UserId)
+	assert.NotZero(t, consumedCode.ConsumedTime)
+	assertDesktopOAuthIdentityCleared(t, consumedCode)
 	binding, err := GetUserByOAuthBinding(identity.ProviderId, identity.ProviderUserId)
 	require.NoError(t, err)
 	assert.Equal(t, first.User.Id, binding.Id)
@@ -148,6 +166,93 @@ func TestPendingDesktopOAuthCreatesAtomicallyAndReusesStarterGrant(t *testing.T)
 		require.NoError(t, DB.Model(target).Count(&count).Error)
 		assert.Equal(t, expected, count)
 	}
+}
+
+func TestDesktopOAuthCleanupRetainsActiveAndRedactsExpiredIdentity(t *testing.T) {
+	setupDesktopTest(t)
+	now := common.GetTimestamp()
+	verifier := strings.Repeat("v", 64)
+
+	activeCode, err := CreatePendingDesktopOAuthCode(desktopOAuthIdentityFixture(), desktopPKCEChallenge(verifier))
+	require.NoError(t, err)
+	activeRequest, err := CreateDesktopOAuthRequest(DesktopOAuthRequestInput{
+		Provider: "google", CallbackUrl: "http://127.0.0.1:12345/iterloop-oauth?state=active",
+		ClientState: "active", CodeChallenge: desktopPKCEChallenge(verifier),
+	})
+	require.NoError(t, err)
+
+	result, err := CleanupDesktopOAuthTemporaryData(now, DesktopOAuthRetentionSeconds)
+	require.NoError(t, err)
+	assert.Zero(t, result.CodesRedacted)
+	assert.Zero(t, result.CodesDeleted)
+	assert.Zero(t, result.RequestsDeleted)
+
+	var retainedCode DesktopOAuthCode
+	require.NoError(t, DB.Where("code_hash = ?", HashDesktopToken(activeCode)).First(&retainedCode).Error)
+	assert.Equal(t, "google-subject-1", retainedCode.OAuthProviderUserId)
+	assert.NotEmpty(t, retainedCode.CodeChallenge)
+	var retainedRequest DesktopOAuthRequest
+	require.NoError(t, DB.Where("request_hash = ?", HashDesktopToken(activeRequest)).First(&retainedRequest).Error)
+	assert.Equal(t, "active", retainedRequest.ClientState)
+
+	expiredCode, err := CreatePendingDesktopOAuthCode(desktopOAuthIdentityFixture(), desktopPKCEChallenge(verifier))
+	require.NoError(t, err)
+	require.NoError(t, DB.Model(&DesktopOAuthCode{}).
+		Where("code_hash = ?", HashDesktopToken(expiredCode)).
+		Update("expires_time", now-1).Error)
+
+	result, err = CleanupDesktopOAuthTemporaryData(now, DesktopOAuthRetentionSeconds)
+	require.NoError(t, err)
+	assert.EqualValues(t, 1, result.CodesRedacted)
+	assert.Zero(t, result.CodesDeleted)
+
+	var redactedCode DesktopOAuthCode
+	require.NoError(t, DB.Where("code_hash = ?", HashDesktopToken(expiredCode)).First(&redactedCode).Error)
+	assertDesktopOAuthIdentityCleared(t, redactedCode)
+	require.NoError(t, DB.Where("code_hash = ?", HashDesktopToken(activeCode)).First(&retainedCode).Error)
+	assert.Equal(t, "google-subject-1", retainedCode.OAuthProviderUserId)
+}
+
+func TestDesktopOAuthCleanupDeletesOldTerminalRecords(t *testing.T) {
+	setupDesktopTest(t)
+	now := common.GetTimestamp()
+	old := now - DesktopOAuthRetentionSeconds - 1
+	verifier := strings.Repeat("v", 64)
+
+	oldCode, err := CreatePendingDesktopOAuthCode(desktopOAuthIdentityFixture(), desktopPKCEChallenge(verifier))
+	require.NoError(t, err)
+	require.NoError(t, DB.Model(&DesktopOAuthCode{}).
+		Where("code_hash = ?", HashDesktopToken(oldCode)).
+		Updates(map[string]any{"expires_time": old, "consumed_time": old}).Error)
+
+	requestStatuses := []map[string]any{
+		{"expires_time": old},
+		{"expires_time": now - 1, "consumed_time": old},
+		{"expires_time": now - 1, "consumed_time": old, "callback_consumed_time": old},
+	}
+	requestHashes := make([]string, 0, len(requestStatuses))
+	for index, status := range requestStatuses {
+		rawRequest, createErr := CreateDesktopOAuthRequest(DesktopOAuthRequestInput{
+			Provider: "google", CallbackUrl: "http://127.0.0.1:12345/iterloop-oauth",
+			ClientState: fmt.Sprintf("terminal-%d", index), CodeChallenge: desktopPKCEChallenge(verifier),
+		})
+		require.NoError(t, createErr)
+		hash := HashDesktopToken(rawRequest)
+		requestHashes = append(requestHashes, hash)
+		require.NoError(t, DB.Model(&DesktopOAuthRequest{}).Where("request_hash = ?", hash).Updates(status).Error)
+	}
+
+	result, err := CleanupDesktopOAuthTemporaryData(now, DesktopOAuthRetentionSeconds)
+	require.NoError(t, err)
+	assert.EqualValues(t, 1, result.CodesDeleted)
+	assert.EqualValues(t, len(requestStatuses), result.RequestsDeleted)
+
+	var codeCount int64
+	require.NoError(t, DB.Model(&DesktopOAuthCode{}).Where("code_hash = ?", HashDesktopToken(oldCode)).Count(&codeCount).Error)
+	assert.Zero(t, codeCount)
+	var requestCount int64
+	require.NoError(t, DB.Model(&DesktopOAuthRequest{}).Where("request_hash IN ?", requestHashes).Count(&requestCount).Error)
+	assert.Zero(t, requestCount)
 }
 
 func TestPendingDesktopOAuthRollsBackUserBindingGrantAndDeviceTogether(t *testing.T) {
@@ -176,6 +281,8 @@ func TestPendingDesktopOAuthRollsBackUserBindingGrantAndDeviceTogether(t *testin
 	var pendingCode DesktopOAuthCode
 	require.NoError(t, DB.Where("code_hash = ?", HashDesktopToken(code)).First(&pendingCode).Error)
 	assert.Zero(t, pendingCode.ConsumedTime)
+	assert.Equal(t, "google-subject-1", pendingCode.OAuthProviderUserId)
+	assert.NotEmpty(t, pendingCode.CodeChallenge)
 }
 
 func desktopEnrollmentFixture(installId string) DesktopEnrollmentInput {

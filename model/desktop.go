@@ -15,6 +15,7 @@ const (
 	DesktopServiceStatusReady             = "ready"
 	DesktopServiceStatusKeyBad            = "credential_unavailable"
 	DesktopRefreshTokenGraceSeconds int64 = 5 * 60
+	DesktopOAuthRetentionSeconds    int64 = 24 * 60 * 60
 )
 
 var (
@@ -75,11 +76,78 @@ type DesktopOAuthRequest struct {
 	CallbackUrl          string  `json:"-" gorm:"type:varchar(512);not null"`
 	ClientState          string  `json:"-" gorm:"type:varchar(128);not null"`
 	CodeChallenge        string  `json:"-" gorm:"type:varchar(128);not null"`
-	OAuthStateHash       *string `json:"-" gorm:"column:oauth_state_hash;type:char(64);uniqueIndex"`
+	OAuthStateHash       *string `json:"-" gorm:"column:oauth_state_hash;type:char(64);unique"`
 	ExpiresTime          int64   `json:"expires_time" gorm:"bigint;index;not null"`
 	ConsumedTime         int64   `json:"consumed_time" gorm:"bigint;not null"`
 	CallbackConsumedTime int64   `json:"callback_consumed_time" gorm:"bigint;not null;default:0"`
 	CreatedTime          int64   `json:"created_time" gorm:"bigint;not null"`
+}
+
+type DesktopOAuthCleanupResult struct {
+	CodesRedacted   int64
+	CodesDeleted    int64
+	RequestsDeleted int64
+}
+
+// CleanupDesktopOAuthTemporaryData removes temporary OAuth data after a
+// bounded retention window. Expired codes are de-identified immediately even
+// while their non-sensitive audit record remains available during retention.
+// The expires_time guard is intentional: a currently valid request or code is
+// never deleted, even if another timestamp is malformed or unexpectedly old.
+func CleanupDesktopOAuthTemporaryData(now int64, retentionSeconds int64) (DesktopOAuthCleanupResult, error) {
+	result := DesktopOAuthCleanupResult{}
+	if now <= 0 || retentionSeconds < 0 {
+		return result, errors.New("invalid desktop oauth cleanup window")
+	}
+	deleteBefore := now - retentionSeconds
+	err := DB.Transaction(func(tx *gorm.DB) error {
+		codeDelete := tx.
+			Where("expires_time <= ? AND (expires_time <= ? OR (consumed_time > 0 AND consumed_time <= ?))", now, deleteBefore, deleteBefore).
+			Delete(&DesktopOAuthCode{})
+		if codeDelete.Error != nil {
+			return codeDelete.Error
+		}
+		result.CodesDeleted = codeDelete.RowsAffected
+
+		requestDelete := tx.
+			Where(`expires_time <= ? AND (
+				expires_time <= ? OR
+				(consumed_time > 0 AND consumed_time <= ?) OR
+				(callback_consumed_time > 0 AND callback_consumed_time <= ?)
+			)`, now, deleteBefore, deleteBefore, deleteBefore).
+			Delete(&DesktopOAuthRequest{})
+		if requestDelete.Error != nil {
+			return requestDelete.Error
+		}
+		result.RequestsDeleted = requestDelete.RowsAffected
+
+		codeRedact := tx.Model(&DesktopOAuthCode{}).
+			Where("expires_time <= ?", now).
+			Where(`(oauth_provider_id <> 0 OR
+				oauth_provider_user_id <> '' OR
+				oauth_username <> '' OR
+				oauth_display_name <> '' OR
+				oauth_email <> '' OR
+				oauth_username_prefix <> '' OR
+				oauth_registration_open = ? OR
+				code_challenge <> '')`, true).
+			Updates(map[string]any{
+				"oauth_provider_id":       0,
+				"oauth_provider_user_id":  "",
+				"oauth_username":          "",
+				"oauth_display_name":      "",
+				"oauth_email":             "",
+				"oauth_username_prefix":   "",
+				"oauth_registration_open": false,
+				"code_challenge":          "",
+			})
+		if codeRedact.Error != nil {
+			return codeRedact.Error
+		}
+		result.CodesRedacted = codeRedact.RowsAffected
+		return nil
+	})
+	return result, err
 }
 
 func HashDesktopToken(token string) string {
