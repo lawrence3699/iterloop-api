@@ -298,6 +298,27 @@ For commercial licensing, please contact support@quantumnous.com
     justify-content: space-between;
   }
 
+  .iterloop-pricing-hero-art {
+    background-image:
+      radial-gradient(
+        circle at 78% 18%,
+        rgb(117 190 255 / 55%),
+        transparent 28%
+      ),
+      linear-gradient(
+        135deg,
+        transparent 34%,
+        rgb(255 255 255 / 14%) 35%,
+        transparent 36%
+      ),
+      linear-gradient(
+        45deg,
+        transparent 58%,
+        rgb(255 255 255 / 8%) 59%,
+        transparent 60%
+      );
+  }
+
   .iterloop-public-header [data-slot='button'] {
     width: 34px;
     height: 44px;

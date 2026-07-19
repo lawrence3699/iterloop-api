@@ -16,7 +16,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
-import { ArrowUpDown, Check, Filter, Grid2X2, Table2 } from 'lucide-react'
+import { ArrowUpDown, Check, Filter } from 'lucide-react'
 import { useCallback, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
@@ -47,12 +47,7 @@ import {
 } from '@/components/ui/tooltip'
 import { cn } from '@/lib/utils'
 
-import {
-  VIEW_MODES,
-  getSortLabels,
-  type SortOption,
-  type ViewMode,
-} from '../constants'
+import { getSortLabels, type SortOption } from '../constants'
 import type { PricingModel, PricingVendor, TokenUnit } from '../types'
 import { PricingSidebar } from './pricing-sidebar'
 
@@ -72,23 +67,9 @@ export interface PricingToolbarProps {
   onTokenUnitChange: (value: TokenUnit) => void
   showRechargePrice: boolean
   onRechargePriceChange: (value: boolean) => void
-  viewMode: ViewMode
-  onViewModeChange: (value: ViewMode) => void
-  showViewToggle?: boolean
-  quotaTypeFilter: string
-  endpointTypeFilter: string
   vendorFilter: string
-  groupFilter: string
-  tagFilter: string
-  onQuotaTypeChange: (value: string) => void
-  onEndpointTypeChange: (value: string) => void
   onVendorChange: (value: string) => void
-  onGroupChange: (value: string) => void
-  onTagChange: (value: string) => void
   vendors: PricingVendor[]
-  groups: string[]
-  groupRatios?: Record<string, number>
-  tags: string[]
   models: PricingModel[]
   hasActiveFilters: boolean
   activeFilterCount: number
@@ -156,18 +137,13 @@ export function PricingToolbar(props: PricingToolbarProps) {
     [props]
   )
 
-  const handleViewModeChange = useCallback(
-    (value: string) => props.onViewModeChange(value as ViewMode),
-    [props]
-  )
-
   const handleRechargePriceChange = useCallback(
     (value: string) => props.onRechargePriceChange(value === 'recharge'),
     [props]
   )
 
   return (
-    <div className='rounded-xl border p-3'>
+    <div className='border-border/70 bg-background/95 rounded-b-2xl border border-t-0 p-3 shadow-sm'>
       <div className='flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between'>
         <div className='flex items-center gap-2'>
           <Button
@@ -253,26 +229,6 @@ export function PricingToolbar(props: PricingToolbarProps) {
               ))}
             </DropdownMenuContent>
           </DropdownMenu>
-
-          {props.showViewToggle !== false ? (
-            <SegmentedControl
-              options={[
-                {
-                  value: VIEW_MODES.CARD,
-                  icon: Grid2X2,
-                  tooltip: t('Card view'),
-                },
-                {
-                  value: VIEW_MODES.TABLE,
-                  icon: Table2,
-                  tooltip: t('Table view'),
-                },
-              ]}
-              value={props.viewMode}
-              onChange={handleViewModeChange}
-              ariaLabel={t('View mode')}
-            />
-          ) : null}
         </div>
       </div>
 
@@ -283,26 +239,13 @@ export function PricingToolbar(props: PricingToolbarProps) {
         >
           <SheetHeader className={sideDrawerHeaderClassName()}>
             <SheetTitle>{t('Filter')}</SheetTitle>
-            <SheetDescription>
-              {t('Filter models by provider, group, type, endpoint, and tags.')}
-            </SheetDescription>
+            <SheetDescription>{t('Provider')}</SheetDescription>
           </SheetHeader>
           <div className={sideDrawerFormClassName('gap-0')}>
             <PricingSidebar
-              quotaTypeFilter={props.quotaTypeFilter}
-              endpointTypeFilter={props.endpointTypeFilter}
               vendorFilter={props.vendorFilter}
-              groupFilter={props.groupFilter}
-              tagFilter={props.tagFilter}
-              onQuotaTypeChange={props.onQuotaTypeChange}
-              onEndpointTypeChange={props.onEndpointTypeChange}
               onVendorChange={props.onVendorChange}
-              onGroupChange={props.onGroupChange}
-              onTagChange={props.onTagChange}
               vendors={props.vendors}
-              groups={props.groups}
-              groupRatios={props.groupRatios}
-              tags={props.tags}
               models={props.models}
               hasActiveFilters={props.hasActiveFilters}
               onClearFilters={props.onClearFilters}
