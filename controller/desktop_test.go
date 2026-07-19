@@ -1,13 +1,19 @@
 package controller
 
 import (
+	"html"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"strings"
 	"testing"
 
 	"github.com/QuantumNous/new-api/common"
+	"github.com/QuantumNous/new-api/model"
+	"github.com/QuantumNous/new-api/oauth"
 	"github.com/QuantumNous/new-api/setting/operation_setting"
+	"github.com/gin-contrib/sessions"
+	"github.com/gin-contrib/sessions/cookie"
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -63,4 +69,227 @@ func TestDesktopTurnstileCallbackMustBeLoopback(t *testing.T) {
 	GetDesktopTurnstilePage(context)
 
 	assert.Equal(t, http.StatusBadRequest, recorder.Code)
+}
+
+func renderDesktopTurnstilePage(t *testing.T, language string) *httptest.ResponseRecorder {
+	t.Helper()
+	recorder := httptest.NewRecorder()
+	context, _ := gin.CreateTestContext(recorder)
+	query := url.Values{
+		"callback": {"http://127.0.0.1:34567/iterloop-turnstile?state=test-state"},
+		"lang":     {language},
+	}
+	context.Request = httptest.NewRequest(http.MethodGet, "/api/desktop/turnstile?"+query.Encode(), nil)
+
+	GetDesktopTurnstilePage(context)
+
+	require.Equal(t, http.StatusOK, recorder.Code)
+	return recorder
+}
+
+func TestDesktopTurnstilePageUsesRequestedLanguage(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	tests := []struct {
+		name        string
+		language    string
+		htmlLang    string
+		widgetLang  string
+		title       string
+		heading     string
+		description string
+	}{
+		{
+			name: "English", language: "en", htmlLang: "en", widgetLang: "en",
+			title: "IterLoop Security Verification", heading: "Complete security verification",
+			description: "You'll return to the IterLoop app automatically after verification.",
+		},
+		{
+			name: "Chinese", language: "zh", htmlLang: "zh-CN", widgetLang: "zh-cn",
+			title: "IterLoop 安全验证", heading: "完成安全验证", description: "验证成功后会自动返回 IterLoop 客户端。",
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			body := renderDesktopTurnstilePage(t, test.language).Body.String()
+			assert.Contains(t, body, `<html lang="`+test.htmlLang+`">`)
+			assert.Contains(t, body, `data-language="`+test.widgetLang+`"`)
+			assert.Contains(t, body, `<title>`+test.title+`</title>`)
+			assert.Contains(t, body, `<h1>`+test.heading+`</h1>`)
+			assert.Contains(t, body, `<p>`+html.EscapeString(test.description)+`</p>`)
+		})
+	}
+}
+
+func TestDesktopTurnstilePageDefaultsSafelyToEnglish(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	body := renderDesktopTurnstilePage(t, `zh\" onmouseover=\"alert(1)`).Body.String()
+
+	assert.Contains(t, body, `<html lang="en">`)
+	assert.Contains(t, body, `<h1>Complete security verification</h1>`)
+	assert.NotContains(t, body, "onmouseover")
+}
+
+func TestDesktopAuthenticationIntentSelectsEnrollForUnknownEmail(t *testing.T) {
+	db := openTokenControllerTestDB(t)
+	require.NoError(t, db.AutoMigrate(&model.User{}))
+
+	intent, purpose, err := desktopAuthenticationIntent("new@example.com")
+
+	require.NoError(t, err)
+	assert.Equal(t, "enroll", intent)
+	assert.Equal(t, common.DesktopEnrollmentPurpose, purpose)
+}
+
+func TestDesktopAuthenticationIntentSelectsLinkForExistingEmail(t *testing.T) {
+	db := openTokenControllerTestDB(t)
+	require.NoError(t, db.AutoMigrate(&model.User{}))
+	require.NoError(t, db.Create(&model.User{
+		Username: "desktop-existing",
+		Email:    "existing@example.com",
+		Password: "password123",
+		Status:   common.UserStatusEnabled,
+	}).Error)
+
+	intent, purpose, err := desktopAuthenticationIntent("EXISTING@example.com")
+
+	require.NoError(t, err)
+	assert.Equal(t, "link", intent)
+	assert.Equal(t, common.DesktopLinkPurpose, purpose)
+}
+
+func prepareDesktopOAuthBrowserRequest(t *testing.T, providerState string) {
+	t.Helper()
+	db := openTokenControllerTestDB(t)
+	require.NoError(t, db.AutoMigrate(&model.DesktopOAuthRequest{}, &model.DesktopOAuthCode{}, &model.User{}))
+	rawRequest, err := model.CreateDesktopOAuthRequest(model.DesktopOAuthRequestInput{
+		Provider: "google", CallbackUrl: "http://127.0.0.1:34567/iterloop-oauth?state=client-state",
+		ClientState: "client-state", CodeChallenge: strings.Repeat("c", 43),
+	})
+	require.NoError(t, err)
+	request, err := model.ConsumeDesktopOAuthRequest(rawRequest)
+	require.NoError(t, err)
+	require.NoError(t, model.BindDesktopOAuthRequestState(request.Id, providerState))
+}
+
+func performDesktopOAuthBrowserCallback(t *testing.T, target string) *httptest.ResponseRecorder {
+	t.Helper()
+	router := gin.New()
+	router.Use(sessions.Sessions("session", cookie.NewStore([]byte("desktop-oauth-test"))))
+	router.GET("/oauth/:provider", func(c *gin.Context) {
+		if !HandleDesktopOAuthBrowserCallback(c) {
+			c.Status(http.StatusTeapot)
+		}
+	})
+	recorder := httptest.NewRecorder()
+	router.ServeHTTP(recorder, httptest.NewRequest(http.MethodGet, target, nil))
+	return recorder
+}
+
+func TestDesktopOAuthCancellationRedirectsErrorAndStateToLoopback(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	prepareDesktopOAuthBrowserRequest(t, "provider-state")
+
+	recorder := performDesktopOAuthBrowserCallback(
+		t,
+		"/oauth/google?state=provider-state&error=access_denied",
+	)
+
+	assert.Equal(t, http.StatusFound, recorder.Code)
+	location, err := url.Parse(recorder.Header().Get("Location"))
+	require.NoError(t, err)
+	assert.Equal(t, "http", location.Scheme)
+	assert.Equal(t, "127.0.0.1:34567", location.Host)
+	assert.Equal(t, "/iterloop-oauth", location.Path)
+	assert.Equal(t, "client-state", location.Query().Get("state"))
+	assert.Equal(t, "oauth_cancelled", location.Query().Get("error"))
+	assert.Empty(t, location.Query().Get("code"))
+}
+
+func TestDesktopOAuthProviderFailureRedirectsErrorAndStateToLoopback(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	prepareDesktopOAuthBrowserRequest(t, "provider-state")
+	previousProvider := oauth.GetProvider("google")
+	oauth.Unregister("google")
+	t.Cleanup(func() {
+		if previousProvider != nil {
+			oauth.Register("google", previousProvider)
+		}
+	})
+
+	recorder := performDesktopOAuthBrowserCallback(
+		t,
+		"/oauth/google?state=provider-state&code=provider-code",
+	)
+
+	assert.Equal(t, http.StatusFound, recorder.Code)
+	location, err := url.Parse(recorder.Header().Get("Location"))
+	require.NoError(t, err)
+	assert.Equal(t, "client-state", location.Query().Get("state"))
+	assert.Equal(t, "oauth_provider_unavailable", location.Query().Get("error"))
+	assert.Empty(t, location.Query().Get("code"))
+}
+
+func TestDesktopOAuthMiddlewareLeavesOrdinaryWebsiteStateUntouched(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	db := openTokenControllerTestDB(t)
+	require.NoError(t, db.AutoMigrate(&model.DesktopOAuthRequest{}))
+
+	recorder := performDesktopOAuthBrowserCallback(t, "/oauth/google?state=website-state&code=website-code")
+
+	assert.Equal(t, http.StatusTeapot, recorder.Code)
+}
+
+func TestDesktopOAuthBrowserSuccessCreatesPendingCodeWithoutUser(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	prepareDesktopOAuthBrowserRequest(t, "provider-state")
+	providerServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, request *http.Request) {
+		switch request.URL.Path {
+		case "/token":
+			w.Header().Set("Content-Type", "application/json")
+			_, _ = w.Write([]byte(`{"access_token":"google-token","token_type":"Bearer"}`))
+		case "/user":
+			assert.Equal(t, "Bearer google-token", request.Header.Get("Authorization"))
+			w.Header().Set("Content-Type", "application/json")
+			_, _ = w.Write([]byte(`{"sub":"google-subject","name":"Google User","email":"google@example.com"}`))
+		default:
+			http.NotFound(w, request)
+		}
+	}))
+	t.Cleanup(providerServer.Close)
+	previousProvider := oauth.GetProvider("google")
+	oauth.Register("google", oauth.NewGenericOAuthProvider(&model.CustomOAuthProvider{
+		Id: 101, Name: "Google", Slug: "google", Enabled: true,
+		ClientId: "client", ClientSecret: "secret", TokenEndpoint: providerServer.URL + "/token",
+		UserInfoEndpoint: providerServer.URL + "/user", UserIdField: "sub",
+		DisplayNameField: "name", EmailField: "email", AuthStyle: oauth.AuthStyleInParams,
+	}))
+	t.Cleanup(func() {
+		if previousProvider == nil {
+			oauth.Unregister("google")
+		} else {
+			oauth.Register("google", previousProvider)
+		}
+	})
+	previousRegisterEnabled := common.RegisterEnabled
+	common.RegisterEnabled = true
+	t.Cleanup(func() { common.RegisterEnabled = previousRegisterEnabled })
+
+	recorder := performDesktopOAuthBrowserCallback(t, "/oauth/google?state=provider-state&code=provider-code")
+
+	assert.Equal(t, http.StatusFound, recorder.Code)
+	location, err := url.Parse(recorder.Header().Get("Location"))
+	require.NoError(t, err)
+	assert.Equal(t, "client-state", location.Query().Get("state"))
+	rawCode := location.Query().Get("code")
+	require.NotEmpty(t, rawCode)
+	assert.Empty(t, location.Query().Get("error"))
+	var userCount int64
+	require.NoError(t, model.DB.Model(&model.User{}).Count(&userCount).Error)
+	assert.Zero(t, userCount)
+	pending := &model.DesktopOAuthCode{}
+	require.NoError(t, model.DB.Where("code_hash = ?", model.HashDesktopToken(rawCode)).First(pending).Error)
+	assert.Zero(t, pending.UserId)
+	assert.Equal(t, 101, pending.OAuthProviderId)
+	assert.Equal(t, "google-subject", pending.OAuthProviderUserId)
 }

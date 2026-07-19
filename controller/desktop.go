@@ -29,13 +29,40 @@ const (
 )
 
 var desktopTurnstilePage = template.Must(template.New("desktop-turnstile").Parse(`<!doctype html>
-<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>IterLoop 安全验证</title><script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+<html lang="{{.HTMLLanguage}}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>{{.Title}}</title><script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
 <style>body{margin:0;background:#f5f5f7;color:#1d1d1f;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}.card{width:min(420px,calc(100% - 40px));margin:12vh auto;background:#fff;border:1px solid #e8e8ed;border-radius:14px;padding:30px;box-shadow:0 12px 36px rgba(0,0,0,.08)}h1{font-size:24px;margin:0 0 8px}p{color:#6e6e73;line-height:1.5}.cf-turnstile{margin-top:24px}</style></head>
-<body data-callback="{{.Callback}}"><main class="card"><h1>完成安全验证</h1><p>验证成功后会自动返回 IterLoop 客户端。</p>
-<div class="cf-turnstile" data-sitekey="{{.SiteKey}}" data-callback="turnstileDone"></div></main>
+<body data-callback="{{.Callback}}"><main class="card"><h1>{{.Heading}}</h1><p>{{.Description}}</p>
+<div class="cf-turnstile" data-sitekey="{{.SiteKey}}" data-language="{{.TurnstileLanguage}}" data-callback="turnstileDone"></div></main>
 <script>function turnstileDone(token){const target=new URL(document.body.dataset.callback);target.searchParams.set('token',token);window.location.replace(target.toString())}</script>
 </body></html>`))
+
+type desktopTurnstilePageText struct {
+	HTMLLanguage      string
+	TurnstileLanguage string
+	Title             string
+	Heading           string
+	Description       string
+}
+
+func desktopTurnstileText(language string) desktopTurnstilePageText {
+	if strings.EqualFold(strings.TrimSpace(language), "zh") {
+		return desktopTurnstilePageText{
+			HTMLLanguage:      "zh-CN",
+			TurnstileLanguage: "zh-cn",
+			Title:             "IterLoop 安全验证",
+			Heading:           "完成安全验证",
+			Description:       "验证成功后会自动返回 IterLoop 客户端。",
+		}
+	}
+	return desktopTurnstilePageText{
+		HTMLLanguage:      "en",
+		TurnstileLanguage: "en",
+		Title:             "IterLoop Security Verification",
+		Heading:           "Complete security verification",
+		Description:       "You'll return to the IterLoop app automatically after verification.",
+	}
+}
 
 var desktopVersionPattern = regexp.MustCompile(`^v?\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$`)
 
@@ -321,7 +348,113 @@ func StartDesktopOAuth(c *gin.Context) {
 		query.Set("scope", config.Scopes)
 	}
 	authorizationURL.RawQuery = query.Encode()
+	if err := model.BindDesktopOAuthRequestState(oauthRequest.Id, oauthState); err != nil {
+		clearDesktopOAuthSession(c)
+		handleDesktopModelError(c, err)
+		return
+	}
 	c.Redirect(http.StatusFound, authorizationURL.String())
+}
+
+func clearDesktopOAuthSession(c *gin.Context) {
+	session := sessions.Default(c)
+	if session.Get("oauth_state") == nil && !desktopOAuthRequested(session) {
+		return
+	}
+	for _, key := range []string{"oauth_state", desktopOAuthCallbackKey, desktopOAuthClientStateKey, desktopOAuthChallengeKey, desktopOAuthProviderKey} {
+		session.Delete(key)
+	}
+	if err := session.Save(); err != nil {
+		common.SysError("failed to clear desktop OAuth session: " + err.Error())
+	}
+}
+
+func redirectDesktopOAuthLoopback(c *gin.Context, request *model.DesktopOAuthRequest, code string, errorCode string) bool {
+	callback, err := desktopLoopbackCallback(request.CallbackUrl, "/iterloop-oauth")
+	if err != nil || callback.Query().Get("state") != request.ClientState {
+		desktopError(c, http.StatusForbidden, "oauth_state_invalid", "Google 登录状态无效")
+		return true
+	}
+	query := callback.Query()
+	query.Del("code")
+	query.Del("error")
+	if code != "" {
+		query.Set("code", code)
+	}
+	if errorCode != "" {
+		query.Set("error", errorCode)
+	}
+	query.Set("state", request.ClientState)
+	callback.RawQuery = query.Encode()
+	clearDesktopOAuthSession(c)
+	c.Header("Cache-Control", "no-store")
+	c.Redirect(http.StatusFound, callback.String())
+	return true
+}
+
+// HandleDesktopOAuthBrowserCallback handles only callbacks whose provider
+// state matches a pending desktop request. Returning false leaves every normal
+// website OAuth callback untouched so the existing SPA flow can handle it.
+// The database-backed state lookup avoids relying on the Strict SameSite
+// session cookie during the cross-site redirect from Google.
+func HandleDesktopOAuthBrowserCallback(c *gin.Context) bool {
+	if c.Request.Method != http.MethodGet {
+		return false
+	}
+	path := strings.Trim(c.Request.URL.Path, "/")
+	parts := strings.Split(path, "/")
+	if len(parts) != 2 || parts[0] != "oauth" {
+		return false
+	}
+	providerName := strings.ToLower(strings.TrimSpace(parts[1]))
+	state := strings.TrimSpace(c.Query("state"))
+	request, claimErr := model.ClaimDesktopOAuthRequestByState(providerName, state)
+	if request == nil {
+		return false
+	}
+	if claimErr != nil {
+		if errors.Is(claimErr, model.ErrDesktopOAuthCallbackConsumed) {
+			desktopError(c, http.StatusConflict, "oauth_callback_consumed", "Google 登录回调已经处理")
+			return true
+		}
+		return redirectDesktopOAuthLoopback(c, request, "", "oauth_request_expired")
+	}
+	if strings.TrimSpace(c.Query("error")) != "" {
+		return redirectDesktopOAuthLoopback(c, request, "", "oauth_cancelled")
+	}
+	provider := oauth.GetProvider(providerName)
+	genericProvider, ok := provider.(*oauth.GenericOAuthProvider)
+	if !ok || provider == nil || !provider.IsEnabled() {
+		return redirectDesktopOAuthLoopback(c, request, "", "oauth_provider_unavailable")
+	}
+	providerCode := strings.TrimSpace(c.Query("code"))
+	if providerCode == "" {
+		return redirectDesktopOAuthLoopback(c, request, "", "oauth_code_invalid")
+	}
+	token, err := provider.ExchangeToken(c.Request.Context(), providerCode, c)
+	if err != nil {
+		common.SysError("desktop OAuth token exchange failed: " + err.Error())
+		return redirectDesktopOAuthLoopback(c, request, "", "oauth_provider_error")
+	}
+	oauthUser, err := provider.GetUserInfo(c.Request.Context(), token)
+	if err != nil {
+		common.SysError("desktop OAuth user lookup failed: " + err.Error())
+		return redirectDesktopOAuthLoopback(c, request, "", "oauth_provider_error")
+	}
+	if oauthUser == nil || strings.TrimSpace(oauthUser.ProviderUserID) == "" {
+		return redirectDesktopOAuthLoopback(c, request, "", "oauth_identity_invalid")
+	}
+	desktopCode, err := model.CreatePendingDesktopOAuthCode(model.DesktopOAuthIdentityInput{
+		Provider: providerName, ProviderId: genericProvider.GetProviderId(),
+		ProviderUserId: oauthUser.ProviderUserID, Username: oauthUser.Username,
+		DisplayName: oauthUser.DisplayName, Email: oauthUser.Email,
+		UsernamePrefix: genericProvider.GetProviderPrefix(), RegistrationOpen: common.RegisterEnabled,
+	}, request.CodeChallenge)
+	if err != nil {
+		common.SysError("failed to create pending desktop OAuth code: " + err.Error())
+		return redirectDesktopOAuthLoopback(c, request, "", "oauth_session_failed")
+	}
+	return redirectDesktopOAuthLoopback(c, request, desktopCode, "")
 }
 
 func desktopOAuthRequested(session sessions.Session) bool {
@@ -398,9 +531,12 @@ func GetDesktopTurnstilePage(c *gin.Context) {
 		c.AbortWithStatus(http.StatusBadRequest)
 		return
 	}
+	pageText := desktopTurnstileText(c.Query("lang"))
 	c.Header("Content-Security-Policy", "default-src 'self'; script-src 'self' 'unsafe-inline' https://challenges.cloudflare.com; frame-src https://challenges.cloudflare.com; style-src 'unsafe-inline'")
 	if err := desktopTurnstilePage.Execute(c.Writer, gin.H{
 		"Callback": callback.String(), "SiteKey": common.TurnstileSiteKey,
+		"HTMLLanguage": pageText.HTMLLanguage, "TurnstileLanguage": pageText.TurnstileLanguage,
+		"Title": pageText.Title, "Heading": pageText.Heading, "Description": pageText.Description,
 	}); err != nil {
 		c.AbortWithStatus(http.StatusInternalServerError)
 	}
@@ -417,6 +553,18 @@ func commaListForDesktop(raw string) []string {
 	return values
 }
 
+func desktopAuthenticationIntent(email string) (string, string, error) {
+	_, err := model.GetUniqueUserByEmail(email)
+	switch {
+	case err == nil:
+		return "link", common.DesktopLinkPurpose, nil
+	case errors.Is(err, model.ErrEmailNotFound):
+		return "enroll", common.DesktopEnrollmentPurpose, nil
+	default:
+		return "", "", err
+	}
+}
+
 func SendDesktopVerification(c *gin.Context) {
 	email := model.NormalizeEmail(c.Query("email"))
 	intent := strings.TrimSpace(c.Query("intent"))
@@ -425,7 +573,18 @@ func SendDesktopVerification(c *gin.Context) {
 		return
 	}
 	purpose := ""
+	resolvedIntent := intent
 	switch intent {
+	case "authenticate":
+		var err error
+		resolvedIntent, purpose, err = desktopAuthenticationIntent(email)
+		if err != nil {
+			handleDesktopModelError(c, err)
+			return
+		}
+		if resolvedIntent == "enroll" && !requireDesktopEnabled(c) {
+			return
+		}
 	case "enroll":
 		if !requireDesktopEnabled(c) {
 			return
@@ -460,7 +619,7 @@ func SendDesktopVerification(c *gin.Context) {
 		desktopError(c, http.StatusServiceUnavailable, "verification_delivery_failed", "验证码发送失败")
 		return
 	}
-	common.ApiSuccess(c, nil)
+	common.ApiSuccess(c, gin.H{"intent": resolvedIntent})
 }
 
 func EnrollDesktop(c *gin.Context) {
@@ -675,6 +834,10 @@ func handleDesktopModelError(c *gin.Context, err error) {
 		desktopError(c, http.StatusBadRequest, "oauth_code_invalid", "Google 登录授权无效，请重试")
 	case errors.Is(err, model.ErrDesktopOAuthCodeExpired):
 		desktopError(c, http.StatusBadRequest, "oauth_code_expired", "Google 登录授权已过期，请重试")
+	case errors.Is(err, model.ErrDesktopOAuthIdentityInvalid):
+		desktopError(c, http.StatusBadRequest, "oauth_identity_invalid", "Google 登录账户信息无效")
+	case errors.Is(err, model.ErrDesktopOAuthRegisterDisabled):
+		desktopError(c, http.StatusServiceUnavailable, "oauth_registration_disabled", "Google 新账户注册暂未开放")
 	case errors.Is(err, model.ErrEmailAlreadyTaken):
 		desktopError(c, http.StatusConflict, "email_already_registered", "该邮箱已经注册")
 	case errors.Is(err, gorm.ErrDuplicatedKey), strings.Contains(strings.ToLower(err.Error()), "unique"):
