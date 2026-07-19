@@ -55,6 +55,7 @@ import type {
 
 interface WalletProps {
   initialShowHistory?: boolean
+  embedded?: boolean
 }
 
 export function Wallet(props: WalletProps) {
@@ -260,62 +261,64 @@ export function Wallet(props: WalletProps) {
     return topupInfo?.discount?.[topupAmount] || DEFAULT_DISCOUNT_RATE
   }, [topupInfo, topupAmount])
 
+  const walletContent = (
+    <div className='mx-auto flex w-full max-w-7xl flex-col gap-4 sm:gap-5'>
+      <WalletStatsCard user={user} loading={userLoading} />
+
+      <div className='grid gap-4'>
+        <div id='wallet-add-funds' className='scroll-mt-4'>
+          <RechargeFormCard
+            topupInfo={topupInfo}
+            presetAmounts={presetAmounts}
+            selectedPreset={selectedPreset}
+            onSelectPreset={handleSelectPreset}
+            topupAmount={topupAmount}
+            onTopupAmountChange={handleTopupAmountChange}
+            paymentAmount={paymentAmount}
+            calculating={calculating}
+            onPaymentMethodSelect={handlePaymentMethodSelect}
+            paymentLoading={paymentLoading}
+            redemptionCode={redemptionCode}
+            onRedemptionCodeChange={setRedemptionCode}
+            onRedeem={handleRedeem}
+            redeeming={redeeming}
+            topupLink={topupInfo?.topup_link}
+            loading={topupLoading}
+            priceRatio={(status?.price as number) || 1}
+            usdExchangeRate={effectiveUsdExchangeRate}
+            onOpenBilling={() => setBillingDialogOpen(true)}
+            creemProducts={topupInfo?.creem_products}
+            enableCreemTopup={topupInfo?.enable_creem_topup}
+            onCreemProductSelect={handleCreemProductSelect}
+            enableWaffoTopup={topupInfo?.enable_waffo_topup}
+            waffoPayMethods={topupInfo?.waffo_pay_methods}
+            waffoMinTopup={topupInfo?.waffo_min_topup}
+            onWaffoMethodSelect={handleWaffoMethodSelect}
+            enableWaffoPancakeTopup={topupInfo?.enable_waffo_pancake_topup}
+          />
+        </div>
+      </div>
+
+      <AffiliateRewardsCard
+        user={user}
+        affiliateLink={affiliateLink}
+        onTransfer={() => setTransferDialogOpen(true)}
+        complianceConfirmed={topupInfo?.payment_compliance_confirmed !== false}
+        loading={affiliateLoading}
+      />
+    </div>
+  )
+
   return (
     <>
-      <SectionPageLayout>
-        <SectionPageLayout.Title>{t('Wallet')}</SectionPageLayout.Title>
-        <SectionPageLayout.Content>
-          <div className='mx-auto flex w-full max-w-7xl flex-col gap-4 sm:gap-5'>
-            <WalletStatsCard user={user} loading={userLoading} />
-
-            <div className='grid gap-4'>
-              <div id='wallet-add-funds' className='scroll-mt-4'>
-                <RechargeFormCard
-                  topupInfo={topupInfo}
-                  presetAmounts={presetAmounts}
-                  selectedPreset={selectedPreset}
-                  onSelectPreset={handleSelectPreset}
-                  topupAmount={topupAmount}
-                  onTopupAmountChange={handleTopupAmountChange}
-                  paymentAmount={paymentAmount}
-                  calculating={calculating}
-                  onPaymentMethodSelect={handlePaymentMethodSelect}
-                  paymentLoading={paymentLoading}
-                  redemptionCode={redemptionCode}
-                  onRedemptionCodeChange={setRedemptionCode}
-                  onRedeem={handleRedeem}
-                  redeeming={redeeming}
-                  topupLink={topupInfo?.topup_link}
-                  loading={topupLoading}
-                  priceRatio={(status?.price as number) || 1}
-                  usdExchangeRate={effectiveUsdExchangeRate}
-                  onOpenBilling={() => setBillingDialogOpen(true)}
-                  creemProducts={topupInfo?.creem_products}
-                  enableCreemTopup={topupInfo?.enable_creem_topup}
-                  onCreemProductSelect={handleCreemProductSelect}
-                  enableWaffoTopup={topupInfo?.enable_waffo_topup}
-                  waffoPayMethods={topupInfo?.waffo_pay_methods}
-                  waffoMinTopup={topupInfo?.waffo_min_topup}
-                  onWaffoMethodSelect={handleWaffoMethodSelect}
-                  enableWaffoPancakeTopup={
-                    topupInfo?.enable_waffo_pancake_topup
-                  }
-                />
-              </div>
-            </div>
-
-            <AffiliateRewardsCard
-              user={user}
-              affiliateLink={affiliateLink}
-              onTransfer={() => setTransferDialogOpen(true)}
-              complianceConfirmed={
-                topupInfo?.payment_compliance_confirmed !== false
-              }
-              loading={affiliateLoading}
-            />
-          </div>
-        </SectionPageLayout.Content>
-      </SectionPageLayout>
+      {props.embedded ? (
+        walletContent
+      ) : (
+        <SectionPageLayout>
+          <SectionPageLayout.Title>{t('Wallet')}</SectionPageLayout.Title>
+          <SectionPageLayout.Content>{walletContent}</SectionPageLayout.Content>
+        </SectionPageLayout>
+      )}
 
       <PaymentConfirmDialog
         open={confirmDialogOpen}

@@ -51,6 +51,9 @@ const usageLogsSearchSchema = z.object({
 
 export const Route = createFileRoute('/_authenticated/usage-logs/$section')({
   beforeLoad: ({ params, search }) => {
+    if (params.section === 'common') {
+      throw redirect({ to: '/dashboard', search: { tab: 'usage' } })
+    }
     if (!isUsageLogsSectionId(params.section)) {
       throw redirect({
         to: '/usage-logs/$section',

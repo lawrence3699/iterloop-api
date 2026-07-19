@@ -17,11 +17,13 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 import { useNavigate } from '@tanstack/react-router'
-import { User, Wallet, LogOut, Settings } from 'lucide-react'
+import { Languages, LogOut, MoonStar, ShieldCheck, User } from 'lucide-react'
 import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 
+import { LanguageSwitcher } from '@/components/language-switcher'
 import { SignOutDialog } from '@/components/sign-out-dialog'
+import { ThemeSwitch } from '@/components/theme-switch'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
 import {
@@ -32,9 +34,9 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import useDialogState from '@/hooks/use-dialog'
-import { useIsSidebarModuleVisible } from '@/hooks/use-sidebar-config'
 import { useUserDisplay } from '@/hooks/use-user-display'
 import { getUserAvatarFallback, getUserAvatarStyle } from '@/lib/avatar'
+import { iterLoopAdminUrl } from '@/lib/iterloop-host'
 import { ROLE } from '@/lib/roles'
 import { useAuthStore } from '@/stores/auth-store'
 
@@ -46,8 +48,7 @@ export function ProfileDropdown() {
   const [open, setOpen] = useDialogState()
   const user = useAuthStore((state) => state.auth.user)
   const { displayName, roleLabel } = useUserDisplay(user)
-  const isSuperAdmin = user?.role === ROLE.SUPER_ADMIN
-  const isWalletVisible = useIsSidebarModuleVisible('/wallet')
+  const isAdmin = (user?.role ?? ROLE.GUEST) >= ROLE.ADMIN
   const avatarName = user?.username || displayName
   const avatarFallback = getUserAvatarFallback(avatarName)
   const avatarFallbackStyle = useMemo(
@@ -107,26 +108,31 @@ export function ProfileDropdown() {
             {t('Profile')}
           </DropdownMenuItem>
 
-          {isWalletVisible && (
-            <DropdownMenuItem onClick={() => navigate({ to: '/wallet' })}>
-              <Wallet className='size-4' />
-              {t('Wallet')}
+          {isAdmin && (
+            <DropdownMenuItem
+              onClick={() =>
+                window.location.assign(iterLoopAdminUrl('/channels'))
+              }
+            >
+              <ShieldCheck className='size-4' />
+              {t('Admin workspace')}
             </DropdownMenuItem>
           )}
 
-          {isSuperAdmin && (
-            <DropdownMenuItem
-              onClick={() =>
-                navigate({
-                  to: '/system-settings/site/$section',
-                  params: { section: 'system-info' },
-                })
-              }
-            >
-              <Settings className='size-4' />
-              {t('System Settings')}
-            </DropdownMenuItem>
-          )}
+          <DropdownMenuSeparator />
+
+          <div className='iterloop-profile-preferences'>
+            <div>
+              <Languages className='size-4' aria-hidden='true' />
+              <span>{t('Language')}</span>
+              <LanguageSwitcher />
+            </div>
+            <div>
+              <MoonStar className='size-4' aria-hidden='true' />
+              <span>{t('Theme')}</span>
+              <ThemeSwitch />
+            </div>
+          </div>
 
           <DropdownMenuSeparator />
 
