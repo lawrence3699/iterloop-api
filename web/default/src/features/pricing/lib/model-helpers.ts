@@ -53,9 +53,9 @@ export function getConfiguredGroupRatio(
 /**
  * Resolve the group ratio used by model square summary prices.
  *
- * When no specific group is selected, the model square shows the best price
- * available to the viewer. When a group filter is active, it mirrors classic
- * and shows that group's price.
+ * The public catalog shows the Faro-aligned base settlement price. A specific
+ * group is applied only when the caller explicitly selects one; group-specific
+ * pricing remains visible in the model details drawer.
  */
 export function getDisplayGroupRatio(
   model: PricingModel,
@@ -74,24 +74,7 @@ export function getDisplayGroupRatio(
     return getConfiguredGroupRatio(groupRatio, selectedGroup)
   }
 
-  if (modelEnableGroups.length === 0) {
-    return 1
-  }
-
-  let minRatio = Number.POSITIVE_INFINITY
-
-  for (const group of modelEnableGroups) {
-    const ratio = groupRatio[group]
-    if (
-      typeof ratio === 'number' &&
-      Number.isFinite(ratio) &&
-      ratio < minRatio
-    ) {
-      minRatio = ratio
-    }
-  }
-
-  return minRatio === Number.POSITIVE_INFINITY ? 1 : minRatio
+  return 1
 }
 
 /**
