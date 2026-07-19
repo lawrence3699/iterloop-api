@@ -133,12 +133,22 @@ export function Wallet(props: WalletProps) {
   // Initialize topup amount when topup info is loaded
   useEffect(() => {
     if (topupInfo && topupAmount === 0) {
-      const minTopup = getMinTopupAmount(topupInfo)
-      setTopupAmount(minTopup)
+      const stripePresetOnly = Boolean(
+        topupInfo.stripe_preset_only &&
+        topupInfo.enable_stripe_topup &&
+        !topupInfo.enable_online_topup &&
+        !topupInfo.enable_waffo_topup &&
+        !topupInfo.enable_waffo_pancake_topup
+      )
+      const initialAmount =
+        stripePresetOnly && topupInfo.amount_options?.length
+          ? topupInfo.amount_options[0]
+          : getMinTopupAmount(topupInfo)
+      setTopupAmount(initialAmount)
 
       // Calculate initial payment amount with default payment type
       const defaultPaymentType = getDefaultPaymentType(topupInfo)
-      calculatePaymentAmount(minTopup, defaultPaymentType)
+      calculatePaymentAmount(initialAmount, defaultPaymentType)
     }
   }, [topupInfo, topupAmount, calculatePaymentAmount])
 

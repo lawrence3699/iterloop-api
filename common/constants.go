@@ -272,8 +272,12 @@ const (
 )
 
 const (
-	TopUpStatusPending = "pending"
-	TopUpStatusSuccess = "success"
-	TopUpStatusFailed  = "failed"
-	TopUpStatusExpired = "expired"
+	TopUpStatusPending           = "pending"
+	TopUpStatusSuccess           = "success"
+	TopUpStatusFailed            = "failed"
+	TopUpStatusExpired           = "expired"
+	TopUpStatusPartiallyRefunded = "partially_refunded"
+	TopUpStatusRefunded          = "refunded"
+	TopUpStatusDisputed          = "disputed"
+	TopUpStatusChargeback        = "chargeback"
 )

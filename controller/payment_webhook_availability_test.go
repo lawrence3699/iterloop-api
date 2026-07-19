@@ -21,27 +21,44 @@ func confirmPaymentComplianceForTest(t *testing.T) {
 	paymentSetting.ComplianceTermsVersion = operation_setting.CurrentComplianceTermsVersion
 }
 
-func TestStripeWebhookEnabledRequiresTopUpAndWebhookConfig(t *testing.T) {
+func TestStripeCheckoutAndWebhookAvailabilityAreIndependent(t *testing.T) {
 	confirmPaymentComplianceForTest(t)
 	originalAPISecret := setting.StripeApiSecret
 	originalWebhookSecret := setting.StripeWebhookSecret
-	originalPriceID := setting.StripePriceId
+	originalCurrency := setting.StripeCurrency
+	originalUnitPrice := setting.StripeUnitPrice
+	originalPromotionCodesEnabled := setting.StripePromotionCodesEnabled
+	originalAmountOptions := operation_setting.GetPaymentSetting().AmountOptions
 	t.Cleanup(func() {
 		setting.StripeApiSecret = originalAPISecret
 		setting.StripeWebhookSecret = originalWebhookSecret
-		setting.StripePriceId = originalPriceID
+		setting.StripeCurrency = originalCurrency
+		setting.StripeUnitPrice = originalUnitPrice
+		setting.StripePromotionCodesEnabled = originalPromotionCodesEnabled
+		operation_setting.GetPaymentSetting().AmountOptions = originalAmountOptions
 	})
 
 	setting.StripeWebhookSecret = ""
 	setting.StripeApiSecret = "sk_test_123"
-	setting.StripePriceId = "price_123"
+	setting.StripeCurrency = "AUD"
+	setting.StripeUnitPrice = 1
+	setting.StripePromotionCodesEnabled = false
+	operation_setting.GetPaymentSetting().AmountOptions = []int{10, 25, 50}
 	require.False(t, isStripeWebhookEnabled())
+	require.False(t, isStripeTopUpEnabled())
 
 	setting.StripeWebhookSecret = "whsec_test"
 	require.True(t, isStripeWebhookEnabled())
+	require.True(t, isStripeTopUpEnabled())
 
-	setting.StripePriceId = ""
-	require.False(t, isStripeWebhookEnabled())
+	setting.StripeCurrency = "USD"
+	require.True(t, isStripeWebhookEnabled())
+	require.False(t, isStripeTopUpEnabled())
+
+	setting.StripeCurrency = "AUD"
+	setting.StripePromotionCodesEnabled = true
+	require.True(t, isStripeWebhookEnabled())
+	require.False(t, isStripeTopUpEnabled())
 }
 
 func TestCreemWebhookEnabledRequiresTopUpAndWebhookConfig(t *testing.T) {
