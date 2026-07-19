@@ -119,6 +119,13 @@ test.describe('Download-first public experience', () => {
     test(`Chinese light homepage at ${viewport.name}`, async ({ page }) => {
       await page.setViewportSize(viewport)
       await openHome(page)
+      if (viewport.width === 390) {
+        expect(
+          await page.evaluate(
+            () => document.documentElement.scrollWidth === window.innerWidth
+          )
+        ).toBe(true)
+      }
       await expect(page).toHaveScreenshot(
         `download-home-zh-light-${viewport.name}.png`,
         {

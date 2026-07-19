@@ -5807,8 +5807,8 @@ For commercial licensing, please contact support@quantumnous.com
 
   .iterloop-desktop-preview {
     display: block;
-    width: 132%;
-    margin-left: -7%;
+    width: calc(100% + 32px);
+    margin-left: -16px;
   }
 
   .iterloop-performance-band,
