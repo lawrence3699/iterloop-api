@@ -46,11 +46,13 @@ export function usePricingData() {
     if (!data?.data || !data?.vendors) return []
 
     const vendorMap = new Map(data.vendors.map((v) => [v.id, v]))
+    const openAIVendor = data.vendors.find((vendor) => vendor.name === 'OpenAI')
 
     return data.data.map((model) => {
-      const vendor = model.vendor_id
-        ? vendorMap.get(model.vendor_id)
-        : undefined
+      let vendor = model.vendor_id ? vendorMap.get(model.vendor_id) : undefined
+      if (!vendor && model.model_name.toLowerCase().startsWith('codex-')) {
+        vendor = openAIVendor
+      }
       return {
         ...model,
         key: model.model_name,
