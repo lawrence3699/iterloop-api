@@ -14,12 +14,12 @@ import (
 func setupDesktopTest(t *testing.T) *IssuanceProfile {
 	t.Helper()
 	setupIssuanceTest(t)
-	require.NoError(t, DB.AutoMigrate(&DesktopDevice{}, &DesktopGrant{}, &DesktopOAuthCode{}, &DesktopOAuthRequest{}))
-	for _, target := range []any{&DesktopDevice{}, &DesktopGrant{}, &DesktopOAuthCode{}, &DesktopOAuthRequest{}} {
+	require.NoError(t, DB.AutoMigrate(&DesktopDevice{}, &DesktopGrant{}, &DesktopOAuthCode{}, &DesktopOAuthRequest{}, &UserOAuthBinding{}))
+	for _, target := range []any{&DesktopDevice{}, &DesktopGrant{}, &DesktopOAuthCode{}, &DesktopOAuthRequest{}, &UserOAuthBinding{}} {
 		require.NoError(t, DB.Session(&gorm.Session{AllowGlobalUpdate: true}).Unscoped().Delete(target).Error)
 	}
 	t.Cleanup(func() {
-		for _, target := range []any{&DesktopDevice{}, &DesktopGrant{}, &DesktopOAuthCode{}, &DesktopOAuthRequest{}} {
+		for _, target := range []any{&DesktopDevice{}, &DesktopGrant{}, &DesktopOAuthCode{}, &DesktopOAuthRequest{}, &UserOAuthBinding{}} {
 			_ = DB.Session(&gorm.Session{AllowGlobalUpdate: true}).Unscoped().Delete(target).Error
 		}
 	})
@@ -40,6 +40,31 @@ func TestDesktopOAuthRequestCanOnlyBeConsumedOnce(t *testing.T) {
 	assert.Equal(t, "test-state", request.ClientState)
 	_, err = ConsumeDesktopOAuthRequest(rawRequest)
 	assert.ErrorIs(t, err, ErrDesktopOAuthCodeInvalid)
+}
+
+func TestDesktopOAuthBrowserStateCanOnlyBeClaimedOnce(t *testing.T) {
+	setupDesktopTest(t)
+	rawRequest, err := CreateDesktopOAuthRequest(DesktopOAuthRequestInput{
+		Provider: "google", CallbackUrl: "http://127.0.0.1:12345/iterloop-oauth?state=client-state",
+		ClientState: "client-state", CodeChallenge: strings.Repeat("c", 43),
+	})
+	require.NoError(t, err)
+	request, err := ConsumeDesktopOAuthRequest(rawRequest)
+	require.NoError(t, err)
+	require.NoError(t, BindDesktopOAuthRequestState(request.Id, "provider-state"))
+
+	claimed, err := ClaimDesktopOAuthRequestByState("google", "provider-state")
+	require.NoError(t, err)
+	assert.Equal(t, request.Id, claimed.Id)
+	assert.NotZero(t, claimed.CallbackConsumedTime)
+
+	repeated, err := ClaimDesktopOAuthRequestByState("google", "provider-state")
+	assert.ErrorIs(t, err, ErrDesktopOAuthCallbackConsumed)
+	require.NotNil(t, repeated)
+	assert.Equal(t, request.Id, repeated.Id)
+	missing, err := ClaimDesktopOAuthRequestByState("google", "different-state")
+	assert.ErrorIs(t, err, ErrDesktopOAuthCodeInvalid)
+	assert.Nil(t, missing)
 }
 
 func TestDesktopOAuthCodeUsesPKCEAndCanOnlyBeExchangedOnce(t *testing.T) {
@@ -76,6 +101,81 @@ func TestDesktopOAuthCodeUsesPKCEAndCanOnlyBeExchangedOnce(t *testing.T) {
 	require.NoError(t, DB.Model(&DesktopDevice{}).Count(&deviceCount).Error)
 	assert.EqualValues(t, 1, grantCount)
 	assert.EqualValues(t, 1, deviceCount)
+}
+
+func desktopOAuthIdentityFixture() DesktopOAuthIdentityInput {
+	return DesktopOAuthIdentityInput{
+		Provider: "google", ProviderId: 101, ProviderUserId: "google-subject-1",
+		Username: "google-user", DisplayName: "Google User", Email: "google@example.com",
+		UsernamePrefix: "google_", RegistrationOpen: true,
+	}
+}
+
+func TestPendingDesktopOAuthCreatesAtomicallyAndReusesStarterGrant(t *testing.T) {
+	profile := setupDesktopTest(t)
+	verifier := strings.Repeat("v", 64)
+	identity := desktopOAuthIdentityFixture()
+	code, err := CreatePendingDesktopOAuthCode(identity, desktopPKCEChallenge(verifier))
+	require.NoError(t, err)
+
+	first, err := ExchangeDesktopOAuthCode(profile, code, verifier, DesktopEnrollmentInput{
+		InstallId: "google-install-one", DeviceName: "Google Mac", Platform: "macos", AppVersion: "0.1.1",
+	})
+	require.NoError(t, err)
+	assert.Equal(t, "google@example.com", first.User.Email)
+	assert.Contains(t, first.Credential.ApiKey, "sk-")
+	binding, err := GetUserByOAuthBinding(identity.ProviderId, identity.ProviderUserId)
+	require.NoError(t, err)
+	assert.Equal(t, first.User.Id, binding.Id)
+
+	// Closing new registrations after the first connection must not prevent the
+	// already bound Google account from linking another device.
+	identity.RegistrationOpen = false
+	secondCode, err := CreatePendingDesktopOAuthCode(identity, desktopPKCEChallenge(verifier))
+	require.NoError(t, err)
+	second, err := ExchangeDesktopOAuthCode(profile, secondCode, verifier, DesktopEnrollmentInput{
+		InstallId: "google-install-two", DeviceName: "Second Google Mac", Platform: "macos", AppVersion: "0.1.1",
+	})
+	require.NoError(t, err)
+	assert.Equal(t, first.User.Id, second.User.Id)
+	assert.Equal(t, first.Credential.ApiKey, second.Credential.ApiKey)
+
+	for target, expected := range map[any]int64{
+		&User{}: 1, &UserOAuthBinding{}: 1, &DesktopGrant{}: 1,
+		&Token{}: 1, &Issuance{}: 1, &DesktopDevice{}: 2,
+	} {
+		var count int64
+		require.NoError(t, DB.Model(target).Count(&count).Error)
+		assert.Equal(t, expected, count)
+	}
+}
+
+func TestPendingDesktopOAuthRollsBackUserBindingGrantAndDeviceTogether(t *testing.T) {
+	profile := setupDesktopTest(t)
+	_, err := CreateDesktopEnrollment(profile, desktopEnrollmentFixture("claimed-google-install"))
+	require.NoError(t, err)
+	verifier := strings.Repeat("v", 64)
+	code, err := CreatePendingDesktopOAuthCode(desktopOAuthIdentityFixture(), desktopPKCEChallenge(verifier))
+	require.NoError(t, err)
+
+	_, err = ExchangeDesktopOAuthCode(profile, code, verifier, DesktopEnrollmentInput{
+		InstallId: "claimed-google-install", DeviceName: "Conflicting Mac", Platform: "macos", AppVersion: "0.1.1",
+	})
+	assert.ErrorIs(t, err, ErrDesktopInstallClaimed)
+
+	for target := range map[any]struct{}{
+		&User{}: {}, &DesktopGrant{}: {}, &Token{}: {}, &Issuance{}: {}, &DesktopDevice{}: {},
+	} {
+		var count int64
+		require.NoError(t, DB.Model(target).Count(&count).Error)
+		assert.EqualValues(t, 1, count)
+	}
+	var bindingCount int64
+	require.NoError(t, DB.Model(&UserOAuthBinding{}).Count(&bindingCount).Error)
+	assert.Zero(t, bindingCount)
+	var pendingCode DesktopOAuthCode
+	require.NoError(t, DB.Where("code_hash = ?", HashDesktopToken(code)).First(&pendingCode).Error)
+	assert.Zero(t, pendingCode.ConsumedTime)
 }
 
 func desktopEnrollmentFixture(installId string) DesktopEnrollmentInput {
@@ -122,6 +222,111 @@ func TestCreateDesktopEnrollmentAndRotateSession(t *testing.T) {
 	assert.Equal(t, DesktopServiceStatusKeyBad, disabledSummary.ServiceStatus)
 	_, _, err = RefreshDesktopSession(latestRefreshToken, strings.Repeat("v", 33))
 	assert.ErrorIs(t, err, ErrDesktopInvalidDevice)
+}
+
+func TestDesktopRefreshTokenGraceRecoversWithoutExtendingDeadline(t *testing.T) {
+	profile := setupDesktopTest(t)
+	enrollment, err := CreateDesktopEnrollment(profile, desktopEnrollmentFixture("grace-install"))
+	require.NoError(t, err)
+	originalToken := enrollment.RefreshToken
+
+	firstToken, _, err := RefreshDesktopSession(originalToken, "0.1.1")
+	require.NoError(t, err)
+	device := &DesktopDevice{}
+	require.NoError(t, DB.First(device, enrollment.Device.Id).Error)
+	originalDeadline := device.RefreshTokenGraceExpiresTime
+	assert.Equal(t, HashDesktopToken(originalToken), device.PreviousRefreshTokenHash)
+	assert.Equal(t, HashDesktopToken(firstToken), device.RefreshTokenHash)
+	assert.GreaterOrEqual(t, originalDeadline, common.GetTimestamp()+DesktopRefreshTokenGraceSeconds-1)
+
+	recoveredToken, _, err := RefreshDesktopSession(originalToken, "0.1.2")
+	require.NoError(t, err)
+	assert.NotEqual(t, firstToken, recoveredToken)
+	require.NoError(t, DB.First(device, enrollment.Device.Id).Error)
+	assert.Equal(t, originalDeadline, device.RefreshTokenGraceExpiresTime)
+	assert.Equal(t, HashDesktopToken(originalToken), device.PreviousRefreshTokenHash)
+	assert.Equal(t, HashDesktopToken(recoveredToken), device.RefreshTokenHash)
+	_, err = FindActiveDesktopDeviceByToken(firstToken)
+	assert.ErrorIs(t, err, ErrDesktopDeviceNotFound)
+	_, err = FindActiveDesktopDeviceByToken(recoveredToken)
+	require.NoError(t, err)
+}
+
+func TestDesktopRefreshTokenGraceRejectsExpiredTokenWithoutRotatingCurrent(t *testing.T) {
+	profile := setupDesktopTest(t)
+	enrollment, err := CreateDesktopEnrollment(profile, desktopEnrollmentFixture("expired-grace-install"))
+	require.NoError(t, err)
+	currentToken, _, err := RefreshDesktopSession(enrollment.RefreshToken, "0.1.1")
+	require.NoError(t, err)
+	require.NoError(t, DB.Model(&DesktopDevice{}).
+		Where("id = ?", enrollment.Device.Id).
+		Update("refresh_token_grace_expires_time", common.GetTimestamp()-1).Error)
+
+	_, _, err = RefreshDesktopSession(enrollment.RefreshToken, "0.1.2")
+	assert.ErrorIs(t, err, ErrDesktopDeviceNotFound)
+	_, err = FindActiveDesktopDeviceByToken(currentToken)
+	require.NoError(t, err)
+}
+
+func TestDesktopRefreshRejectsCurrentAndGraceTokensAfterRevoke(t *testing.T) {
+	profile := setupDesktopTest(t)
+	enrollment, err := CreateDesktopEnrollment(profile, desktopEnrollmentFixture("revoked-grace-install"))
+	require.NoError(t, err)
+	currentToken, _, err := RefreshDesktopSession(enrollment.RefreshToken, "0.1.1")
+	require.NoError(t, err)
+	require.NoError(t, RevokeDesktopDevice(enrollment.Device.Id, enrollment.User.Id, false))
+
+	_, _, err = RefreshDesktopSession(currentToken, "0.1.2")
+	assert.ErrorIs(t, err, ErrDesktopDeviceRevoked)
+	_, _, err = RefreshDesktopSession(enrollment.RefreshToken, "0.1.2")
+	assert.ErrorIs(t, err, ErrDesktopDeviceRevoked)
+}
+
+func TestDesktopRefreshTokensAreStoredOnlyAsHashesAndHiddenFromJSON(t *testing.T) {
+	profile := setupDesktopTest(t)
+	enrollment, err := CreateDesktopEnrollment(profile, desktopEnrollmentFixture("hashed-grace-install"))
+	require.NoError(t, err)
+	originalToken := enrollment.RefreshToken
+	currentToken, _, err := RefreshDesktopSession(originalToken, "0.1.1")
+	require.NoError(t, err)
+	device := &DesktopDevice{}
+	require.NoError(t, DB.First(device, enrollment.Device.Id).Error)
+
+	assert.Equal(t, HashDesktopToken(currentToken), device.RefreshTokenHash)
+	assert.Equal(t, HashDesktopToken(originalToken), device.PreviousRefreshTokenHash)
+	assert.NotEqual(t, currentToken, device.RefreshTokenHash)
+	assert.NotEqual(t, originalToken, device.PreviousRefreshTokenHash)
+	serialized, err := common.Marshal(device)
+	require.NoError(t, err)
+	assert.NotContains(t, string(serialized), currentToken)
+	assert.NotContains(t, string(serialized), originalToken)
+	assert.NotContains(t, string(serialized), "refresh_token_hash")
+	assert.NotContains(t, string(serialized), "previous_refresh_token_hash")
+}
+
+func TestDesktopRelinkClearsPreviousRefreshTokenGrace(t *testing.T) {
+	profile := setupDesktopTest(t)
+	enrollment, err := CreateDesktopEnrollment(profile, desktopEnrollmentFixture("relink-grace-install"))
+	require.NoError(t, err)
+	rotatedToken, _, err := RefreshDesktopSession(enrollment.RefreshToken, "0.1.1")
+	require.NoError(t, err)
+
+	relinked, err := LinkDesktopDevice(profile, enrollment.User.Email, DesktopEnrollmentInput{
+		InstallId: "relink-grace-install", DeviceName: "Relinked PC", Platform: "windows", AppVersion: "0.1.2",
+	})
+	require.NoError(t, err)
+	device := &DesktopDevice{}
+	require.NoError(t, DB.First(device, enrollment.Device.Id).Error)
+	assert.Empty(t, device.PreviousRefreshTokenHash)
+	assert.Zero(t, device.RefreshTokenGraceExpiresTime)
+	assert.Equal(t, HashDesktopToken(relinked.RefreshToken), device.RefreshTokenHash)
+
+	_, _, err = RefreshDesktopSession(enrollment.RefreshToken, "0.1.3")
+	assert.ErrorIs(t, err, ErrDesktopDeviceNotFound)
+	_, _, err = RefreshDesktopSession(rotatedToken, "0.1.3")
+	assert.ErrorIs(t, err, ErrDesktopDeviceNotFound)
+	_, _, err = RefreshDesktopSession(relinked.RefreshToken, "0.1.3")
+	require.NoError(t, err)
 }
 
 func TestLinkDesktopDeviceReusesStarterCredential(t *testing.T) {

@@ -10,10 +10,11 @@ import (
 )
 
 const (
-	DesktopDeviceStatusActive  = "active"
-	DesktopDeviceStatusRevoked = "revoked"
-	DesktopServiceStatusReady  = "ready"
-	DesktopServiceStatusKeyBad = "credential_unavailable"
+	DesktopDeviceStatusActive             = "active"
+	DesktopDeviceStatusRevoked            = "revoked"
+	DesktopServiceStatusReady             = "ready"
+	DesktopServiceStatusKeyBad            = "credential_unavailable"
+	DesktopRefreshTokenGraceSeconds int64 = 5 * 60
 )
 
 var (
@@ -24,18 +25,20 @@ var (
 )
 
 type DesktopDevice struct {
-	Id               int    `json:"id"`
-	UserId           int    `json:"user_id" gorm:"index;not null"`
-	InstallId        string `json:"install_id" gorm:"type:varchar(64);uniqueIndex;not null"`
-	DeviceName       string `json:"device_name" gorm:"type:varchar(128);not null"`
-	Platform         string `json:"platform" gorm:"type:varchar(32);index;not null"`
-	AppVersion       string `json:"app_version" gorm:"type:varchar(32);not null"`
-	RefreshTokenHash string `json:"-" gorm:"type:char(64);uniqueIndex;not null"`
-	Status           string `json:"status" gorm:"type:varchar(16);index;not null"`
-	CreatedTime      int64  `json:"created_time" gorm:"bigint;not null"`
-	UpdatedTime      int64  `json:"updated_time" gorm:"bigint;not null"`
-	LastSeenTime     int64  `json:"last_seen_time" gorm:"bigint;index;not null"`
-	RevokedTime      int64  `json:"revoked_time" gorm:"bigint;not null"`
+	Id                           int    `json:"id"`
+	UserId                       int    `json:"user_id" gorm:"index;not null"`
+	InstallId                    string `json:"install_id" gorm:"type:varchar(64);uniqueIndex;not null"`
+	DeviceName                   string `json:"device_name" gorm:"type:varchar(128);not null"`
+	Platform                     string `json:"platform" gorm:"type:varchar(32);index;not null"`
+	AppVersion                   string `json:"app_version" gorm:"type:varchar(32);not null"`
+	RefreshTokenHash             string `json:"-" gorm:"type:char(64);uniqueIndex;not null"`
+	PreviousRefreshTokenHash     string `json:"-" gorm:"type:char(64);index;not null;default:''"`
+	RefreshTokenGraceExpiresTime int64  `json:"-" gorm:"bigint;index;not null;default:0"`
+	Status                       string `json:"status" gorm:"type:varchar(16);index;not null"`
+	CreatedTime                  int64  `json:"created_time" gorm:"bigint;not null"`
+	UpdatedTime                  int64  `json:"updated_time" gorm:"bigint;not null"`
+	LastSeenTime                 int64  `json:"last_seen_time" gorm:"bigint;index;not null"`
+	RevokedTime                  int64  `json:"revoked_time" gorm:"bigint;not null"`
 }
 
 type DesktopGrant struct {
@@ -48,26 +51,35 @@ type DesktopGrant struct {
 }
 
 type DesktopOAuthCode struct {
-	Id            int    `json:"id"`
-	UserId        int    `json:"user_id" gorm:"index;not null"`
-	Provider      string `json:"provider" gorm:"type:varchar(32);index;not null"`
-	CodeHash      string `json:"-" gorm:"type:char(64);uniqueIndex;not null"`
-	CodeChallenge string `json:"-" gorm:"type:varchar(128);not null"`
-	ExpiresTime   int64  `json:"expires_time" gorm:"bigint;index;not null"`
-	ConsumedTime  int64  `json:"consumed_time" gorm:"bigint;not null"`
-	CreatedTime   int64  `json:"created_time" gorm:"bigint;not null"`
+	Id                    int    `json:"id"`
+	UserId                int    `json:"user_id" gorm:"index;not null"`
+	Provider              string `json:"provider" gorm:"type:varchar(32);index;not null"`
+	OAuthProviderId       int    `json:"-" gorm:"column:oauth_provider_id;index;not null;default:0"`
+	OAuthProviderUserId   string `json:"-" gorm:"column:oauth_provider_user_id;type:varchar(256);not null;default:''"`
+	OAuthUsername         string `json:"-" gorm:"column:oauth_username;type:varchar(128);not null;default:''"`
+	OAuthDisplayName      string `json:"-" gorm:"column:oauth_display_name;type:varchar(128);not null;default:''"`
+	OAuthEmail            string `json:"-" gorm:"column:oauth_email;type:varchar(256);not null;default:''"`
+	OAuthUsernamePrefix   string `json:"-" gorm:"column:oauth_username_prefix;type:varchar(64);not null;default:''"`
+	OAuthRegistrationOpen bool   `json:"-" gorm:"column:oauth_registration_open;not null;default:false"`
+	CodeHash              string `json:"-" gorm:"type:char(64);uniqueIndex;not null"`
+	CodeChallenge         string `json:"-" gorm:"type:varchar(128);not null"`
+	ExpiresTime           int64  `json:"expires_time" gorm:"bigint;index;not null"`
+	ConsumedTime          int64  `json:"consumed_time" gorm:"bigint;not null"`
+	CreatedTime           int64  `json:"created_time" gorm:"bigint;not null"`
 }
 
 type DesktopOAuthRequest struct {
-	Id            int    `json:"id"`
-	RequestHash   string `json:"-" gorm:"type:char(64);uniqueIndex;not null"`
-	Provider      string `json:"provider" gorm:"type:varchar(32);index;not null"`
-	CallbackUrl   string `json:"-" gorm:"type:varchar(512);not null"`
-	ClientState   string `json:"-" gorm:"type:varchar(128);not null"`
-	CodeChallenge string `json:"-" gorm:"type:varchar(128);not null"`
-	ExpiresTime   int64  `json:"expires_time" gorm:"bigint;index;not null"`
-	ConsumedTime  int64  `json:"consumed_time" gorm:"bigint;not null"`
-	CreatedTime   int64  `json:"created_time" gorm:"bigint;not null"`
+	Id                   int     `json:"id"`
+	RequestHash          string  `json:"-" gorm:"type:char(64);uniqueIndex;not null"`
+	Provider             string  `json:"provider" gorm:"type:varchar(32);index;not null"`
+	CallbackUrl          string  `json:"-" gorm:"type:varchar(512);not null"`
+	ClientState          string  `json:"-" gorm:"type:varchar(128);not null"`
+	CodeChallenge        string  `json:"-" gorm:"type:varchar(128);not null"`
+	OAuthStateHash       *string `json:"-" gorm:"column:oauth_state_hash;type:char(64);uniqueIndex"`
+	ExpiresTime          int64   `json:"expires_time" gorm:"bigint;index;not null"`
+	ConsumedTime         int64   `json:"consumed_time" gorm:"bigint;not null"`
+	CallbackConsumedTime int64   `json:"callback_consumed_time" gorm:"bigint;not null;default:0"`
+	CreatedTime          int64   `json:"created_time" gorm:"bigint;not null"`
 }
 
 func HashDesktopToken(token string) string {

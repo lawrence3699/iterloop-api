@@ -321,7 +321,113 @@ func StartDesktopOAuth(c *gin.Context) {
 		query.Set("scope", config.Scopes)
 	}
 	authorizationURL.RawQuery = query.Encode()
+	if err := model.BindDesktopOAuthRequestState(oauthRequest.Id, oauthState); err != nil {
+		clearDesktopOAuthSession(c)
+		handleDesktopModelError(c, err)
+		return
+	}
 	c.Redirect(http.StatusFound, authorizationURL.String())
+}
+
+func clearDesktopOAuthSession(c *gin.Context) {
+	session := sessions.Default(c)
+	if session.Get("oauth_state") == nil && !desktopOAuthRequested(session) {
+		return
+	}
+	for _, key := range []string{"oauth_state", desktopOAuthCallbackKey, desktopOAuthClientStateKey, desktopOAuthChallengeKey, desktopOAuthProviderKey} {
+		session.Delete(key)
+	}
+	if err := session.Save(); err != nil {
+		common.SysError("failed to clear desktop OAuth session: " + err.Error())
+	}
+}
+
+func redirectDesktopOAuthLoopback(c *gin.Context, request *model.DesktopOAuthRequest, code string, errorCode string) bool {
+	callback, err := desktopLoopbackCallback(request.CallbackUrl, "/iterloop-oauth")
+	if err != nil || callback.Query().Get("state") != request.ClientState {
+		desktopError(c, http.StatusForbidden, "oauth_state_invalid", "Google 登录状态无效")
+		return true
+	}
+	query := callback.Query()
+	query.Del("code")
+	query.Del("error")
+	if code != "" {
+		query.Set("code", code)
+	}
+	if errorCode != "" {
+		query.Set("error", errorCode)
+	}
+	query.Set("state", request.ClientState)
+	callback.RawQuery = query.Encode()
+	clearDesktopOAuthSession(c)
+	c.Header("Cache-Control", "no-store")
+	c.Redirect(http.StatusFound, callback.String())
+	return true
+}
+
+// HandleDesktopOAuthBrowserCallback handles only callbacks whose provider
+// state matches a pending desktop request. Returning false leaves every normal
+// website OAuth callback untouched so the existing SPA flow can handle it.
+// The database-backed state lookup avoids relying on the Strict SameSite
+// session cookie during the cross-site redirect from Google.
+func HandleDesktopOAuthBrowserCallback(c *gin.Context) bool {
+	if c.Request.Method != http.MethodGet {
+		return false
+	}
+	path := strings.Trim(c.Request.URL.Path, "/")
+	parts := strings.Split(path, "/")
+	if len(parts) != 2 || parts[0] != "oauth" {
+		return false
+	}
+	providerName := strings.ToLower(strings.TrimSpace(parts[1]))
+	state := strings.TrimSpace(c.Query("state"))
+	request, claimErr := model.ClaimDesktopOAuthRequestByState(providerName, state)
+	if request == nil {
+		return false
+	}
+	if claimErr != nil {
+		if errors.Is(claimErr, model.ErrDesktopOAuthCallbackConsumed) {
+			desktopError(c, http.StatusConflict, "oauth_callback_consumed", "Google 登录回调已经处理")
+			return true
+		}
+		return redirectDesktopOAuthLoopback(c, request, "", "oauth_request_expired")
+	}
+	if strings.TrimSpace(c.Query("error")) != "" {
+		return redirectDesktopOAuthLoopback(c, request, "", "oauth_cancelled")
+	}
+	provider := oauth.GetProvider(providerName)
+	genericProvider, ok := provider.(*oauth.GenericOAuthProvider)
+	if !ok || provider == nil || !provider.IsEnabled() {
+		return redirectDesktopOAuthLoopback(c, request, "", "oauth_provider_unavailable")
+	}
+	providerCode := strings.TrimSpace(c.Query("code"))
+	if providerCode == "" {
+		return redirectDesktopOAuthLoopback(c, request, "", "oauth_code_invalid")
+	}
+	token, err := provider.ExchangeToken(c.Request.Context(), providerCode, c)
+	if err != nil {
+		common.SysError("desktop OAuth token exchange failed: " + err.Error())
+		return redirectDesktopOAuthLoopback(c, request, "", "oauth_provider_error")
+	}
+	oauthUser, err := provider.GetUserInfo(c.Request.Context(), token)
+	if err != nil {
+		common.SysError("desktop OAuth user lookup failed: " + err.Error())
+		return redirectDesktopOAuthLoopback(c, request, "", "oauth_provider_error")
+	}
+	if oauthUser == nil || strings.TrimSpace(oauthUser.ProviderUserID) == "" {
+		return redirectDesktopOAuthLoopback(c, request, "", "oauth_identity_invalid")
+	}
+	desktopCode, err := model.CreatePendingDesktopOAuthCode(model.DesktopOAuthIdentityInput{
+		Provider: providerName, ProviderId: genericProvider.GetProviderId(),
+		ProviderUserId: oauthUser.ProviderUserID, Username: oauthUser.Username,
+		DisplayName: oauthUser.DisplayName, Email: oauthUser.Email,
+		UsernamePrefix: genericProvider.GetProviderPrefix(), RegistrationOpen: common.RegisterEnabled,
+	}, request.CodeChallenge)
+	if err != nil {
+		common.SysError("failed to create pending desktop OAuth code: " + err.Error())
+		return redirectDesktopOAuthLoopback(c, request, "", "oauth_session_failed")
+	}
+	return redirectDesktopOAuthLoopback(c, request, desktopCode, "")
 }
 
 func desktopOAuthRequested(session sessions.Session) bool {
@@ -698,6 +804,10 @@ func handleDesktopModelError(c *gin.Context, err error) {
 		desktopError(c, http.StatusBadRequest, "oauth_code_invalid", "Google 登录授权无效，请重试")
 	case errors.Is(err, model.ErrDesktopOAuthCodeExpired):
 		desktopError(c, http.StatusBadRequest, "oauth_code_expired", "Google 登录授权已过期，请重试")
+	case errors.Is(err, model.ErrDesktopOAuthIdentityInvalid):
+		desktopError(c, http.StatusBadRequest, "oauth_identity_invalid", "Google 登录账户信息无效")
+	case errors.Is(err, model.ErrDesktopOAuthRegisterDisabled):
+		desktopError(c, http.StatusServiceUnavailable, "oauth_registration_disabled", "Google 新账户注册暂未开放")
 	case errors.Is(err, model.ErrEmailAlreadyTaken):
 		desktopError(c, http.StatusConflict, "email_already_registered", "该邮箱已经注册")
 	case errors.Is(err, gorm.ErrDuplicatedKey), strings.Contains(strings.ToLower(err.Error()), "unique"):
