@@ -137,24 +137,6 @@ export function IterLoopPublicHeader(props: IterLoopPublicHeaderProps) {
                 {t('Models')}
               </button>
               <HeaderLink
-                href={iterLoopPublicUrl('/#codex')}
-                className='iterloop-global-link'
-              >
-                Codex
-              </HeaderLink>
-              <HeaderLink
-                href={iterLoopPublicUrl('/#claude')}
-                className='iterloop-global-link'
-              >
-                Claude
-              </HeaderLink>
-              <HeaderLink
-                href={iterLoopPublicUrl('/#grok')}
-                className='iterloop-global-link'
-              >
-                Grok
-              </HeaderLink>
-              <HeaderLink
                 href={iterLoopPublicUrl('/pricing')}
                 className='iterloop-global-link'
               >
@@ -236,11 +218,6 @@ export function IterLoopPublicHeader(props: IterLoopPublicHeaderProps) {
             <HeaderLink href={iterLoopPublicUrl('/pricing')}>
               {t('Models and pricing')}
             </HeaderLink>
-            <HeaderLink href={iterLoopPublicUrl('/#codex')}>Codex</HeaderLink>
-            <HeaderLink href={iterLoopPublicUrl('/#claude')}>Claude</HeaderLink>
-            <HeaderLink href={iterLoopPublicUrl('/#grok')}>
-              {t('Grok preparing')}
-            </HeaderLink>
           </section>
           <section>
             <span>{t('Quick links')}</span>
@@ -283,9 +260,6 @@ export function IterLoopPublicHeader(props: IterLoopPublicHeaderProps) {
               label: t('Models and pricing'),
               href: iterLoopPublicUrl('/pricing'),
             },
-            { label: 'Codex', href: iterLoopPublicUrl('/#codex') },
-            { label: 'Claude', href: iterLoopPublicUrl('/#claude') },
-            { label: t('Grok preparing'), href: iterLoopPublicUrl('/#grok') },
             { label: t('Connect'), href: iterLoopPublicUrl('/#integrations') },
             { label: t('API docs'), href: iterLoopPublicUrl('/docs') },
             {
