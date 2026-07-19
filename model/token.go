@@ -516,3 +516,10 @@ func InvalidateUserTokensCache(userId int) error {
 	}
 	return firstErr
 }
+
+func InvalidateTokenKeyCache(key string) error {
+	if !common.RedisEnabled || key == "" {
+		return nil
+	}
+	return cacheDeleteToken(key)
+}

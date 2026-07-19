@@ -53,6 +53,26 @@ func SetApiRouter(router *gin.Engine) {
 		apiRouter.GET("/oauth/:provider", middleware.CriticalRateLimit(), controller.HandleOAuth)
 		apiRouter.GET("/ratio_config", middleware.CriticalRateLimit(), controller.GetRatioConfig)
 
+		desktopRoute := apiRouter.Group("/desktop")
+		{
+			desktopRoute.GET("/bootstrap", controller.GetDesktopBootstrap)
+			desktopRoute.GET("/turnstile", controller.GetDesktopTurnstilePage)
+			desktopRoute.GET("/verification", middleware.EmailVerificationRateLimit(), middleware.TurnstileCheck(), controller.SendDesktopVerification)
+			desktopRoute.POST("/enroll", middleware.CriticalRateLimit(), anonymousRequestBodyLimit, controller.EnrollDesktop)
+			desktopRoute.POST("/link", middleware.CriticalRateLimit(), anonymousRequestBodyLimit, controller.LinkDesktop)
+			desktopRoute.POST("/session/refresh", middleware.CriticalRateLimit(), anonymousRequestBodyLimit, controller.RefreshDesktopSession)
+			desktopRoute.POST("/credential/rotate", middleware.CriticalRateLimit(), anonymousRequestBodyLimit, controller.RotateDesktopCredential)
+			desktopRoute.GET("/devices", middleware.CriticalRateLimit(), controller.ListMyDesktopDevices)
+			desktopRoute.DELETE("/device/:id", middleware.CriticalRateLimit(), anonymousRequestBodyLimit, controller.RevokeMyDesktopDevice)
+			desktopRoute.DELETE("/devices/:id", middleware.CriticalRateLimit(), anonymousRequestBodyLimit, controller.RevokeMyDesktopDevice)
+		}
+		desktopAdminRoute := apiRouter.Group("/desktop/admin")
+		desktopAdminRoute.Use(middleware.AdminAuth())
+		{
+			desktopAdminRoute.GET("/devices", controller.AdminListDesktopDevices)
+			desktopAdminRoute.DELETE("/devices/:id", anonymousRequestBodyLimit, controller.AdminRevokeDesktopDevice)
+		}
+
 		apiRouter.POST("/stripe/webhook", anonymousRequestBodyLimit, controller.StripeWebhook)
 		apiRouter.POST("/creem/webhook", anonymousRequestBodyLimit, controller.CreemWebhook)
 		apiRouter.POST("/waffo/webhook", anonymousRequestBodyLimit, controller.WaffoWebhook)

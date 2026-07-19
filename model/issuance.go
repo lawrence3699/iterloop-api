@@ -348,43 +348,156 @@ func createIssuedToken(tx *gorm.DB, userId int, name string, models []string, gr
 	return token, credential, nil
 }
 
-func IssueAccess(profile *IssuanceProfile, email string, note string, createdBy int, options IssueAccessOptions) (*IssueAccessResult, error) {
+type resolvedIssueAccessOptions struct {
+	balanceQuota int
+	keyQuota     int
+	expireDays   int
+}
+
+func resolveIssueAccess(profile *IssuanceProfile, email string, note string, options IssueAccessOptions) (string, string, resolvedIssueAccessOptions, error) {
 	if profile == nil || profile.Id <= 0 {
-		return nil, errors.New("invalid issuance profile")
+		return "", "", resolvedIssueAccessOptions{}, errors.New("invalid issuance profile")
 	}
 	if err := profile.Normalize(); err != nil {
-		return nil, err
+		return "", "", resolvedIssueAccessOptions{}, err
 	}
 	if !profile.Enabled {
-		return nil, errors.New("issuance profile is disabled")
+		return "", "", resolvedIssueAccessOptions{}, errors.New("issuance profile is disabled")
 	}
 	email = NormalizeEmail(email)
 	if email == "" || !strings.Contains(email, "@") {
-		return nil, errors.New("a valid email address is required")
+		return "", "", resolvedIssueAccessOptions{}, errors.New("a valid email address is required")
 	}
 	note = strings.TrimSpace(note)
 	if len(note) > 255 {
-		return nil, errors.New("note must not exceed 255 characters")
+		return "", "", resolvedIssueAccessOptions{}, errors.New("note must not exceed 255 characters")
 	}
-	balanceQuota := profile.BalanceQuota
-	keyQuota := profile.KeyQuota
-	expireDays := profile.ExpireDays
+	resolved := resolvedIssueAccessOptions{
+		balanceQuota: profile.BalanceQuota,
+		keyQuota:     profile.KeyQuota,
+		expireDays:   profile.ExpireDays,
+	}
 	if options.BalanceQuota != nil {
-		balanceQuota = *options.BalanceQuota
+		resolved.balanceQuota = *options.BalanceQuota
 	}
 	if options.KeyQuota != nil {
-		keyQuota = *options.KeyQuota
+		resolved.keyQuota = *options.KeyQuota
 	}
 	if options.ExpireDays != nil {
-		expireDays = *options.ExpireDays
+		resolved.expireDays = *options.ExpireDays
 	}
-	if balanceQuota < 0 || keyQuota < 0 || expireDays < 0 || expireDays > 3650 {
-		return nil, errors.New("invalid quota or expiry override")
+	if resolved.balanceQuota < 0 || resolved.keyQuota < 0 || resolved.expireDays < 0 || resolved.expireDays > 3650 {
+		return "", "", resolvedIssueAccessOptions{}, errors.New("invalid quota or expiry override")
+	}
+	return email, note, resolved, nil
+}
+
+func addIssuedCredential(tx *gorm.DB, profile *IssuanceProfile, userId int, label string, models []string, group string, index int, resolved resolvedIssueAccessOptions, credentials *[]IssuedCredential, tokenIds *[]int) error {
+	name := fmt.Sprintf("%s %s", profile.Name, label)
+	if profile.KeyCount > 1 {
+		name = fmt.Sprintf("%s %s %d", profile.Name, label, index+1)
+	}
+	if len(name) > 50 {
+		name = name[:50]
+	}
+	token, credential, err := createIssuedToken(tx, userId, name, models, group, resolved.keyQuota, profile.UnlimitedQuota, resolved.expireDays, profile.AllowIps)
+	if err != nil {
+		return err
+	}
+	*tokenIds = append(*tokenIds, token.Id)
+	*credentials = append(*credentials, credential)
+	return nil
+}
+
+func issueAccessToUserWithTx(tx *gorm.DB, profile *IssuanceProfile, user *User, email string, note string, createdBy int, resolved resolvedIssueAccessOptions) (*IssueAccessResult, error) {
+	if tx == nil || user == nil || user.Id <= 0 {
+		return nil, errors.New("valid transaction and user are required")
+	}
+	if resolved.balanceQuota > 0 {
+		if err := tx.Model(&User{}).Where("id = ?", user.Id).Update("quota", gorm.Expr("quota + ?", resolved.balanceQuota)).Error; err != nil {
+			return nil, err
+		}
+		user.Quota += resolved.balanceQuota
+	}
+
+	credentials := make([]IssuedCredential, 0, profile.KeyCount*3)
+	tokenIds := make([]int, 0, profile.KeyCount*3)
+	codexModels := commaList(profile.CodexModels)
+	claudeModels := commaList(profile.ClaudeModels)
+	grokModels := commaList(profile.GrokModels)
+	for index := 0; index < profile.KeyCount; index++ {
+		switch profile.Mode {
+		case IssuanceModeCodex:
+			if err := addIssuedCredential(tx, profile, user.Id, "Codex", codexModels, profile.CodexGroup, index, resolved, &credentials, &tokenIds); err != nil {
+				return nil, err
+			}
+		case IssuanceModeClaude:
+			if err := addIssuedCredential(tx, profile, user.Id, "Claude", claudeModels, profile.ClaudeGroup, index, resolved, &credentials, &tokenIds); err != nil {
+				return nil, err
+			}
+		case IssuanceModeGrok:
+			if err := addIssuedCredential(tx, profile, user.Id, "Grok", grokModels, profile.GrokGroup, index, resolved, &credentials, &tokenIds); err != nil {
+				return nil, err
+			}
+		case IssuanceModeCombined:
+			models := append(append(append([]string{}, codexModels...), claudeModels...), grokModels...)
+			if err := addIssuedCredential(tx, profile, user.Id, "Combined", models, profile.CombinedGroup, index, resolved, &credentials, &tokenIds); err != nil {
+				return nil, err
+			}
+		case IssuanceModeSplit:
+			if len(codexModels) > 0 {
+				if err := addIssuedCredential(tx, profile, user.Id, "Codex", codexModels, profile.CodexGroup, index, resolved, &credentials, &tokenIds); err != nil {
+					return nil, err
+				}
+			}
+			if len(claudeModels) > 0 {
+				if err := addIssuedCredential(tx, profile, user.Id, "Claude", claudeModels, profile.ClaudeGroup, index, resolved, &credentials, &tokenIds); err != nil {
+					return nil, err
+				}
+			}
+			if len(grokModels) > 0 {
+				if err := addIssuedCredential(tx, profile, user.Id, "Grok", grokModels, profile.GrokGroup, index, resolved, &credentials, &tokenIds); err != nil {
+					return nil, err
+				}
+			}
+		}
+	}
+	tokenIdsJSON, err := common.Marshal(tokenIds)
+	if err != nil {
+		return nil, err
+	}
+	issuance := &Issuance{
+		ProfileId: profile.Id, UserId: user.Id, Email: email, Status: IssuanceStatusActive,
+		BalanceGranted: resolved.balanceQuota, TokenIds: string(tokenIdsJSON), Note: note,
+		CreatedBy: createdBy, CreatedTime: common.GetTimestamp(),
+	}
+	if err := tx.Create(issuance).Error; err != nil {
+		return nil, err
+	}
+	return &IssueAccessResult{Issuance: issuance, User: user, Credentials: credentials}, nil
+}
+
+func IssueAccessToExistingUserWithTx(tx *gorm.DB, profile *IssuanceProfile, user *User, note string, createdBy int, options IssueAccessOptions) (*IssueAccessResult, error) {
+	if user == nil {
+		return nil, errors.New("user is required")
+	}
+	email, note, resolved, err := resolveIssueAccess(profile, user.Email, note, options)
+	if err != nil {
+		return nil, err
+	}
+	return issueAccessToUserWithTx(tx, profile, user, email, note, createdBy, resolved)
+}
+
+func IssueAccess(profile *IssuanceProfile, email string, note string, createdBy int, options IssueAccessOptions) (*IssueAccessResult, error) {
+	email, note, resolved, err := resolveIssueAccess(profile, email, note, options)
+	if err != nil {
+		return nil, err
 	}
 
 	result := &IssueAccessResult{}
 	var createdUser *User
-	err := DB.Transaction(func(tx *gorm.DB) error {
+	var temporaryPassword string
+	err = DB.Transaction(func(tx *gorm.DB) error {
 		users := make([]User, 0, 2)
 		if err := tx.Where("LOWER(email) = ?", email).Limit(2).Find(&users).Error; err != nil {
 			return err
@@ -409,94 +522,22 @@ func IssueAccess(profile *IssuanceProfile, email string, note string, createdBy 
 			if err := user.InsertWithTx(tx, 0); err != nil {
 				return err
 			}
-			result.AccountCreated = true
-			result.TemporaryPassword = password
+			temporaryPassword = password
 			createdUser = user
 		case 1:
 			user = &users[0]
 		default:
 			return ErrEmailAmbiguous
 		}
-		if balanceQuota > 0 {
-			if err := tx.Model(&User{}).Where("id = ?", user.Id).Update("quota", gorm.Expr("quota + ?", balanceQuota)).Error; err != nil {
-				return err
-			}
-			user.Quota += balanceQuota
-		}
-
-		credentials := make([]IssuedCredential, 0, profile.KeyCount*3)
-		tokenIds := make([]int, 0, profile.KeyCount*3)
-		add := func(label string, models []string, group string, index int) error {
-			name := fmt.Sprintf("%s %s", profile.Name, label)
-			if profile.KeyCount > 1 {
-				name = fmt.Sprintf("%s %s %d", profile.Name, label, index+1)
-			}
-			if len(name) > 50 {
-				name = name[:50]
-			}
-			token, credential, err := createIssuedToken(tx, user.Id, name, models, group, keyQuota, profile.UnlimitedQuota, expireDays, profile.AllowIps)
-			if err != nil {
-				return err
-			}
-			tokenIds = append(tokenIds, token.Id)
-			credentials = append(credentials, credential)
-			return nil
-		}
-		codexModels := commaList(profile.CodexModels)
-		claudeModels := commaList(profile.ClaudeModels)
-		grokModels := commaList(profile.GrokModels)
-		for index := 0; index < profile.KeyCount; index++ {
-			switch profile.Mode {
-			case IssuanceModeCodex:
-				if err := add("Codex", codexModels, profile.CodexGroup, index); err != nil {
-					return err
-				}
-			case IssuanceModeClaude:
-				if err := add("Claude", claudeModels, profile.ClaudeGroup, index); err != nil {
-					return err
-				}
-			case IssuanceModeGrok:
-				if err := add("Grok", grokModels, profile.GrokGroup, index); err != nil {
-					return err
-				}
-			case IssuanceModeCombined:
-				models := append(append(append([]string{}, codexModels...), claudeModels...), grokModels...)
-				if err := add("Combined", models, profile.CombinedGroup, index); err != nil {
-					return err
-				}
-			case IssuanceModeSplit:
-				if len(codexModels) > 0 {
-					if err := add("Codex", codexModels, profile.CodexGroup, index); err != nil {
-						return err
-					}
-				}
-				if len(claudeModels) > 0 {
-					if err := add("Claude", claudeModels, profile.ClaudeGroup, index); err != nil {
-						return err
-					}
-				}
-				if len(grokModels) > 0 {
-					if err := add("Grok", grokModels, profile.GrokGroup, index); err != nil {
-						return err
-					}
-				}
-			}
-		}
-		tokenIdsJSON, err := common.Marshal(tokenIds)
+		issuedResult, err := issueAccessToUserWithTx(tx, profile, user, email, note, createdBy, resolved)
 		if err != nil {
 			return err
 		}
-		issuance := &Issuance{
-			ProfileId: profile.Id, UserId: user.Id, Email: email, Status: IssuanceStatusActive,
-			BalanceGranted: balanceQuota, TokenIds: string(tokenIdsJSON), Note: note,
-			CreatedBy: createdBy, CreatedTime: common.GetTimestamp(),
+		result = issuedResult
+		if createdUser != nil {
+			result.AccountCreated = true
+			result.TemporaryPassword = temporaryPassword
 		}
-		if err := tx.Create(issuance).Error; err != nil {
-			return err
-		}
-		result.Issuance = issuance
-		result.User = user
-		result.Credentials = credentials
 		return nil
 	})
 	if err != nil {
