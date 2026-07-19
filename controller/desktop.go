@@ -417,6 +417,18 @@ func commaListForDesktop(raw string) []string {
 	return values
 }
 
+func desktopAuthenticationIntent(email string) (string, string, error) {
+	_, err := model.GetUniqueUserByEmail(email)
+	switch {
+	case err == nil:
+		return "link", common.DesktopLinkPurpose, nil
+	case errors.Is(err, model.ErrEmailNotFound):
+		return "enroll", common.DesktopEnrollmentPurpose, nil
+	default:
+		return "", "", err
+	}
+}
+
 func SendDesktopVerification(c *gin.Context) {
 	email := model.NormalizeEmail(c.Query("email"))
 	intent := strings.TrimSpace(c.Query("intent"))
@@ -425,7 +437,18 @@ func SendDesktopVerification(c *gin.Context) {
 		return
 	}
 	purpose := ""
+	resolvedIntent := intent
 	switch intent {
+	case "authenticate":
+		var err error
+		resolvedIntent, purpose, err = desktopAuthenticationIntent(email)
+		if err != nil {
+			handleDesktopModelError(c, err)
+			return
+		}
+		if resolvedIntent == "enroll" && !requireDesktopEnabled(c) {
+			return
+		}
 	case "enroll":
 		if !requireDesktopEnabled(c) {
 			return
@@ -460,7 +483,7 @@ func SendDesktopVerification(c *gin.Context) {
 		desktopError(c, http.StatusServiceUnavailable, "verification_delivery_failed", "验证码发送失败")
 		return
 	}
-	common.ApiSuccess(c, nil)
+	common.ApiSuccess(c, gin.H{"intent": resolvedIntent})
 }
 
 func EnrollDesktop(c *gin.Context) {

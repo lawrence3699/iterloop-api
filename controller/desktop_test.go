@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/QuantumNous/new-api/common"
+	"github.com/QuantumNous/new-api/model"
 	"github.com/QuantumNous/new-api/setting/operation_setting"
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
@@ -63,4 +64,32 @@ func TestDesktopTurnstileCallbackMustBeLoopback(t *testing.T) {
 	GetDesktopTurnstilePage(context)
 
 	assert.Equal(t, http.StatusBadRequest, recorder.Code)
+}
+
+func TestDesktopAuthenticationIntentSelectsEnrollForUnknownEmail(t *testing.T) {
+	db := openTokenControllerTestDB(t)
+	require.NoError(t, db.AutoMigrate(&model.User{}))
+
+	intent, purpose, err := desktopAuthenticationIntent("new@example.com")
+
+	require.NoError(t, err)
+	assert.Equal(t, "enroll", intent)
+	assert.Equal(t, common.DesktopEnrollmentPurpose, purpose)
+}
+
+func TestDesktopAuthenticationIntentSelectsLinkForExistingEmail(t *testing.T) {
+	db := openTokenControllerTestDB(t)
+	require.NoError(t, db.AutoMigrate(&model.User{}))
+	require.NoError(t, db.Create(&model.User{
+		Username: "desktop-existing",
+		Email:    "existing@example.com",
+		Password: "password123",
+		Status:   common.UserStatusEnabled,
+	}).Error)
+
+	intent, purpose, err := desktopAuthenticationIntent("EXISTING@example.com")
+
+	require.NoError(t, err)
+	assert.Equal(t, "link", intent)
+	assert.Equal(t, common.DesktopLinkPurpose, purpose)
 }
