@@ -279,6 +279,7 @@ func migrateDB() error {
 		&Log{},
 		&Midjourney{},
 		&TopUp{},
+		&StripeWebhookEvent{},
 		&QuotaData{},
 		&Task{},
 		&Model{},
@@ -301,6 +302,8 @@ func migrateDB() error {
 		&AuthzRole{},
 		&IssuanceProfile{},
 		&Issuance{},
+		&DesktopDevice{},
+		&DesktopGrant{},
 	)
 	if err != nil {
 		return err
@@ -335,6 +338,7 @@ func migrateDBFast() error {
 		{&Log{}, "Log"},
 		{&Midjourney{}, "Midjourney"},
 		{&TopUp{}, "TopUp"},
+		{&StripeWebhookEvent{}, "StripeWebhookEvent"},
 		{&QuotaData{}, "QuotaData"},
 		{&Task{}, "Task"},
 		{&Model{}, "Model"},
@@ -355,6 +359,8 @@ func migrateDBFast() error {
 		{&SystemTaskLock{}, "SystemTaskLock"},
 		{&IssuanceProfile{}, "IssuanceProfile"},
 		{&Issuance{}, "Issuance"},
+		{&DesktopDevice{}, "DesktopDevice"},
+		{&DesktopGrant{}, "DesktopGrant"},
 	}
 	// 动态计算migration数量，确保errChan缓冲区足够大
 	errChan := make(chan error, len(migrations))
