@@ -14,16 +14,68 @@ import (
 func setupDesktopTest(t *testing.T) *IssuanceProfile {
 	t.Helper()
 	setupIssuanceTest(t)
-	require.NoError(t, DB.AutoMigrate(&DesktopDevice{}, &DesktopGrant{}))
-	for _, target := range []any{&DesktopDevice{}, &DesktopGrant{}} {
+	require.NoError(t, DB.AutoMigrate(&DesktopDevice{}, &DesktopGrant{}, &DesktopOAuthCode{}, &DesktopOAuthRequest{}))
+	for _, target := range []any{&DesktopDevice{}, &DesktopGrant{}, &DesktopOAuthCode{}, &DesktopOAuthRequest{}} {
 		require.NoError(t, DB.Session(&gorm.Session{AllowGlobalUpdate: true}).Unscoped().Delete(target).Error)
 	}
 	t.Cleanup(func() {
-		for _, target := range []any{&DesktopDevice{}, &DesktopGrant{}} {
+		for _, target := range []any{&DesktopDevice{}, &DesktopGrant{}, &DesktopOAuthCode{}, &DesktopOAuthRequest{}} {
 			_ = DB.Session(&gorm.Session{AllowGlobalUpdate: true}).Unscoped().Delete(target).Error
 		}
 	})
 	return createIssuanceProfileFixture(t, IssuanceModeCombined)
+}
+
+func TestDesktopOAuthRequestCanOnlyBeConsumedOnce(t *testing.T) {
+	setupDesktopTest(t)
+	rawRequest, err := CreateDesktopOAuthRequest(DesktopOAuthRequestInput{
+		Provider: "google", CallbackUrl: "http://127.0.0.1:12345/iterloop-oauth?state=test-state",
+		ClientState: "test-state", CodeChallenge: strings.Repeat("c", 43),
+	})
+	require.NoError(t, err)
+
+	request, err := ConsumeDesktopOAuthRequest(rawRequest)
+	require.NoError(t, err)
+	assert.Equal(t, "google", request.Provider)
+	assert.Equal(t, "test-state", request.ClientState)
+	_, err = ConsumeDesktopOAuthRequest(rawRequest)
+	assert.ErrorIs(t, err, ErrDesktopOAuthCodeInvalid)
+}
+
+func TestDesktopOAuthCodeUsesPKCEAndCanOnlyBeExchangedOnce(t *testing.T) {
+	profile := setupDesktopTest(t)
+	user := &User{
+		Username: "google-user", DisplayName: "Google User", Email: "google@example.com",
+		Role: common.RoleCommonUser, Status: common.UserStatusEnabled, Group: "default",
+	}
+	require.NoError(t, user.Insert(0))
+	verifier := strings.Repeat("v", 64)
+	code, err := CreateDesktopOAuthCode(user.Id, "google", desktopPKCEChallenge(verifier))
+	require.NoError(t, err)
+
+	input := DesktopEnrollmentInput{
+		InstallId: "google-install", DeviceName: "Google Mac", Platform: "macos", AppVersion: "0.1.1",
+	}
+	_, err = ExchangeDesktopOAuthCode(profile, code, strings.Repeat("x", 64), input)
+	assert.ErrorIs(t, err, ErrDesktopOAuthCodeInvalid)
+
+	result, err := ExchangeDesktopOAuthCode(profile, code, verifier, input)
+	require.NoError(t, err)
+	assert.Equal(t, user.Id, result.User.Id)
+	assert.Contains(t, result.Credential.ApiKey, "sk-")
+	assert.NotEmpty(t, result.RefreshToken)
+
+	_, err = ExchangeDesktopOAuthCode(profile, code, verifier, DesktopEnrollmentInput{
+		InstallId: "second-google-install", DeviceName: "Second Mac", Platform: "macos", AppVersion: "0.1.1",
+	})
+	assert.ErrorIs(t, err, ErrDesktopOAuthCodeInvalid)
+
+	var grantCount int64
+	var deviceCount int64
+	require.NoError(t, DB.Model(&DesktopGrant{}).Count(&grantCount).Error)
+	require.NoError(t, DB.Model(&DesktopDevice{}).Count(&deviceCount).Error)
+	assert.EqualValues(t, 1, grantCount)
+	assert.EqualValues(t, 1, deviceCount)
 }
 
 func desktopEnrollmentFixture(installId string) DesktopEnrollmentInput {

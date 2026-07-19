@@ -47,6 +47,29 @@ type DesktopGrant struct {
 	CreatedTime int64 `json:"created_time" gorm:"bigint;not null"`
 }
 
+type DesktopOAuthCode struct {
+	Id            int    `json:"id"`
+	UserId        int    `json:"user_id" gorm:"index;not null"`
+	Provider      string `json:"provider" gorm:"type:varchar(32);index;not null"`
+	CodeHash      string `json:"-" gorm:"type:char(64);uniqueIndex;not null"`
+	CodeChallenge string `json:"-" gorm:"type:varchar(128);not null"`
+	ExpiresTime   int64  `json:"expires_time" gorm:"bigint;index;not null"`
+	ConsumedTime  int64  `json:"consumed_time" gorm:"bigint;not null"`
+	CreatedTime   int64  `json:"created_time" gorm:"bigint;not null"`
+}
+
+type DesktopOAuthRequest struct {
+	Id            int    `json:"id"`
+	RequestHash   string `json:"-" gorm:"type:char(64);uniqueIndex;not null"`
+	Provider      string `json:"provider" gorm:"type:varchar(32);index;not null"`
+	CallbackUrl   string `json:"-" gorm:"type:varchar(512);not null"`
+	ClientState   string `json:"-" gorm:"type:varchar(128);not null"`
+	CodeChallenge string `json:"-" gorm:"type:varchar(128);not null"`
+	ExpiresTime   int64  `json:"expires_time" gorm:"bigint;index;not null"`
+	ConsumedTime  int64  `json:"consumed_time" gorm:"bigint;not null"`
+	CreatedTime   int64  `json:"created_time" gorm:"bigint;not null"`
+}
+
 func HashDesktopToken(token string) string {
 	return hex.EncodeToString(common.Sha256Raw([]byte(strings.TrimSpace(token))))
 }

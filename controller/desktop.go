@@ -13,9 +13,19 @@ import (
 
 	"github.com/QuantumNous/new-api/common"
 	"github.com/QuantumNous/new-api/model"
+	"github.com/QuantumNous/new-api/oauth"
 	"github.com/QuantumNous/new-api/setting/operation_setting"
+	"github.com/QuantumNous/new-api/setting/system_setting"
+	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
+)
+
+const (
+	desktopOAuthCallbackKey    = "desktop_oauth_callback"
+	desktopOAuthClientStateKey = "desktop_oauth_client_state"
+	desktopOAuthChallengeKey   = "desktop_oauth_code_challenge"
+	desktopOAuthProviderKey    = "desktop_oauth_provider"
 )
 
 var desktopTurnstilePage = template.Must(template.New("desktop-turnstile").Parse(`<!doctype html>
@@ -63,6 +73,21 @@ type desktopRotateRequest struct {
 
 type desktopRevokeRequest struct {
 	RevokeCredential bool `json:"revoke_credential"`
+}
+
+type desktopOAuthExchangeRequest struct {
+	desktopDeviceRequest
+	Code         string `json:"code"`
+	CodeVerifier string `json:"code_verifier"`
+}
+
+type desktopOAuthPrepareRequest struct {
+	Provider       string `json:"provider"`
+	Callback       string `json:"callback"`
+	CodeChallenge  string `json:"code_challenge"`
+	LegalVersion   string `json:"legal_version"`
+	BetaInviteCode string `json:"beta_invite_code"`
+	AppVersion     string `json:"app_version"`
 }
 
 func desktopError(c *gin.Context, status int, code string, message string) {
@@ -166,13 +191,15 @@ func desktopEnrollmentResponse(result *model.DesktopEnrollmentResult) gin.H {
 
 func GetDesktopBootstrap(c *gin.Context) {
 	settings := operation_setting.GetDesktopSetting()
+	googleProvider := oauth.GetProvider("google")
 	data := gin.H{
 		"enabled": settings.Enabled, "minimum_client_version": settings.MinimumClientVersion,
 		"recommended_codex_model":  settings.RecommendedCodexModel,
 		"recommended_claude_model": settings.RecommendedClaudeModel,
 		"legal_version":            settings.LegalVersion, "beta_invite_required": settings.BetaInviteRequired,
 		"turnstile_enabled": common.TurnstileCheckEnabled, "turnstile_site_key": common.TurnstileSiteKey,
-		"legal_urls": gin.H{"user_agreement": "/user-agreement", "privacy_policy": "/privacy-policy"},
+		"google_oauth_enabled": googleProvider != nil && googleProvider.IsEnabled(),
+		"legal_urls":           gin.H{"user_agreement": "/user-agreement", "privacy_policy": "/privacy-policy"},
 		"tools": gin.H{
 			"codex":  gin.H{"install_url": "https://chatgpt.com/codex/install.ps1"},
 			"claude": gin.H{"install_url": "https://claude.ai/install.ps1"},
@@ -188,14 +215,182 @@ func GetDesktopBootstrap(c *gin.Context) {
 	common.ApiSuccess(c, data)
 }
 
-func GetDesktopTurnstilePage(c *gin.Context) {
-	callback, err := url.Parse(c.Query("callback"))
-	if err != nil || callback.Scheme != "http" || callback.Path != "/iterloop-turnstile" {
-		c.AbortWithStatus(http.StatusBadRequest)
-		return
+func desktopLoopbackCallback(raw string, expectedPath string) (*url.URL, error) {
+	callback, err := url.Parse(raw)
+	if err != nil || callback.Scheme != "http" || callback.Path != expectedPath || callback.User != nil || callback.Fragment != "" {
+		return nil, errors.New("invalid desktop callback")
 	}
 	host := strings.ToLower(callback.Hostname())
 	if host != "127.0.0.1" && host != "localhost" && host != "::1" {
+		return nil, errors.New("invalid desktop callback host")
+	}
+	if callback.Port() == "" {
+		return nil, errors.New("invalid desktop callback port")
+	}
+	return callback, nil
+}
+
+func PrepareDesktopOAuth(c *gin.Context) {
+	if !requireDesktopEnabled(c) {
+		return
+	}
+	request := &desktopOAuthPrepareRequest{}
+	if err := common.DecodeJson(c.Request.Body, request); err != nil {
+		desktopError(c, http.StatusBadRequest, "invalid_oauth_request", "Google 登录请求无效")
+		return
+	}
+	providerName := strings.ToLower(strings.TrimSpace(request.Provider))
+	if providerName != "google" {
+		desktopError(c, http.StatusBadRequest, "oauth_provider_unsupported", "桌面端暂不支持该登录方式")
+		return
+	}
+	provider := oauth.GetProvider(providerName)
+	if provider == nil || !provider.IsEnabled() {
+		desktopError(c, http.StatusServiceUnavailable, "oauth_provider_unavailable", "Google 登录暂不可用")
+		return
+	}
+	if !requireDesktopClientVersion(c, request.AppVersion) || !requireDesktopInvite(c, request.BetaInviteCode) {
+		return
+	}
+	if strings.TrimSpace(request.LegalVersion) != operation_setting.GetDesktopSetting().LegalVersion {
+		desktopError(c, http.StatusConflict, "legal_version_changed", "协议已更新，请重新确认")
+		return
+	}
+	if _, err := desktopStarterProfile(); err != nil {
+		desktopError(c, http.StatusServiceUnavailable, "starter_unavailable", "Starter 发放方案暂不可用")
+		return
+	}
+	callback, err := desktopLoopbackCallback(request.Callback, "/iterloop-oauth")
+	if err != nil {
+		desktopError(c, http.StatusBadRequest, "invalid_oauth_callback", "桌面端回调地址无效")
+		return
+	}
+	clientState := callback.Query().Get("state")
+	challenge := strings.TrimSpace(request.CodeChallenge)
+	if clientState == "" || len(clientState) > 128 || len(challenge) < 32 || len(challenge) > 128 {
+		desktopError(c, http.StatusBadRequest, "invalid_oauth_request", "Google 登录请求无效")
+		return
+	}
+	rawRequest, err := model.CreateDesktopOAuthRequest(model.DesktopOAuthRequestInput{
+		Provider: providerName, CallbackUrl: callback.String(), ClientState: clientState, CodeChallenge: challenge,
+	})
+	if err != nil {
+		handleDesktopModelError(c, err)
+		return
+	}
+	startURL := strings.TrimRight(system_setting.ServerAddress, "/") + "/api/desktop/oauth/start?request=" + url.QueryEscape(rawRequest)
+	common.ApiSuccess(c, gin.H{"authorization_url": startURL})
+}
+
+func StartDesktopOAuth(c *gin.Context) {
+	oauthRequest, err := model.ConsumeDesktopOAuthRequest(c.Query("request"))
+	if err != nil {
+		handleDesktopModelError(c, err)
+		return
+	}
+	providerName := oauthRequest.Provider
+	provider := oauth.GetProvider(providerName)
+	genericProvider, ok := provider.(*oauth.GenericOAuthProvider)
+	if !ok || !provider.IsEnabled() {
+		desktopError(c, http.StatusServiceUnavailable, "oauth_provider_unavailable", "Google 登录暂不可用")
+		return
+	}
+	session := sessions.Default(c)
+	oauthState := common.GetRandomString(32)
+	session.Set("oauth_state", oauthState)
+	session.Set(desktopOAuthCallbackKey, oauthRequest.CallbackUrl)
+	session.Set(desktopOAuthClientStateKey, oauthRequest.ClientState)
+	session.Set(desktopOAuthChallengeKey, oauthRequest.CodeChallenge)
+	session.Set(desktopOAuthProviderKey, providerName)
+	if err := session.Save(); err != nil {
+		desktopError(c, http.StatusInternalServerError, "oauth_session_failed", "无法初始化 Google 登录")
+		return
+	}
+	config := genericProvider.GetConfig()
+	authorizationURL, err := url.Parse(config.AuthorizationEndpoint)
+	if err != nil || authorizationURL.Scheme != "https" {
+		desktopError(c, http.StatusServiceUnavailable, "oauth_provider_unavailable", "Google 登录配置无效")
+		return
+	}
+	query := authorizationURL.Query()
+	query.Set("client_id", config.ClientId)
+	query.Set("redirect_uri", strings.TrimRight(system_setting.ServerAddress, "/")+"/oauth/"+config.Slug)
+	query.Set("response_type", "code")
+	query.Set("state", oauthState)
+	if strings.TrimSpace(config.Scopes) != "" {
+		query.Set("scope", config.Scopes)
+	}
+	authorizationURL.RawQuery = query.Encode()
+	c.Redirect(http.StatusFound, authorizationURL.String())
+}
+
+func desktopOAuthRequested(session sessions.Session) bool {
+	provider, _ := session.Get(desktopOAuthProviderKey).(string)
+	callback, _ := session.Get(desktopOAuthCallbackKey).(string)
+	return provider != "" && callback != ""
+}
+
+func completeDesktopOAuth(user *model.User, providerName string, c *gin.Context) bool {
+	session := sessions.Default(c)
+	if !desktopOAuthRequested(session) {
+		return false
+	}
+	expectedProvider, _ := session.Get(desktopOAuthProviderKey).(string)
+	callbackRaw, _ := session.Get(desktopOAuthCallbackKey).(string)
+	clientState, _ := session.Get(desktopOAuthClientStateKey).(string)
+	challenge, _ := session.Get(desktopOAuthChallengeKey).(string)
+	if expectedProvider != providerName {
+		desktopError(c, http.StatusForbidden, "oauth_state_invalid", "Google 登录状态无效")
+		return true
+	}
+	callback, err := desktopLoopbackCallback(callbackRaw, "/iterloop-oauth")
+	if err != nil || callback.Query().Get("state") != clientState {
+		desktopError(c, http.StatusForbidden, "oauth_state_invalid", "Google 登录状态无效")
+		return true
+	}
+	code, err := model.CreateDesktopOAuthCode(user.Id, providerName, challenge)
+	if err != nil {
+		handleDesktopModelError(c, err)
+		return true
+	}
+	query := callback.Query()
+	query.Set("code", code)
+	query.Set("state", clientState)
+	callback.RawQuery = query.Encode()
+	for _, key := range []string{"oauth_state", desktopOAuthCallbackKey, desktopOAuthClientStateKey, desktopOAuthChallengeKey, desktopOAuthProviderKey} {
+		session.Delete(key)
+	}
+	if err := session.Save(); err != nil {
+		desktopError(c, http.StatusInternalServerError, "oauth_session_failed", "无法完成 Google 登录")
+		return true
+	}
+	common.ApiSuccess(c, gin.H{"desktop_callback_url": callback.String()})
+	return true
+}
+
+func ExchangeDesktopOAuth(c *gin.Context) {
+	request := &desktopOAuthExchangeRequest{}
+	if err := common.DecodeJson(c.Request.Body, request); err != nil {
+		desktopError(c, http.StatusBadRequest, "invalid_oauth_request", "Google 登录请求无效")
+		return
+	}
+	if !requireDesktopClientVersion(c, request.AppVersion) {
+		return
+	}
+	profile, _ := desktopStarterProfile()
+	result, err := model.ExchangeDesktopOAuthCode(profile, request.Code, request.CodeVerifier, model.DesktopEnrollmentInput{
+		InstallId: request.InstallId, DeviceName: request.DeviceName, Platform: request.Platform, AppVersion: request.AppVersion,
+	})
+	if err != nil {
+		handleDesktopModelError(c, err)
+		return
+	}
+	common.ApiSuccess(c, desktopEnrollmentResponse(result))
+}
+
+func GetDesktopTurnstilePage(c *gin.Context) {
+	callback, err := desktopLoopbackCallback(c.Query("callback"), "/iterloop-turnstile")
+	if err != nil {
 		c.AbortWithStatus(http.StatusBadRequest)
 		return
 	}
@@ -476,6 +671,10 @@ func handleDesktopModelError(c *gin.Context, err error) {
 		desktopError(c, http.StatusBadRequest, "invalid_enrollment", "注册信息无效")
 	case errors.Is(err, model.ErrDesktopUsernameUnavailable):
 		desktopError(c, http.StatusConflict, "username_already_registered", "该用户名已经注册")
+	case errors.Is(err, model.ErrDesktopOAuthCodeInvalid):
+		desktopError(c, http.StatusBadRequest, "oauth_code_invalid", "Google 登录授权无效，请重试")
+	case errors.Is(err, model.ErrDesktopOAuthCodeExpired):
+		desktopError(c, http.StatusBadRequest, "oauth_code_expired", "Google 登录授权已过期，请重试")
 	case errors.Is(err, model.ErrEmailAlreadyTaken):
 		desktopError(c, http.StatusConflict, "email_already_registered", "该邮箱已经注册")
 	case errors.Is(err, gorm.ErrDuplicatedKey), strings.Contains(strings.ToLower(err.Error()), "unique"):
