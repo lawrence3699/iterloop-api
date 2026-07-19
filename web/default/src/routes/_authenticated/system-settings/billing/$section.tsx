@@ -19,20 +19,20 @@ For commercial licensing, please contact support@quantumnous.com
 import { createFileRoute, redirect } from '@tanstack/react-router'
 
 import { BillingSettings } from '@/features/system-settings/billing'
-import {
-  BILLING_DEFAULT_SECTION,
-  BILLING_SECTION_IDS,
-} from '@/features/system-settings/billing/section-registry.tsx'
+import { SYSTEM_SETTINGS_ROUTE_SECTIONS } from '@/features/system-settings/route-sections'
 
 export const Route = createFileRoute(
   '/_authenticated/system-settings/billing/$section'
 )({
   beforeLoad: ({ params }) => {
-    const validSections = BILLING_SECTION_IDS as unknown as string[]
+    const validSections: readonly string[] =
+      SYSTEM_SETTINGS_ROUTE_SECTIONS.billing.sectionIds
     if (!validSections.includes(params.section)) {
       throw redirect({
         to: '/system-settings/billing/$section',
-        params: { section: BILLING_DEFAULT_SECTION },
+        params: {
+          section: SYSTEM_SETTINGS_ROUTE_SECTIONS.billing.defaultSection,
+        },
       })
     }
   },

@@ -17,26 +17,37 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 import { createFileRoute, redirect } from '@tanstack/react-router'
-import z from 'zod'
 
 import { Users } from '@/features/users'
 import { ROLE } from '@/lib/roles'
+import {
+  optionalNumber,
+  optionalString,
+  searchRecord,
+  stringArray,
+} from '@/lib/search-params'
 import { useAuthStore } from '@/stores/auth-store'
 
-const usersSearchSchema = z.object({
-  page: z.number().optional().catch(1),
-  pageSize: z.number().optional().catch(undefined),
-  filter: z.string().optional().catch(''),
-  status: z
-    .array(z.enum(['-1', '1', '2']))
-    .optional()
-    .catch([]),
-  role: z
-    .array(z.enum(['1', '10', '100']))
-    .optional()
-    .catch([]),
-  group: z.string().optional().catch(''),
-})
+const usersSearchSchema = (
+  value: unknown
+): Partial<{
+  page: number
+  pageSize: number
+  filter: string
+  status: ('-1' | '1' | '2')[]
+  role: ('1' | '10' | '100')[]
+  group: string
+}> => {
+  const search = searchRecord(value)
+  return {
+    page: optionalNumber(search.page, 1),
+    pageSize: optionalNumber(search.pageSize),
+    filter: optionalString(search.filter, ''),
+    status: stringArray(search.status, ['-1', '1', '2']),
+    role: stringArray(search.role, ['1', '10', '100']),
+    group: optionalString(search.group, ''),
+  }
+}
 
 export const Route = createFileRoute('/_authenticated/users/')({
   beforeLoad: () => {

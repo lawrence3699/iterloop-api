@@ -19,10 +19,19 @@ For commercial licensing, please contact support@quantumnous.com
 import { useQuery } from '@tanstack/react-query'
 
 import type { SystemStatus } from '@/features/auth/types'
-import { getStatus } from '@/lib/api'
 import { useSystemConfigStore } from '@/stores/system-config-store'
 
 import { mapStatusDataToConfig } from './use-system-config'
+
+async function fetchStatus(): Promise<SystemStatus | null> {
+  const response = await fetch('/api/status', {
+    credentials: 'same-origin',
+    headers: { Accept: 'application/json' },
+  })
+  if (!response.ok) throw new Error(`Status request failed: ${response.status}`)
+  const payload = (await response.json()) as { data?: SystemStatus }
+  return payload.data ?? null
+}
 
 // Get initial cache from localStorage
 function getInitialStatus(): SystemStatus | undefined {
@@ -41,11 +50,15 @@ export function useStatus() {
   const { data, isLoading, error } = useQuery({
     queryKey: ['status'],
     queryFn: async () => {
-      const status = await getStatus()
+      const status = await fetchStatus()
       try {
         if (status) {
           const { setConfig } = useSystemConfigStore.getState()
-          setConfig(mapStatusDataToConfig(status))
+          setConfig(
+            mapStatusDataToConfig(
+              status as Parameters<typeof mapStatusDataToConfig>[0]
+            )
+          )
         }
       } catch (err) {
         if (import.meta.env.DEV) {

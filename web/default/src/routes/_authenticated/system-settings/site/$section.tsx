@@ -18,21 +18,21 @@ For commercial licensing, please contact support@quantumnous.com
 */
 import { createFileRoute, redirect } from '@tanstack/react-router'
 
+import { SYSTEM_SETTINGS_ROUTE_SECTIONS } from '@/features/system-settings/route-sections'
 import { SiteSettings } from '@/features/system-settings/site'
-import {
-  SITE_DEFAULT_SECTION,
-  SITE_SECTION_IDS,
-} from '@/features/system-settings/site/section-registry.tsx'
 
 export const Route = createFileRoute(
   '/_authenticated/system-settings/site/$section'
 )({
   beforeLoad: ({ params }) => {
-    const validSections = SITE_SECTION_IDS as unknown as string[]
+    const validSections: readonly string[] =
+      SYSTEM_SETTINGS_ROUTE_SECTIONS.site.sectionIds
     if (!validSections.includes(params.section)) {
       throw redirect({
         to: '/system-settings/site/$section',
-        params: { section: SITE_DEFAULT_SECTION },
+        params: {
+          section: SYSTEM_SETTINGS_ROUTE_SECTIONS.site.defaultSection,
+        },
       })
     }
   },

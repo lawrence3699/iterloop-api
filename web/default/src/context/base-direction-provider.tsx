@@ -16,25 +16,15 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
-import { createFileRoute, redirect } from '@tanstack/react-router'
+import { DirectionProvider } from '@base-ui/react/direction-provider'
 
-import { ContentSettings } from '@/features/system-settings/content'
-import { SYSTEM_SETTINGS_ROUTE_SECTIONS } from '@/features/system-settings/route-sections'
-
-export const Route = createFileRoute(
-  '/_authenticated/system-settings/content/$section'
-)({
-  beforeLoad: ({ params }) => {
-    const validSections: readonly string[] =
-      SYSTEM_SETTINGS_ROUTE_SECTIONS.content.sectionIds
-    if (!validSections.includes(params.section)) {
-      throw redirect({
-        to: '/system-settings/content/$section',
-        params: {
-          section: SYSTEM_SETTINGS_ROUTE_SECTIONS.content.defaultSection,
-        },
-      })
-    }
-  },
-  component: ContentSettings,
-})
+export function BaseDirectionProvider(props: {
+  children: React.ReactNode
+  direction: 'ltr' | 'rtl'
+}) {
+  return (
+    <DirectionProvider direction={props.direction}>
+      {props.children}
+    </DirectionProvider>
+  )
+}

@@ -20,7 +20,6 @@ import { ArrowRight } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
 import { Footer } from '@/components/layout/components/footer'
-import { Button } from '@/components/ui/button'
 import { iterLoopConsoleUrl, iterLoopPublicUrl } from '@/lib/iterloop-host'
 
 import { DownloadFirstHero } from './download-first-hero'
@@ -35,6 +34,10 @@ import { LivePricingGrid } from './live-pricing-grid'
 
 export function IterLoopHome(props: { isAuthenticated: boolean }) {
   const { t } = useTranslation()
+  const hasStaticHero =
+    typeof document !== 'undefined' &&
+    document.documentElement.classList.contains('iterloop-static-home') &&
+    document.querySelector('#iterloop-static-hero') !== null
   const footerColumns = [
     {
       title: 'Product',
@@ -90,7 +93,9 @@ export function IterLoopHome(props: { isAuthenticated: boolean }) {
 
   return (
     <div className='iterloop-download-home'>
-      <DownloadFirstHero isAuthenticated={props.isAuthenticated} />
+      {!hasStaticHero && (
+        <DownloadFirstHero isAuthenticated={props.isAuthenticated} />
+      )}
       <PerformanceBand />
       <LivePricingGrid />
       <ModelIntelligenceSections />
@@ -102,13 +107,13 @@ export function IterLoopHome(props: { isAuthenticated: boolean }) {
           <span>{t('Start with the manual guide today.')}</span>
           <h2>{t('Desktop is coming soon. The API is ready now.')}</h2>
         </div>
-        <Button
-          size='lg'
-          render={<a href={iterLoopPublicUrl('/docs/install-codex-desktop')} />}
+        <a
+          className='iterloop-download-cta-button'
+          href={iterLoopPublicUrl('/docs/install-codex-desktop')}
         >
           {t('Open documentation')}
           <ArrowRight aria-hidden='true' />
-        </Button>
+        </a>
       </section>
       <Footer
         name='IterLoop API'

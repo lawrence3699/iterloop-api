@@ -19,10 +19,7 @@ For commercial licensing, please contact support@quantumnous.com
 import { createFileRoute, useNavigate, useSearch } from '@tanstack/react-router'
 import i18next from 'i18next'
 import { useEffect } from 'react'
-import { toast } from 'sonner'
 
-import { wechatLoginByCode } from '@/features/auth/api'
-import { getSelf } from '@/lib/api'
 import { useAuthStore, type AuthUser } from '@/stores/auth-store'
 
 function OAuthComponent() {
@@ -38,8 +35,10 @@ function OAuthComponent() {
     ;(async () => {
       try {
         if (search?.provider === 'wechat' && search.code) {
+          const { wechatLoginByCode } = await import('@/features/auth/api')
           await wechatLoginByCode(search.code)
         }
+        const { getSelf } = await import('@/lib/api')
         const res = await getSelf()
         if (res?.success) {
           useAuthStore.getState().auth.setUser(res.data as AuthUser)
@@ -50,6 +49,7 @@ function OAuthComponent() {
       } catch {
         /* empty */
       }
+      const { toast } = await import('sonner')
       toast.error(i18next.t('OAuth failed'))
       navigate({ to: '/sign-in', replace: true })
     })()

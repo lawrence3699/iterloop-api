@@ -17,10 +17,8 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 import { ArrowRight, Download, MonitorCog } from 'lucide-react'
-import { motion, useReducedMotion } from 'motion/react'
 import { useTranslation } from 'react-i18next'
 
-import { Button } from '@/components/ui/button'
 import { iterLoopConsoleUrl, iterLoopPublicUrl } from '@/lib/iterloop-host'
 
 const DOWNLOAD_CHANNELS = [
@@ -30,19 +28,10 @@ const DOWNLOAD_CHANNELS = [
 
 export function DownloadFirstHero(props: { isAuthenticated: boolean }) {
   const { t } = useTranslation()
-  const reduceMotion = useReducedMotion()
 
   return (
     <section className='iterloop-download-hero'>
-      <motion.div
-        className='iterloop-download-hero-copy'
-        initial={reduceMotion ? false : { opacity: 0, y: 8 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{
-          duration: reduceMotion ? 0 : 0.22,
-          ease: [0.22, 1, 0.36, 1],
-        }}
-      >
+      <div className='iterloop-download-hero-copy'>
         <span>
           <MonitorCog aria-hidden='true' />
           IterLoop Desktop
@@ -55,11 +44,16 @@ export function DownloadFirstHero(props: { isAuthenticated: boolean }) {
         </p>
         <div className='iterloop-download-actions'>
           {DOWNLOAD_CHANNELS.map((channel) => (
-            <Button key={channel.platform} size='lg' disabled={!channel.url}>
+            <button
+              key={channel.platform}
+              type='button'
+              className='iterloop-download-button'
+              disabled={!channel.url}
+            >
               <Download aria-hidden='true' />
               {channel.platform}
               <small>{t('Coming soon')}</small>
-            </Button>
+            </button>
           ))}
         </div>
         <div className='iterloop-download-secondary'>
@@ -80,26 +74,17 @@ export function DownloadFirstHero(props: { isAuthenticated: boolean }) {
           <span>{t('Windows and macOS')}</span>
           <span>{t('Manual setup always available')}</span>
         </div>
-      </motion.div>
+      </div>
 
-      <motion.figure
-        className='iterloop-desktop-preview'
-        initial={reduceMotion ? false : { opacity: 0, y: 18, scale: 0.985 }}
-        animate={{ opacity: 1, y: 0, scale: 1 }}
-        transition={{
-          duration: reduceMotion ? 0 : 0.48,
-          delay: reduceMotion ? 0 : 0.08,
-          ease: [0.22, 1, 0.36, 1],
-        }}
-      >
+      <figure className='iterloop-desktop-preview'>
         <img
           src='/iterloop-desktop-preview.svg'
           alt={t('IterLoop Desktop connections dashboard')}
           width='1400'
           height='900'
-          fetchPriority='high'
+          loading='lazy'
         />
-      </motion.figure>
+      </figure>
     </section>
   )
 }

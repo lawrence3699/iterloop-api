@@ -26,24 +26,13 @@ import {
   ReceiptText,
   ShieldCheck,
 } from 'lucide-react'
-import { motion, useReducedMotion } from 'motion/react'
 import { useTranslation } from 'react-i18next'
 
 function Reveal(props: { children: React.ReactNode; className?: string }) {
-  const reduceMotion = useReducedMotion()
   return (
-    <motion.div
-      className={props.className}
-      initial={reduceMotion ? false : { opacity: 0, y: 18 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, amount: 0.14 }}
-      transition={{
-        duration: reduceMotion ? 0 : 0.48,
-        ease: [0.22, 1, 0.36, 1],
-      }}
-    >
+    <div className={`iterloop-scroll-reveal ${props.className ?? ''}`}>
       {props.children}
-    </motion.div>
+    </div>
   )
 }
 

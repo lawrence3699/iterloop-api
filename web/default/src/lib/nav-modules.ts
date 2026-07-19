@@ -16,8 +16,6 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
-import { getStatus } from '@/lib/api'
-
 export type ModuleAccess = { enabled: boolean; requireAuth: boolean }
 
 export type HeaderNavModule = 'pricing'
@@ -168,6 +166,7 @@ export async function getFreshModuleAccess(
   module: HeaderNavModule
 ): Promise<ModuleAccess> {
   try {
+    const { getStatus } = await import('@/lib/api')
     const status = (await getStatus()) as Record<string, unknown> | null
     cacheStatus(status)
     return getModuleAccessFromStatus(status, module)

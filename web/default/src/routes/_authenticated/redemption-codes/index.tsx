@@ -17,19 +17,34 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 import { createFileRoute, redirect } from '@tanstack/react-router'
-import z from 'zod'
 
 import { Redemptions } from '@/features/redemption-codes'
 import { REDEMPTION_FILTER_VALUES } from '@/features/redemption-codes/constants'
 import { ROLE } from '@/lib/roles'
+import {
+  optionalNumber,
+  optionalString,
+  searchRecord,
+  stringArray,
+} from '@/lib/search-params'
 import { useAuthStore } from '@/stores/auth-store'
 
-const redemptionsSearchSchema = z.object({
-  page: z.number().optional().catch(1),
-  pageSize: z.number().optional().catch(10),
-  filter: z.string().optional().catch(''),
-  status: z.array(z.enum(REDEMPTION_FILTER_VALUES)).optional().catch([]),
-})
+const redemptionsSearchSchema = (
+  value: unknown
+): Partial<{
+  page: number
+  pageSize: number
+  filter: string
+  status: (typeof REDEMPTION_FILTER_VALUES)[number][]
+}> => {
+  const search = searchRecord(value)
+  return {
+    page: optionalNumber(search.page, 1),
+    pageSize: optionalNumber(search.pageSize, 10),
+    filter: optionalString(search.filter, ''),
+    status: stringArray(search.status, REDEMPTION_FILTER_VALUES),
+  }
+}
 
 export const Route = createFileRoute('/_authenticated/redemption-codes/')({
   beforeLoad: () => {

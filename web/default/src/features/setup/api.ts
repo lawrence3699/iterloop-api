@@ -16,25 +16,29 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
-import { api } from '@/lib/api'
-
 import type { SetupFormValues, SetupResponse } from './types'
 
 export async function getSetupStatus(): Promise<SetupResponse> {
-  const res = await api.get('/api/setup', {
-    // We want fresh status on every visit.
-    params: {
-      t: Date.now(),
-    },
+  const response = await fetch(`/api/setup?t=${Date.now()}`, {
+    credentials: 'same-origin',
+    cache: 'no-store',
+    headers: { Accept: 'application/json' },
   })
-  return res.data
+  if (!response.ok) throw new Error(`Setup request failed: ${response.status}`)
+  return response.json() as Promise<SetupResponse>
 }
 
 export async function submitSetup(
   payload: Record<string, unknown>
 ): Promise<SetupResponse> {
-  const res = await api.post('/api/setup', payload)
-  return res.data
+  const response = await fetch('/api/setup', {
+    method: 'POST',
+    credentials: 'same-origin',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  })
+  if (!response.ok) throw new Error(`Setup request failed: ${response.status}`)
+  return response.json() as Promise<SetupResponse>
 }
 
 export function buildSetupPayload(

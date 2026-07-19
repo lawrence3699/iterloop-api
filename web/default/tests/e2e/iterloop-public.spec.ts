@@ -81,6 +81,9 @@ async function preparePage(
 }
 
 async function settlePage(page: Page) {
+  await page.waitForFunction(
+    () => document.documentElement.dataset.iterloopReady === 'true'
+  )
   await page.addStyleTag({ content: QA_STYLES })
   await page.evaluate(async () => {
     await document.fonts.ready
@@ -192,7 +195,7 @@ test.describe('Documentation', () => {
       page.getByRole('heading', { name: /Connect Codex CLI/ })
     ).toBeVisible()
     await expect(
-      page.getByText('Claude Code', { exact: true }).first()
+      page.getByRole('heading', { name: 'Claude Code', exact: true, level: 2 })
     ).toBeVisible()
     await expect(page.getByText('Grok', { exact: true })).toHaveCount(0)
   })

@@ -17,24 +17,43 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 import { createFileRoute, redirect } from '@tanstack/react-router'
-import z from 'zod'
 
 import { Pricing } from '@/features/pricing'
 import { getFreshModuleAccess } from '@/lib/nav-modules'
+import {
+  enumValue,
+  optionalBoolean,
+  optionalString,
+  searchRecord,
+} from '@/lib/search-params'
 import { useAuthStore } from '@/stores/auth-store'
 
-const pricingSearchSchema = z.object({
-  search: z.string().optional(),
-  sort: z.string().optional(),
-  vendor: z.string().optional(),
-  group: z.string().optional(),
-  quotaType: z.string().optional(),
-  endpointType: z.string().optional(),
-  tag: z.string().optional(),
-  tokenUnit: z.enum(['M', 'K']).optional(),
-  view: z.enum(['card', 'table']).optional().catch(undefined),
-  rechargePrice: z.boolean().optional(),
-})
+function pricingSearchSchema(value: unknown): Partial<{
+  search: string
+  sort: string
+  vendor: string
+  group: string
+  quotaType: string
+  endpointType: string
+  tag: string
+  tokenUnit: 'M' | 'K'
+  view: 'card' | 'table'
+  rechargePrice: boolean
+}> {
+  const search = searchRecord(value)
+  return {
+    search: optionalString(search.search),
+    sort: optionalString(search.sort),
+    vendor: optionalString(search.vendor),
+    group: optionalString(search.group),
+    quotaType: optionalString(search.quotaType),
+    endpointType: optionalString(search.endpointType),
+    tag: optionalString(search.tag),
+    tokenUnit: enumValue(search.tokenUnit, ['M', 'K']),
+    view: enumValue(search.view, ['card', 'table']),
+    rechargePrice: optionalBoolean(search.rechargePrice),
+  }
+}
 
 export const Route = createFileRoute('/pricing/')({
   validateSearch: pricingSearchSchema,

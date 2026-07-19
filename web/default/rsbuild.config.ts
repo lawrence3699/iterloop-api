@@ -54,6 +54,27 @@ export default defineConfig(({ envMode }) => {
           priority: 0,
           enforce: true,
         },
+        'vendor-i18n': {
+          test: /node_modules[\\/](i18next|i18next-browser-languagedetector|react-i18next|html-parse-stringify)[\\/]/,
+          name: 'vendor-i18n',
+          chunks: 'all',
+          priority: 20,
+          enforce: true,
+        },
+        'vendor-network': {
+          test: /node_modules[\\/](axios|sonner)[\\/]/,
+          name: 'vendor-network',
+          chunks: 'all',
+          priority: 20,
+          enforce: true,
+        },
+        'vendor-validation': {
+          test: /node_modules[\\/]zod[\\/]/,
+          name: 'vendor-validation',
+          chunks: 'all',
+          priority: 20,
+          enforce: true,
+        },
       },
     },
     source: {
@@ -81,6 +102,7 @@ export default defineConfig(({ envMode }) => {
     output: {
       // Production optimizations
       minify: isProd,
+      inlineStyles: /static[\\/]css[\\/]index\./,
       target: 'web',
       distPath: {
         root: 'dist',

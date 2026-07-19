@@ -22,17 +22,15 @@ import {
   useParams,
   useSearch,
 } from '@tanstack/react-router'
-import type { AxiosRequestConfig } from 'axios'
 import i18next from 'i18next'
 import { useEffect, useState } from 'react'
-import { toast } from 'sonner'
 
 import { OAuthCallbackScreen } from '@/features/auth/components/oauth-callback-screen'
 import { OAUTH_BIND_STORAGE_KEY } from '@/features/auth/constants'
-import { api, getSelf } from '@/lib/api'
 import { useAuthStore, type AuthUser } from '@/stores/auth-store'
 
-type OAuthRequestConfig = AxiosRequestConfig & {
+type OAuthRequestConfig = {
+  params: { code: string; state?: string }
   skipBusinessError?: boolean
 }
 
@@ -59,6 +57,10 @@ function OAuthCallback() {
 
   useEffect(() => {
     ;(async () => {
+      const [{ api, getSelf }, { toast }] = await Promise.all([
+        import('@/lib/api'),
+        import('sonner'),
+      ])
       const safeNavigate = (target: string) => {
         navigate({ to: target as never, replace: true })
         if (typeof window !== 'undefined') {

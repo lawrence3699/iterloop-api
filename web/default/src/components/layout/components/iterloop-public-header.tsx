@@ -17,18 +17,31 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 import { Link, useRouterState } from '@tanstack/react-router'
-import { Search, UserRound, X } from 'lucide-react'
-import { useEffect, useRef, useState, type ReactNode } from 'react'
+import { Languages, Moon, Search, Sun, UserRound, X } from 'lucide-react'
+import {
+  lazy,
+  Suspense,
+  useEffect,
+  useRef,
+  useState,
+  type ReactNode,
+} from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { IterLoopMark } from '@/components/iterloop-mark'
-import { LanguageSwitcher } from '@/components/language-switcher'
-import { ProfileDropdown } from '@/components/profile-dropdown'
-import { ThemeSwitch } from '@/components/theme-switch'
-import { Button } from '@/components/ui/button'
+import { useTheme } from '@/context/theme-provider'
+import {
+  INTERFACE_LANGUAGE_OPTIONS,
+  normalizeInterfaceLanguage,
+} from '@/i18n/languages'
 import { iterLoopConsoleUrl, iterLoopPublicUrl } from '@/lib/iterloop-host'
 import { cn } from '@/lib/utils'
 import { useAuthStore } from '@/stores/auth-store'
+
+const ProfileDropdown = lazy(async () => {
+  const module = await import('@/components/profile-dropdown')
+  return { default: module.ProfileDropdown }
+})
 
 type IterLoopPublicHeaderProps = {
   showThemeSwitch?: boolean
@@ -57,6 +70,50 @@ function HeaderLink(props: HeaderLinkProps) {
     <Link to={props.href} className={props.className} onClick={props.onClick}>
       {props.children}
     </Link>
+  )
+}
+
+function PublicLanguageSwitcher() {
+  const { i18n, t } = useTranslation()
+  const language = normalizeInterfaceLanguage(i18n.language)
+
+  return (
+    <label className='iterloop-global-icon iterloop-native-select'>
+      <Languages className='size-[17px]' aria-hidden='true' />
+      <span className='sr-only'>{t('Change language')}</span>
+      <select
+        aria-label={t('Change language')}
+        value={language}
+        onChange={(event) => void i18n.changeLanguage(event.target.value)}
+      >
+        {INTERFACE_LANGUAGE_OPTIONS.map((option) => (
+          <option key={option.code} value={option.code}>
+            {option.label}
+          </option>
+        ))}
+      </select>
+    </label>
+  )
+}
+
+function PublicThemeSwitch() {
+  const { t } = useTranslation()
+  const { resolvedTheme, setTheme } = useTheme()
+  const isDark = resolvedTheme === 'dark'
+
+  return (
+    <button
+      type='button'
+      className='iterloop-global-icon'
+      aria-label={t('Toggle theme')}
+      onClick={() => setTheme(isDark ? 'light' : 'dark')}
+    >
+      {isDark ? (
+        <Moon className='size-[17px]' aria-hidden='true' />
+      ) : (
+        <Sun className='size-[17px]' aria-hidden='true' />
+      )}
+    </button>
   )
 }
 
@@ -170,11 +227,24 @@ export function IterLoopPublicHeader(props: IterLoopPublicHeaderProps) {
                 <Search className='size-[17px]' aria-hidden='true' />
                 <span className='sr-only'>{t('Search')}</span>
               </HeaderLink>
-              {props.showLanguageSwitcher !== false && <LanguageSwitcher />}
-              {props.showThemeSwitch !== false && <ThemeSwitch />}
+              {props.showLanguageSwitcher !== false && (
+                <PublicLanguageSwitcher />
+              )}
+              {props.showThemeSwitch !== false && <PublicThemeSwitch />}
               {props.showAuthButtons !== false &&
                 (user ? (
-                  <ProfileDropdown />
+                  <Suspense
+                    fallback={
+                      <HeaderLink
+                        href={iterLoopConsoleUrl('/dashboard')}
+                        className='iterloop-global-icon hidden sm:inline-flex'
+                      >
+                        <UserRound className='size-[18px]' aria-hidden='true' />
+                      </HeaderLink>
+                    }
+                  >
+                    <ProfileDropdown />
+                  </Suspense>
                 ) : (
                   <HeaderLink
                     href={iterLoopConsoleUrl('/sign-in')}
@@ -184,11 +254,9 @@ export function IterLoopPublicHeader(props: IterLoopPublicHeaderProps) {
                     <span className='sr-only'>{t('Sign in')}</span>
                   </HeaderLink>
                 ))}
-              <Button
+              <button
                 type='button'
-                variant='ghost'
-                size='icon'
-                className='size-11 rounded-none lg:hidden'
+                className='iterloop-global-icon size-11 rounded-none lg:hidden'
                 aria-expanded={mobileOpen}
                 aria-label={mobileOpen ? t('Close menu') : t('Open menu')}
                 onClick={() => setMobileOpen((open) => !open)}
@@ -201,7 +269,7 @@ export function IterLoopPublicHeader(props: IterLoopPublicHeaderProps) {
                     <span />
                   </span>
                 )}
-              </Button>
+              </button>
             </div>
           </nav>
         </div>

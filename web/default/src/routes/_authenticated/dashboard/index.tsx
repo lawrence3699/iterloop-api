@@ -17,16 +17,24 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 import { createFileRoute } from '@tanstack/react-router'
-import { z } from 'zod'
 
 import { ConsoleDashboard } from '@/features/console-dashboard'
+import { enumValue, searchRecord } from '@/lib/search-params'
 
-const dashboardSearchSchema = z.object({
-  tab: z
-    .enum(['billing', 'routing', 'api-keys', 'usage', 'cost'])
-    .optional()
-    .catch('billing'),
-})
+const dashboardSearchSchema = (
+  value: unknown
+): {
+  tab?: 'billing' | 'routing' | 'api-keys' | 'usage' | 'cost'
+} => {
+  const search = searchRecord(value)
+  return {
+    tab: enumValue(
+      search.tab,
+      ['billing', 'routing', 'api-keys', 'usage', 'cost'],
+      'billing'
+    ),
+  }
+}
 
 export const Route = createFileRoute('/_authenticated/dashboard/')({
   validateSearch: dashboardSearchSchema,

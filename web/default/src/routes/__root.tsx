@@ -16,28 +16,108 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
-import { type QueryClient } from '@tanstack/react-query'
-import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
+import type { QueryClient } from '@tanstack/react-query'
 import {
   createRootRouteWithContext,
   Outlet,
   redirect,
+  useRouterState,
 } from '@tanstack/react-router'
-import { TanStackRouterDevtools } from '@tanstack/react-router-devtools'
-import { useEffect } from 'react'
+import { lazy, Suspense, useEffect, useState } from 'react'
 
-import { NavigationProgress } from '@/components/navigation-progress'
-import { Toaster } from '@/components/ui/sonner'
 import { ThemeCustomizationProvider } from '@/context/theme-customization-provider'
 import { saveAffiliateCode } from '@/features/auth/lib/storage'
-import { GeneralError } from '@/features/errors/general-error'
-import { NotFoundError } from '@/features/errors/not-found-error'
 import { getSetupStatus } from '@/features/setup/api'
 import { useSystemConfig } from '@/hooks/use-system-config'
+
+const Toaster = lazy(async () => {
+  const module = await import('@/components/ui/sonner')
+  return { default: module.Toaster }
+})
+const NavigationProgress = lazy(async () => {
+  const module = await import('@/components/navigation-progress')
+  return { default: module.NavigationProgress }
+})
+const GeneralError = lazy(async () => {
+  const module = await import('@/features/errors/general-error')
+  return { default: module.GeneralError }
+})
+const NotFoundError = lazy(async () => {
+  const module = await import('@/features/errors/not-found-error')
+  return { default: module.NotFoundError }
+})
+const ReactQueryDevtools = lazy(async () => {
+  const module = await import('@tanstack/react-query-devtools')
+  return { default: module.ReactQueryDevtools }
+})
+const TanStackRouterDevtools = lazy(async () => {
+  const module = await import('@tanstack/react-router-devtools')
+  return { default: module.TanStackRouterDevtools }
+})
+
+function DeferredToaster() {
+  const [ready, setReady] = useState(false)
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => setReady(true), 5000)
+    return () => window.clearTimeout(timer)
+  }, [])
+
+  if (!ready) return null
+  return (
+    <Suspense fallback={null}>
+      <Toaster closeButton duration={5000} position='top-center' richColors />
+    </Suspense>
+  )
+}
+
+function DeferredNavigationProgress() {
+  const [ready, setReady] = useState(false)
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => setReady(true), 5000)
+    return () => window.clearTimeout(timer)
+  }, [])
+
+  if (!ready) return null
+  return (
+    <Suspense fallback={null}>
+      <NavigationProgress />
+    </Suspense>
+  )
+}
+
+function RootError(props: { error: unknown }) {
+  return (
+    <Suspense fallback={null}>
+      <GeneralError error={props.error} />
+    </Suspense>
+  )
+}
+
+function RootNotFound() {
+  return (
+    <Suspense fallback={null}>
+      <NotFoundError />
+    </Suspense>
+  )
+}
 
 function RootComponent() {
   // Load system configuration (logo, system name, etc.) from backend
   useSystemConfig({ autoLoad: true })
+  const pathname = useRouterState({
+    select: (state) => state.location.pathname,
+  })
+
+  useEffect(() => {
+    if (pathname === '/') return
+    document.documentElement.classList.remove(
+      'iterloop-static-home',
+      'iterloop-static-auth'
+    )
+    document.querySelector('#iterloop-static-hero')?.remove()
+  }, [pathname])
 
   useEffect(() => {
     const aff = new URLSearchParams(window.location.search).get('aff')?.trim()
@@ -48,14 +128,14 @@ function RootComponent() {
 
   return (
     <ThemeCustomizationProvider>
-      <NavigationProgress />
+      <DeferredNavigationProgress />
       <Outlet />
-      <Toaster closeButton duration={5000} position='top-center' richColors />
+      <DeferredToaster />
       {import.meta.env.MODE === 'development' && (
-        <>
+        <Suspense fallback={null}>
           <ReactQueryDevtools buttonPosition='bottom-left' />
           <TanStackRouterDevtools position='bottom-right' />
-        </>
+        </Suspense>
       )}
     </ThemeCustomizationProvider>
   )
@@ -127,6 +207,6 @@ export const Route = createRootRouteWithContext<{
     // 如果用户有有效 session 但 localStorage 被清空，会被重定向到登录页重新登录
   },
   component: RootComponent,
-  notFoundComponent: NotFoundError,
-  errorComponent: GeneralError,
+  notFoundComponent: RootNotFound,
+  errorComponent: RootError,
 })
