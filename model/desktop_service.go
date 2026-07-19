@@ -18,6 +18,8 @@ var (
 	ErrDesktopInvalidDevice         = errors.New("invalid desktop device")
 	ErrDesktopInvalidEnrollment     = errors.New("invalid desktop enrollment")
 	ErrDesktopUsernameUnavailable   = errors.New("desktop username is unavailable")
+	ErrDesktopOAuthIdentityInvalid  = errors.New("desktop oauth identity is invalid")
+	ErrDesktopOAuthRegisterDisabled = errors.New("desktop oauth registration is disabled")
 )
 
 type DesktopEnrollmentInput struct {
@@ -53,9 +55,21 @@ type DesktopOAuthRequestInput struct {
 	CodeChallenge string
 }
 
+type DesktopOAuthIdentityInput struct {
+	Provider         string
+	ProviderId       int
+	ProviderUserId   string
+	Username         string
+	DisplayName      string
+	Email            string
+	UsernamePrefix   string
+	RegistrationOpen bool
+}
+
 var (
-	ErrDesktopOAuthCodeInvalid = errors.New("desktop oauth code is invalid")
-	ErrDesktopOAuthCodeExpired = errors.New("desktop oauth code is expired")
+	ErrDesktopOAuthCodeInvalid      = errors.New("desktop oauth code is invalid")
+	ErrDesktopOAuthCodeExpired      = errors.New("desktop oauth code is expired")
+	ErrDesktopOAuthCallbackConsumed = errors.New("desktop oauth browser callback is already consumed")
 )
 
 func ValidateDesktopStarterProfile(profile *IssuanceProfile) error {
@@ -115,7 +129,8 @@ func createOrRelinkDesktopDeviceWithTx(tx *gorm.DB, userId int, input DesktopEnr
 		}
 		updates := map[string]any{
 			"device_name": input.DeviceName, "platform": input.Platform, "app_version": input.AppVersion,
-			"refresh_token_hash": HashDesktopToken(refreshToken), "status": DesktopDeviceStatusActive,
+			"refresh_token_hash": HashDesktopToken(refreshToken), "previous_refresh_token_hash": "",
+			"refresh_token_grace_expires_time": int64(0), "status": DesktopDeviceStatusActive,
 			"updated_time": now, "last_seen_time": now, "revoked_time": int64(0),
 		}
 		if err := tx.Model(device).Updates(updates).Error; err != nil {
@@ -186,6 +201,42 @@ func CreateDesktopOAuthCode(userId int, provider string, codeChallenge string) (
 	return rawCode, nil
 }
 
+// CreatePendingDesktopOAuthCode records only the verified provider identity.
+// A new local user is deliberately not created until the desktop client
+// exchanges this code with its PKCE verifier and device payload.
+func CreatePendingDesktopOAuthCode(identity DesktopOAuthIdentityInput, codeChallenge string) (string, error) {
+	identity.Provider = strings.ToLower(strings.TrimSpace(identity.Provider))
+	identity.ProviderUserId = strings.TrimSpace(identity.ProviderUserId)
+	identity.Username = strings.TrimSpace(identity.Username)
+	identity.DisplayName = strings.TrimSpace(identity.DisplayName)
+	identity.Email = NormalizeEmail(identity.Email)
+	identity.UsernamePrefix = strings.TrimSpace(identity.UsernamePrefix)
+	codeChallenge = strings.TrimSpace(codeChallenge)
+	if identity.Provider == "" || len(identity.Provider) > 32 || identity.ProviderId <= 0 ||
+		identity.ProviderUserId == "" || len(identity.ProviderUserId) > 256 || len(identity.Username) > 128 ||
+		len(identity.DisplayName) > 128 || len(identity.Email) > 256 || len(identity.UsernamePrefix) > 64 ||
+		len(codeChallenge) < 32 || len(codeChallenge) > 128 {
+		return "", ErrDesktopOAuthIdentityInvalid
+	}
+	rawCode, err := common.GenerateRandomKey(48)
+	if err != nil {
+		return "", err
+	}
+	now := common.GetTimestamp()
+	code := &DesktopOAuthCode{
+		Provider: identity.Provider, OAuthProviderId: identity.ProviderId,
+		OAuthProviderUserId: identity.ProviderUserId, OAuthUsername: identity.Username,
+		OAuthDisplayName: identity.DisplayName, OAuthEmail: identity.Email,
+		OAuthUsernamePrefix: identity.UsernamePrefix, OAuthRegistrationOpen: identity.RegistrationOpen,
+		CodeHash: HashDesktopToken(rawCode), CodeChallenge: codeChallenge,
+		ExpiresTime: now + 300, CreatedTime: now,
+	}
+	if err := DB.Create(code).Error; err != nil {
+		return "", err
+	}
+	return rawCode, nil
+}
+
 func CreateDesktopOAuthRequest(input DesktopOAuthRequestInput) (string, error) {
 	input.Provider = strings.ToLower(strings.TrimSpace(input.Provider))
 	input.CallbackUrl = strings.TrimSpace(input.CallbackUrl)
@@ -237,6 +288,70 @@ func ConsumeDesktopOAuthRequest(rawRequest string) (*DesktopOAuthRequest, error)
 		return nil, err
 	}
 	return request, nil
+}
+
+// BindDesktopOAuthRequestState associates the provider-facing OAuth state with
+// the already validated desktop request. The state is stored only as a hash so
+// a browser callback can be recognized without relying on a SameSite cookie.
+func BindDesktopOAuthRequestState(requestId int, rawState string) error {
+	rawState = strings.TrimSpace(rawState)
+	if requestId <= 0 || rawState == "" || len(rawState) > 128 {
+		return ErrDesktopOAuthCodeInvalid
+	}
+	stateHash := HashDesktopToken(rawState)
+	return DB.Transaction(func(tx *gorm.DB) error {
+		request := &DesktopOAuthRequest{}
+		if err := lockForUpdate(tx).First(request, requestId).Error; err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				return ErrDesktopOAuthCodeInvalid
+			}
+			return err
+		}
+		if request.ConsumedTime == 0 || request.ExpiresTime <= common.GetTimestamp() || request.OAuthStateHash != nil {
+			return ErrDesktopOAuthCodeInvalid
+		}
+		return tx.Model(request).Update("oauth_state_hash", stateHash).Error
+	})
+}
+
+// ClaimDesktopOAuthRequestByState atomically consumes the browser callback.
+// A populated request is returned even for an expired or repeated callback so
+// the controller can still send a stable error to the validated loopback URL.
+func ClaimDesktopOAuthRequestByState(provider string, rawState string) (*DesktopOAuthRequest, error) {
+	provider = strings.ToLower(strings.TrimSpace(provider))
+	rawState = strings.TrimSpace(rawState)
+	if provider == "" || rawState == "" || len(provider) > 32 || len(rawState) > 128 {
+		return nil, ErrDesktopOAuthCodeInvalid
+	}
+	request := &DesktopOAuthRequest{}
+	err := DB.Transaction(func(tx *gorm.DB) error {
+		lookup := lockForUpdate(tx).
+			Where("provider = ? AND oauth_state_hash = ?", provider, HashDesktopToken(rawState)).
+			Limit(1).
+			Find(request)
+		if lookup.Error != nil {
+			return lookup.Error
+		}
+		if lookup.RowsAffected == 0 {
+			return ErrDesktopOAuthCodeInvalid
+		}
+		if request.CallbackConsumedTime != 0 {
+			return ErrDesktopOAuthCallbackConsumed
+		}
+		if request.ExpiresTime <= common.GetTimestamp() {
+			return ErrDesktopOAuthCodeExpired
+		}
+		now := common.GetTimestamp()
+		if err := tx.Model(request).Update("callback_consumed_time", now).Error; err != nil {
+			return err
+		}
+		request.CallbackConsumedTime = now
+		return nil
+	})
+	if request.Id == 0 {
+		return nil, err
+	}
+	return request, err
 }
 
 func desktopPKCEChallenge(verifier string) string {
@@ -375,6 +490,116 @@ func LinkDesktopDevice(profile *IssuanceProfile, email string, rawInput DesktopE
 	return result, nil
 }
 
+func desktopOAuthUsernameAvailableWithTx(tx *gorm.DB, username string) (bool, error) {
+	var count int64
+	if err := tx.Unscoped().Model(&User{}).Where("username = ?", username).Count(&count).Error; err != nil {
+		return false, err
+	}
+	return count == 0, nil
+}
+
+func desktopOAuthUsernameWithTx(tx *gorm.DB, code *DesktopOAuthCode) (string, error) {
+	preferred := strings.TrimSpace(code.OAuthUsername)
+	if preferred != "" && len(preferred) <= UserNameMaxLength {
+		available, err := desktopOAuthUsernameAvailableWithTx(tx, preferred)
+		if err != nil {
+			return "", err
+		}
+		if available {
+			return preferred, nil
+		}
+	}
+	prefix := strings.TrimSpace(code.OAuthUsernamePrefix)
+	if prefix == "" {
+		prefix = strings.TrimSpace(code.Provider) + "_"
+	}
+	for attempt := 0; attempt < 32; attempt++ {
+		suffix := HashDesktopToken(fmt.Sprintf("%s:%d", code.OAuthProviderUserId, attempt))[:10]
+		prefixLimit := UserNameMaxLength - len(suffix)
+		candidatePrefix := prefix
+		if len(candidatePrefix) > prefixLimit {
+			candidatePrefix = candidatePrefix[:prefixLimit]
+		}
+		candidate := candidatePrefix + suffix
+		available, err := desktopOAuthUsernameAvailableWithTx(tx, candidate)
+		if err != nil {
+			return "", err
+		}
+		if available {
+			return candidate, nil
+		}
+	}
+	return "", ErrDesktopUsernameUnavailable
+}
+
+func truncateDesktopOAuthDisplayName(value string) string {
+	value = strings.TrimSpace(value)
+	runes := []rune(value)
+	if len(runes) > UserNameMaxLength {
+		return string(runes[:UserNameMaxLength])
+	}
+	return value
+}
+
+func resolveDesktopOAuthUserWithTx(tx *gorm.DB, code *DesktopOAuthCode) (*User, bool, error) {
+	if code.UserId > 0 {
+		user := &User{}
+		if err := lockForUpdate(tx).First(user, code.UserId).Error; err != nil {
+			return nil, false, err
+		}
+		return user, false, nil
+	}
+	if code.OAuthProviderId <= 0 || strings.TrimSpace(code.OAuthProviderUserId) == "" {
+		return nil, false, ErrDesktopOAuthIdentityInvalid
+	}
+	binding := &UserOAuthBinding{}
+	err := lockForUpdate(tx).
+		Where("provider_id = ? AND provider_user_id = ?", code.OAuthProviderId, code.OAuthProviderUserId).
+		First(binding).Error
+	if err == nil {
+		user := &User{}
+		if err := lockForUpdate(tx).First(user, binding.UserId).Error; err != nil {
+			return nil, false, err
+		}
+		return user, false, nil
+	}
+	if !errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil, false, err
+	}
+	if !code.OAuthRegistrationOpen {
+		return nil, false, ErrDesktopOAuthRegisterDisabled
+	}
+	email := NormalizeEmail(code.OAuthEmail)
+	if len(email) > 50 {
+		return nil, false, ErrDesktopOAuthIdentityInvalid
+	}
+	username, err := desktopOAuthUsernameWithTx(tx, code)
+	if err != nil {
+		return nil, false, err
+	}
+	displayName := truncateDesktopOAuthDisplayName(code.OAuthDisplayName)
+	if displayName == "" {
+		displayName = truncateDesktopOAuthDisplayName(code.OAuthUsername)
+	}
+	if displayName == "" {
+		displayName = truncateDesktopOAuthDisplayName(code.Provider + " User")
+	}
+	user := &User{
+		Username: username, DisplayName: displayName, Email: email,
+		Role: common.RoleCommonUser, Status: common.UserStatusEnabled, Group: "default",
+	}
+	if err := user.InsertWithTx(tx, 0); err != nil {
+		return nil, false, err
+	}
+	binding = &UserOAuthBinding{
+		UserId: user.Id, ProviderId: code.OAuthProviderId, ProviderUserId: code.OAuthProviderUserId,
+	}
+	if err := CreateUserOAuthBindingWithTx(tx, binding); err != nil {
+		return nil, false, err
+	}
+	return user, true, nil
+}
+
 func ExchangeDesktopOAuthCode(profile *IssuanceProfile, rawCode string, verifier string, rawInput DesktopEnrollmentInput) (*DesktopEnrollmentResult, error) {
 	input, err := normalizeDesktopDeviceInput(rawInput)
 	if err != nil {
@@ -390,6 +615,7 @@ func ExchangeDesktopOAuthCode(profile *IssuanceProfile, rawCode string, verifier
 		return nil, err
 	}
 	result := &DesktopEnrollmentResult{Profile: profile, RefreshToken: refreshToken}
+	createdUser := false
 	err = DB.Transaction(func(tx *gorm.DB) error {
 		code := &DesktopOAuthCode{}
 		if err := lockForUpdate(tx).Where("code_hash = ?", HashDesktopToken(rawCode)).First(code).Error; err != nil {
@@ -409,8 +635,8 @@ func ExchangeDesktopOAuthCode(profile *IssuanceProfile, rawCode string, verifier
 		if len(challenge) != len(code.CodeChallenge) || subtle.ConstantTimeCompare([]byte(challenge), []byte(code.CodeChallenge)) != 1 {
 			return ErrDesktopOAuthCodeInvalid
 		}
-		user := &User{}
-		if err := lockForUpdate(tx).First(user, code.UserId).Error; err != nil {
+		user, created, err := resolveDesktopOAuthUserWithTx(tx, code)
+		if err != nil {
 			return err
 		}
 		if user.Status != common.UserStatusEnabled {
@@ -419,10 +645,17 @@ func ExchangeDesktopOAuthCode(profile *IssuanceProfile, rawCode string, verifier
 		if err := linkDesktopUserWithTx(tx, profile, user, input, refreshToken, result); err != nil {
 			return err
 		}
-		return tx.Model(code).Update("consumed_time", now).Error
+		if err := tx.Model(code).Update("consumed_time", now).Error; err != nil {
+			return err
+		}
+		createdUser = created
+		return nil
 	})
 	if err != nil {
 		return nil, err
+	}
+	if createdUser {
+		result.User.FinalizeOAuthUserCreation(0)
 	}
 	_ = InvalidateUserCache(result.User.Id)
 	RecordLog(result.User.Id, LogTypeSystem, "IterLoop desktop OAuth device linked")
@@ -432,7 +665,11 @@ func ExchangeDesktopOAuthCode(profile *IssuanceProfile, rawCode string, verifier
 }
 
 func RefreshDesktopSession(currentToken string, appVersion string) (string, *DesktopSessionSummary, error) {
+	currentToken = strings.TrimSpace(currentToken)
 	appVersion = strings.TrimSpace(appVersion)
+	if currentToken == "" {
+		return "", nil, ErrDesktopDeviceNotFound
+	}
 	if appVersion == "" || len(appVersion) > 32 {
 		return "", nil, ErrDesktopInvalidDevice
 	}
@@ -443,19 +680,36 @@ func RefreshDesktopSession(currentToken string, appVersion string) (string, *Des
 	summary := &DesktopSessionSummary{}
 	err = DB.Transaction(func(tx *gorm.DB) error {
 		device := &DesktopDevice{}
-		if err := lockForUpdate(tx).Where("refresh_token_hash = ?", HashDesktopToken(currentToken)).First(device).Error; err != nil {
-			if errors.Is(err, gorm.ErrRecordNotFound) {
+		tokenHash := HashDesktopToken(currentToken)
+		usingGraceToken := false
+		lookup := lockForUpdate(tx).Where("refresh_token_hash = ?", tokenHash).Limit(1).Find(device)
+		if lookup.Error != nil {
+			return lookup.Error
+		}
+		if lookup.RowsAffected == 0 {
+			lookup = lockForUpdate(tx).Where("previous_refresh_token_hash = ?", tokenHash).Limit(1).Find(device)
+			if lookup.Error != nil {
+				return lookup.Error
+			}
+			if lookup.RowsAffected == 0 {
 				return ErrDesktopDeviceNotFound
 			}
-			return err
+			usingGraceToken = true
 		}
 		if device.Status != DesktopDeviceStatusActive || device.RevokedTime != 0 {
 			return ErrDesktopDeviceRevoked
 		}
 		now := common.GetTimestamp()
+		if usingGraceToken && device.RefreshTokenGraceExpiresTime <= now {
+			return ErrDesktopDeviceNotFound
+		}
 		updates := map[string]any{
-			"refresh_token_hash": HashDesktopToken(newToken), "app_version": strings.TrimSpace(appVersion),
+			"refresh_token_hash": HashDesktopToken(newToken), "app_version": appVersion,
 			"updated_time": now, "last_seen_time": now,
+		}
+		if !usingGraceToken {
+			updates["previous_refresh_token_hash"] = device.RefreshTokenHash
+			updates["refresh_token_grace_expires_time"] = now + DesktopRefreshTokenGraceSeconds
 		}
 		if err := tx.Model(device).Updates(updates).Error; err != nil {
 			return err

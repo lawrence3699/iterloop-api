@@ -3,12 +3,16 @@ package controller
 import (
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"strings"
 	"testing"
 
 	"github.com/QuantumNous/new-api/common"
 	"github.com/QuantumNous/new-api/model"
+	"github.com/QuantumNous/new-api/oauth"
 	"github.com/QuantumNous/new-api/setting/operation_setting"
+	"github.com/gin-contrib/sessions"
+	"github.com/gin-contrib/sessions/cookie"
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -92,4 +96,140 @@ func TestDesktopAuthenticationIntentSelectsLinkForExistingEmail(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, "link", intent)
 	assert.Equal(t, common.DesktopLinkPurpose, purpose)
+}
+
+func prepareDesktopOAuthBrowserRequest(t *testing.T, providerState string) {
+	t.Helper()
+	db := openTokenControllerTestDB(t)
+	require.NoError(t, db.AutoMigrate(&model.DesktopOAuthRequest{}, &model.DesktopOAuthCode{}, &model.User{}))
+	rawRequest, err := model.CreateDesktopOAuthRequest(model.DesktopOAuthRequestInput{
+		Provider: "google", CallbackUrl: "http://127.0.0.1:34567/iterloop-oauth?state=client-state",
+		ClientState: "client-state", CodeChallenge: strings.Repeat("c", 43),
+	})
+	require.NoError(t, err)
+	request, err := model.ConsumeDesktopOAuthRequest(rawRequest)
+	require.NoError(t, err)
+	require.NoError(t, model.BindDesktopOAuthRequestState(request.Id, providerState))
+}
+
+func performDesktopOAuthBrowserCallback(t *testing.T, target string) *httptest.ResponseRecorder {
+	t.Helper()
+	router := gin.New()
+	router.Use(sessions.Sessions("session", cookie.NewStore([]byte("desktop-oauth-test"))))
+	router.GET("/oauth/:provider", func(c *gin.Context) {
+		if !HandleDesktopOAuthBrowserCallback(c) {
+			c.Status(http.StatusTeapot)
+		}
+	})
+	recorder := httptest.NewRecorder()
+	router.ServeHTTP(recorder, httptest.NewRequest(http.MethodGet, target, nil))
+	return recorder
+}
+
+func TestDesktopOAuthCancellationRedirectsErrorAndStateToLoopback(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	prepareDesktopOAuthBrowserRequest(t, "provider-state")
+
+	recorder := performDesktopOAuthBrowserCallback(
+		t,
+		"/oauth/google?state=provider-state&error=access_denied",
+	)
+
+	assert.Equal(t, http.StatusFound, recorder.Code)
+	location, err := url.Parse(recorder.Header().Get("Location"))
+	require.NoError(t, err)
+	assert.Equal(t, "http", location.Scheme)
+	assert.Equal(t, "127.0.0.1:34567", location.Host)
+	assert.Equal(t, "/iterloop-oauth", location.Path)
+	assert.Equal(t, "client-state", location.Query().Get("state"))
+	assert.Equal(t, "oauth_cancelled", location.Query().Get("error"))
+	assert.Empty(t, location.Query().Get("code"))
+}
+
+func TestDesktopOAuthProviderFailureRedirectsErrorAndStateToLoopback(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	prepareDesktopOAuthBrowserRequest(t, "provider-state")
+	previousProvider := oauth.GetProvider("google")
+	oauth.Unregister("google")
+	t.Cleanup(func() {
+		if previousProvider != nil {
+			oauth.Register("google", previousProvider)
+		}
+	})
+
+	recorder := performDesktopOAuthBrowserCallback(
+		t,
+		"/oauth/google?state=provider-state&code=provider-code",
+	)
+
+	assert.Equal(t, http.StatusFound, recorder.Code)
+	location, err := url.Parse(recorder.Header().Get("Location"))
+	require.NoError(t, err)
+	assert.Equal(t, "client-state", location.Query().Get("state"))
+	assert.Equal(t, "oauth_provider_unavailable", location.Query().Get("error"))
+	assert.Empty(t, location.Query().Get("code"))
+}
+
+func TestDesktopOAuthMiddlewareLeavesOrdinaryWebsiteStateUntouched(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	db := openTokenControllerTestDB(t)
+	require.NoError(t, db.AutoMigrate(&model.DesktopOAuthRequest{}))
+
+	recorder := performDesktopOAuthBrowserCallback(t, "/oauth/google?state=website-state&code=website-code")
+
+	assert.Equal(t, http.StatusTeapot, recorder.Code)
+}
+
+func TestDesktopOAuthBrowserSuccessCreatesPendingCodeWithoutUser(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	prepareDesktopOAuthBrowserRequest(t, "provider-state")
+	providerServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, request *http.Request) {
+		switch request.URL.Path {
+		case "/token":
+			w.Header().Set("Content-Type", "application/json")
+			_, _ = w.Write([]byte(`{"access_token":"google-token","token_type":"Bearer"}`))
+		case "/user":
+			assert.Equal(t, "Bearer google-token", request.Header.Get("Authorization"))
+			w.Header().Set("Content-Type", "application/json")
+			_, _ = w.Write([]byte(`{"sub":"google-subject","name":"Google User","email":"google@example.com"}`))
+		default:
+			http.NotFound(w, request)
+		}
+	}))
+	t.Cleanup(providerServer.Close)
+	previousProvider := oauth.GetProvider("google")
+	oauth.Register("google", oauth.NewGenericOAuthProvider(&model.CustomOAuthProvider{
+		Id: 101, Name: "Google", Slug: "google", Enabled: true,
+		ClientId: "client", ClientSecret: "secret", TokenEndpoint: providerServer.URL + "/token",
+		UserInfoEndpoint: providerServer.URL + "/user", UserIdField: "sub",
+		DisplayNameField: "name", EmailField: "email", AuthStyle: oauth.AuthStyleInParams,
+	}))
+	t.Cleanup(func() {
+		if previousProvider == nil {
+			oauth.Unregister("google")
+		} else {
+			oauth.Register("google", previousProvider)
+		}
+	})
+	previousRegisterEnabled := common.RegisterEnabled
+	common.RegisterEnabled = true
+	t.Cleanup(func() { common.RegisterEnabled = previousRegisterEnabled })
+
+	recorder := performDesktopOAuthBrowserCallback(t, "/oauth/google?state=provider-state&code=provider-code")
+
+	assert.Equal(t, http.StatusFound, recorder.Code)
+	location, err := url.Parse(recorder.Header().Get("Location"))
+	require.NoError(t, err)
+	assert.Equal(t, "client-state", location.Query().Get("state"))
+	rawCode := location.Query().Get("code")
+	require.NotEmpty(t, rawCode)
+	assert.Empty(t, location.Query().Get("error"))
+	var userCount int64
+	require.NoError(t, model.DB.Model(&model.User{}).Count(&userCount).Error)
+	assert.Zero(t, userCount)
+	pending := &model.DesktopOAuthCode{}
+	require.NoError(t, model.DB.Where("code_hash = ?", model.HashDesktopToken(rawCode)).First(pending).Error)
+	assert.Zero(t, pending.UserId)
+	assert.Equal(t, 101, pending.OAuthProviderId)
+	assert.Equal(t, "google-subject", pending.OAuthProviderUserId)
 }
