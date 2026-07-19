@@ -68,6 +68,20 @@ export type PricingModel = {
   input_modalities?: Modality[]
   output_modalities?: Modality[]
   capabilities?: ModelCapability[]
+  /** Locale-selected settlement currency for the public pricing catalog. */
+  pricing_currency?: ResolvedPricingCurrency
+  /** Provider standard API pricing in USD per one million tokens. */
+  official_price?: OfficialModelPrice
+}
+
+export type OfficialModelPrice = {
+  input_usd: number
+  output_usd: number
+  cache_read_usd?: number
+  cache_write_usd?: number
+  source_model: string
+  source_url: string
+  effective_until?: string
 }
 
 /** Input/output modalities supported by a model. */
@@ -97,6 +111,28 @@ export type PricingData = {
   usable_group: Record<string, { desc: string; ratio: number }>
   supported_endpoint: Record<string, string>
   auto_groups: string[]
+  pricing_currency?: PricingCurrencyPolicy
+}
+
+export type PricingCurrencyOption = {
+  currency: string
+  symbol: string
+  exchange_rate: number
+}
+
+export type PricingCurrencyPolicy = {
+  base_currency: string
+  chinese: PricingCurrencyOption
+  english: PricingCurrencyOption
+  reference_url?: string
+  reference_date?: string
+}
+
+export type ResolvedPricingCurrency = {
+  code: string
+  symbol: string
+  exchangeRate: number
+  locale: string
 }
 
 export type TokenUnit = 'M' | 'K'

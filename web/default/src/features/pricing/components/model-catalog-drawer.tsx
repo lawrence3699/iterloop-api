@@ -16,12 +16,11 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
-import { Coins, Info, Link2 } from 'lucide-react'
+import { Coins, Info } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
 import { CopyButton } from '@/components/copy-button'
 import { sideDrawerContentClassName } from '@/components/drawer-layout'
-import { GroupBadge } from '@/components/group-badge'
 import {
   Sheet,
   SheetContent,
@@ -32,9 +31,10 @@ import {
 import { getLobeIcon } from '@/lib/lobe-icon'
 
 import { isTokenBasedModel } from '../lib/model-helpers'
-import { formatFixedPrice, formatGroupPrice } from '../lib/price'
+import { formatRequestPrice } from '../lib/price'
 import type { PriceType } from '../types'
 import type { ModelDetailsDrawerProps } from './model-details'
+import { PriceComparison } from './price-comparison'
 
 const PRICE_FIELDS: { label: string; type: PriceType }[] = [
   { label: 'Input', type: 'input' },
@@ -76,9 +76,6 @@ export function ModelCatalogDrawer(props: ModelDetailsDrawerProps) {
     }
     return true
   })
-  const groups = (props.model.enable_groups || []).filter((group) =>
-    Object.hasOwn(props.usableGroup, group)
-  )
 
   return (
     <Sheet open={props.open} onOpenChange={props.onOpenChange}>
@@ -129,95 +126,48 @@ export function ModelCatalogDrawer(props: ModelDetailsDrawerProps) {
             </p>
           </section>
 
-          <section className='border-b py-6'>
-            <SectionHeading
-              icon={Link2}
-              title={t('API Endpoints')}
-              description={t('API')}
-            />
-            <div className='space-y-2'>
-              {(props.model.supported_endpoint_types || []).map((endpoint) => {
-                const endpointInfo = props.endpointMap[endpoint]
-                return (
-                  <div
-                    key={endpoint}
-                    className='bg-muted/30 flex items-center gap-3 rounded-xl border px-4 py-3 text-sm'
-                  >
-                    <span className='size-2 rounded-full bg-emerald-500' />
-                    <span className='text-muted-foreground font-medium'>
-                      {endpoint}
-                    </span>
-                    <code className='min-w-0 flex-1 truncate font-mono text-xs sm:text-sm'>
-                      {endpointInfo?.path || '—'}
-                    </code>
-                    <span className='text-muted-foreground text-xs font-semibold'>
-                      {endpointInfo?.method || 'POST'}
-                    </span>
-                  </div>
-                )
-              })}
-            </div>
-          </section>
-
           <section className='py-6'>
             <SectionHeading
               icon={Coins}
-              title={t('Pricing by Group')}
-              description={t('Price display mode')}
+              title={t('Pricing')}
+              description={`${tokenUnitLabel} tokens · ${props.model.pricing_currency?.code || ''}`}
             />
-            <div className='overflow-hidden rounded-xl border'>
-              {groups.map((group) => (
-                <div
-                  key={group}
-                  className='border-b p-4 last:border-b-0 sm:grid sm:grid-cols-[150px_minmax(0,1fr)] sm:gap-4'
-                >
-                  <div className='mb-3 sm:mb-0'>
-                    <GroupBadge group={group} size='sm' />
-                  </div>
-                  {isTokenBased ? (
-                    <div className='grid gap-2 text-sm sm:grid-cols-2'>
-                      {availablePriceFields.map((field) => (
-                        <div
-                          key={field.type}
-                          className='flex justify-between gap-3'
-                        >
-                          <span className='text-muted-foreground'>
-                            {t(field.label)}
-                          </span>
-                          <span className='font-mono font-semibold tabular-nums'>
-                            {formatGroupPrice(
-                              props.model,
-                              group,
-                              field.type,
-                              props.tokenUnit,
-                              props.showRechargePrice ?? false,
-                              props.priceRate,
-                              props.usdExchangeRate,
-                              props.groupRatio
-                            )}
-                            <span className='text-muted-foreground ml-1 text-[10px] font-normal'>
-                              / {tokenUnitLabel}
-                            </span>
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className='text-sm font-semibold'>
-                      {formatFixedPrice(
-                        props.model,
-                        group,
-                        props.showRechargePrice ?? false,
-                        props.priceRate,
-                        props.usdExchangeRate,
-                        props.groupRatio
-                      )}{' '}
-                      / {t('request')}
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
+            {isTokenBased ? (
+              <div className='grid gap-3 sm:grid-cols-2'>
+                {availablePriceFields.map((field) => (
+                  <PriceComparison
+                    key={field.type}
+                    model={props.model}
+                    type={field.type}
+                    label={field.label}
+                    tokenUnit={props.tokenUnit}
+                    showRechargePrice={props.showRechargePrice ?? false}
+                    priceRate={props.priceRate}
+                    usdExchangeRate={props.usdExchangeRate}
+                  />
+                ))}
+              </div>
+            ) : (
+              <div className='bg-muted/20 rounded-xl border p-4 font-mono text-lg font-semibold'>
+                {formatRequestPrice(
+                  props.model,
+                  props.showRechargePrice ?? false,
+                  props.priceRate,
+                  props.usdExchangeRate
+                )}{' '}
+                / {t('request')}
+              </div>
+            )}
+            {props.model.official_price?.source_url && (
+              <a
+                href={props.model.official_price.source_url}
+                target='_blank'
+                rel='noreferrer'
+                className='text-muted-foreground hover:text-foreground mt-4 inline-flex text-xs underline underline-offset-4'
+              >
+                {t('Official')} · {props.model.official_price.source_model}
+              </a>
+            )}
           </section>
         </div>
       </SheetContent>

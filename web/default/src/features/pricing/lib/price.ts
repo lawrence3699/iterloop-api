@@ -16,11 +16,10 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
-import { formatCurrencyFromUSD } from '@/lib/currency'
-
 import { QUOTA_TYPE_VALUES, TOKEN_UNIT_DIVISORS } from '../constants'
 import type { PricingModel, TokenUnit, PriceType } from '../types'
 import { getConfiguredGroupRatio, getDisplayGroupRatio } from './model-helpers'
+import { formatPricingCurrencyFromUSD } from './pricing-currency'
 
 // ----------------------------------------------------------------------------
 // Price Calculation Utilities
@@ -102,6 +101,47 @@ function hasRatio(value: number | null | undefined): boolean {
   return value !== undefined && value !== null && Number.isFinite(Number(value))
 }
 
+function getOfficialPriceInUSD(
+  model: PricingModel,
+  type: PriceType
+): number | undefined {
+  const official = model.official_price
+  if (!official) return undefined
+
+  switch (type) {
+    case 'input':
+      return official.input_usd
+    case 'output':
+      return official.output_usd
+    case 'cache':
+      return official.cache_read_usd
+    case 'create_cache':
+      return official.cache_write_usd
+    default:
+      return undefined
+  }
+}
+
+/** Format the model provider's standard API price in the selected currency. */
+export function formatOfficialPrice(
+  model: PricingModel,
+  type: PriceType,
+  tokenUnit: TokenUnit
+): string {
+  const priceInUSD = getOfficialPriceInUSD(model, type)
+  if (priceInUSD == null) return '-'
+
+  return formatPricingCurrencyFromUSD(
+    priceInUSD / TOKEN_UNIT_DIVISORS[tokenUnit],
+    model.pricing_currency,
+    {
+      digitsLarge: 4,
+      digitsSmall: 6,
+      abbreviate: false,
+    }
+  )
+}
+
 /**
  * Apply recharge rate to price
  *
@@ -165,7 +205,7 @@ export function formatPrice(
   )
 
   const price = priceInUSD / TOKEN_UNIT_DIVISORS[tokenUnit]
-  return formatCurrencyFromUSD(price, {
+  return formatPricingCurrencyFromUSD(price, model.pricing_currency, {
     digitsLarge: 4,
     digitsSmall: 6,
     abbreviate: false,
@@ -200,7 +240,7 @@ export function formatGroupPrice(
   )
 
   const price = priceInUSD / TOKEN_UNIT_DIVISORS[tokenUnit]
-  return formatCurrencyFromUSD(price, {
+  return formatPricingCurrencyFromUSD(price, model.pricing_currency, {
     digitsLarge: 4,
     digitsSmall: 6,
     abbreviate: false,
@@ -232,7 +272,7 @@ export function formatFixedPrice(
     usdExchangeRate
   )
 
-  return formatCurrencyFromUSD(priceInUSD, {
+  return formatPricingCurrencyFromUSD(priceInUSD, model.pricing_currency, {
     digitsLarge: 4,
     digitsSmall: 4,
     abbreviate: false,
@@ -264,7 +304,7 @@ export function formatRequestPrice(
     usdExchangeRate
   )
 
-  return formatCurrencyFromUSD(priceInUSD, {
+  return formatPricingCurrencyFromUSD(priceInUSD, model.pricing_currency, {
     digitsLarge: 4,
     digitsSmall: 4,
     abbreviate: false,

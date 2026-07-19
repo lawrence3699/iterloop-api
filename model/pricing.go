@@ -36,6 +36,21 @@ type Pricing struct {
 	BillingMode            string                  `json:"billing_mode,omitempty"`
 	BillingExpr            string                  `json:"billing_expr,omitempty"`
 	PricingVersion         string                  `json:"pricing_version,omitempty"`
+	OfficialPrice          *OfficialModelPrice     `json:"official_price,omitempty"`
+}
+
+// OfficialModelPrice stores the model provider's standard API prices in USD
+// per one million tokens. It is kept separate from IterLoop's billing ratios so
+// the public catalog can compare like-for-like prices without affecting usage
+// charging.
+type OfficialModelPrice struct {
+	InputUSD       float64  `json:"input_usd"`
+	OutputUSD      float64  `json:"output_usd"`
+	CacheReadUSD   *float64 `json:"cache_read_usd,omitempty"`
+	CacheWriteUSD  *float64 `json:"cache_write_usd,omitempty"`
+	SourceModel    string   `json:"source_model"`
+	SourceURL      string   `json:"source_url"`
+	EffectiveUntil string   `json:"effective_until,omitempty"`
 }
 
 type PricingVendor struct {
@@ -411,7 +426,7 @@ func updatePricing() {
 
 	// 防止大更新后数据不通用
 	if len(pricingMap) > 0 {
-		pricingMap[0].PricingVersion = "5a90f2b86c08bd983a9a2e6d66c255f4eaef9c4bc934386d2b6ae84ef0ff1f1f"
+		pricingMap[0].PricingVersion = "74b3f20476ef5f0ce7c7f0e2cfb3fbc6226805c68b6dfb8bcfe952c7d26e0f74"
 	}
 
 	// 刷新缓存映射，供高并发快速查询

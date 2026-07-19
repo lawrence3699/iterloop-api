@@ -86,6 +86,18 @@ Never restart Windows, ai-mac, CLIProxyAPI, CodePrism, original cloudflared task
 
 The environment template enables Resend SMTP, email verification, and Turnstile. Verify `iter-loop.com` in Resend and create Turnstile host rules before enabling public registration. New users start with zero quota and must redeem or receive an issuance before model calls succeed.
 
+## Faro pricing and locale currencies
+
+The public catalog uses Faro's USD-denominated model prices as its billing baseline. Chinese UI displays the converted price in CNY; English UI displays the converted price in AUD. The guarded database update is intentionally separate from the EXE deployment:
+
+1. Back up PostgreSQL and record the current `ModelRatio`, `CompletionRatio`, `CacheRatio`, `CreateCacheRatio`, and `GroupRatio` options.
+2. Deploy and validate the candidate EXE first.
+3. Review `configure-faro-pricing.ps1`, then run it explicitly with `-Apply`.
+4. Reload only `IterLoop API Shadow` so the in-memory pricing options refresh.
+5. Verify `/api/pricing`, `/pricing.json?lang=zhCN`, `/pricing.json?lang=en`, and the Chinese/English pricing pages before opening traffic.
+
+The configured catalog rates are `1 USD = 7.30 CNY` and `1 USD = 1.52 AUD`. Updating those rates is a commercial decision and must use the same backup, review, and verification process.
+
 ## Backups and retention
 
 - Run `backup-postgres.ps1` daily with Task Scheduler.

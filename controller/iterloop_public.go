@@ -2,6 +2,7 @@ package controller
 
 import (
 	"net/http"
+	"strings"
 
 	"github.com/QuantumNous/new-api/common"
 	"github.com/QuantumNous/new-api/setting/billing_setting"
@@ -19,11 +20,27 @@ func IterLoopHealth(c *gin.Context) {
 
 func IterLoopPricing(c *gin.Context) {
 	pricing := operation_setting.GetIterLoopPricingSetting()
+	currency := "AUD"
+	currencySymbol := "A$"
+	exchangeRate := pricing.AUDExchangeRate
+	language := strings.ToLower(strings.TrimSpace(c.Query("lang")))
+	if language == "" {
+		language = strings.ToLower(c.GetHeader("Accept-Language"))
+	}
+	if strings.HasPrefix(language, "zh") {
+		currency = "CNY"
+		currencySymbol = "¥"
+		exchangeRate = pricing.CNYExchangeRate
+	}
 	c.JSON(http.StatusOK, gin.H{
-		"schema_version":  "2026-07-14",
+		"schema_version":  "2026-07-19",
 		"kind":            "iterloop.public_pricing_snapshot",
-		"currency":        "CNY",
-		"currency_symbol": "¥",
+		"base_currency":   "USD",
+		"currency":        currency,
+		"currency_symbol": currencySymbol,
+		"exchange_rate":   exchangeRate,
+		"reference_url":   pricing.ReferenceURL,
+		"reference_date":  pricing.ReferenceDate,
 		"quota_per_unit":  common.QuotaPerUnit,
 		"groups": gin.H{
 			"codex-standard":  gin.H{"ratio": pricing.CodexRatio, "provider": "OpenAI-compatible"},
