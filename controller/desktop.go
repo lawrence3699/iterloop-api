@@ -29,13 +29,40 @@ const (
 )
 
 var desktopTurnstilePage = template.Must(template.New("desktop-turnstile").Parse(`<!doctype html>
-<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>IterLoop 安全验证</title><script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+<html lang="{{.HTMLLanguage}}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>{{.Title}}</title><script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
 <style>body{margin:0;background:#f5f5f7;color:#1d1d1f;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}.card{width:min(420px,calc(100% - 40px));margin:12vh auto;background:#fff;border:1px solid #e8e8ed;border-radius:14px;padding:30px;box-shadow:0 12px 36px rgba(0,0,0,.08)}h1{font-size:24px;margin:0 0 8px}p{color:#6e6e73;line-height:1.5}.cf-turnstile{margin-top:24px}</style></head>
-<body data-callback="{{.Callback}}"><main class="card"><h1>完成安全验证</h1><p>验证成功后会自动返回 IterLoop 客户端。</p>
-<div class="cf-turnstile" data-sitekey="{{.SiteKey}}" data-callback="turnstileDone"></div></main>
+<body data-callback="{{.Callback}}"><main class="card"><h1>{{.Heading}}</h1><p>{{.Description}}</p>
+<div class="cf-turnstile" data-sitekey="{{.SiteKey}}" data-language="{{.TurnstileLanguage}}" data-callback="turnstileDone"></div></main>
 <script>function turnstileDone(token){const target=new URL(document.body.dataset.callback);target.searchParams.set('token',token);window.location.replace(target.toString())}</script>
 </body></html>`))
+
+type desktopTurnstilePageText struct {
+	HTMLLanguage      string
+	TurnstileLanguage string
+	Title             string
+	Heading           string
+	Description       string
+}
+
+func desktopTurnstileText(language string) desktopTurnstilePageText {
+	if strings.EqualFold(strings.TrimSpace(language), "zh") {
+		return desktopTurnstilePageText{
+			HTMLLanguage:      "zh-CN",
+			TurnstileLanguage: "zh-cn",
+			Title:             "IterLoop 安全验证",
+			Heading:           "完成安全验证",
+			Description:       "验证成功后会自动返回 IterLoop 客户端。",
+		}
+	}
+	return desktopTurnstilePageText{
+		HTMLLanguage:      "en",
+		TurnstileLanguage: "en",
+		Title:             "IterLoop Security Verification",
+		Heading:           "Complete security verification",
+		Description:       "You'll return to the IterLoop app automatically after verification.",
+	}
+}
 
 var desktopVersionPattern = regexp.MustCompile(`^v?\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$`)
 
@@ -504,9 +531,12 @@ func GetDesktopTurnstilePage(c *gin.Context) {
 		c.AbortWithStatus(http.StatusBadRequest)
 		return
 	}
+	pageText := desktopTurnstileText(c.Query("lang"))
 	c.Header("Content-Security-Policy", "default-src 'self'; script-src 'self' 'unsafe-inline' https://challenges.cloudflare.com; frame-src https://challenges.cloudflare.com; style-src 'unsafe-inline'")
 	if err := desktopTurnstilePage.Execute(c.Writer, gin.H{
 		"Callback": callback.String(), "SiteKey": common.TurnstileSiteKey,
+		"HTMLLanguage": pageText.HTMLLanguage, "TurnstileLanguage": pageText.TurnstileLanguage,
+		"Title": pageText.Title, "Heading": pageText.Heading, "Description": pageText.Description,
 	}); err != nil {
 		c.AbortWithStatus(http.StatusInternalServerError)
 	}

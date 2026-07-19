@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"html"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -68,6 +69,65 @@ func TestDesktopTurnstileCallbackMustBeLoopback(t *testing.T) {
 	GetDesktopTurnstilePage(context)
 
 	assert.Equal(t, http.StatusBadRequest, recorder.Code)
+}
+
+func renderDesktopTurnstilePage(t *testing.T, language string) *httptest.ResponseRecorder {
+	t.Helper()
+	recorder := httptest.NewRecorder()
+	context, _ := gin.CreateTestContext(recorder)
+	query := url.Values{
+		"callback": {"http://127.0.0.1:34567/iterloop-turnstile?state=test-state"},
+		"lang":     {language},
+	}
+	context.Request = httptest.NewRequest(http.MethodGet, "/api/desktop/turnstile?"+query.Encode(), nil)
+
+	GetDesktopTurnstilePage(context)
+
+	require.Equal(t, http.StatusOK, recorder.Code)
+	return recorder
+}
+
+func TestDesktopTurnstilePageUsesRequestedLanguage(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	tests := []struct {
+		name        string
+		language    string
+		htmlLang    string
+		widgetLang  string
+		title       string
+		heading     string
+		description string
+	}{
+		{
+			name: "English", language: "en", htmlLang: "en", widgetLang: "en",
+			title: "IterLoop Security Verification", heading: "Complete security verification",
+			description: "You'll return to the IterLoop app automatically after verification.",
+		},
+		{
+			name: "Chinese", language: "zh", htmlLang: "zh-CN", widgetLang: "zh-cn",
+			title: "IterLoop 安全验证", heading: "完成安全验证", description: "验证成功后会自动返回 IterLoop 客户端。",
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			body := renderDesktopTurnstilePage(t, test.language).Body.String()
+			assert.Contains(t, body, `<html lang="`+test.htmlLang+`">`)
+			assert.Contains(t, body, `data-language="`+test.widgetLang+`"`)
+			assert.Contains(t, body, `<title>`+test.title+`</title>`)
+			assert.Contains(t, body, `<h1>`+test.heading+`</h1>`)
+			assert.Contains(t, body, `<p>`+html.EscapeString(test.description)+`</p>`)
+		})
+	}
+}
+
+func TestDesktopTurnstilePageDefaultsSafelyToEnglish(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	body := renderDesktopTurnstilePage(t, `zh\" onmouseover=\"alert(1)`).Body.String()
+
+	assert.Contains(t, body, `<html lang="en">`)
+	assert.Contains(t, body, `<h1>Complete security verification</h1>`)
+	assert.NotContains(t, body, "onmouseover")
 }
 
 func TestDesktopAuthenticationIntentSelectsEnrollForUnknownEmail(t *testing.T) {
