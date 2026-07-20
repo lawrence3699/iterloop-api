@@ -22,10 +22,11 @@ import (
 )
 
 const (
-	desktopOAuthCallbackKey    = "desktop_oauth_callback"
-	desktopOAuthClientStateKey = "desktop_oauth_client_state"
-	desktopOAuthChallengeKey   = "desktop_oauth_code_challenge"
-	desktopOAuthProviderKey    = "desktop_oauth_provider"
+	desktopOAuthCallbackKey     = "desktop_oauth_callback"
+	desktopOAuthClientStateKey  = "desktop_oauth_client_state"
+	desktopOAuthChallengeKey    = "desktop_oauth_code_challenge"
+	desktopOAuthProviderKey     = "desktop_oauth_provider"
+	desktopOAuthGrantStarterKey = "desktop_oauth_grant_starter"
 )
 
 var desktopTurnstilePage = template.Must(template.New("desktop-turnstile").Parse(`<!doctype html>
@@ -156,8 +157,7 @@ func requireDesktopClientVersion(c *gin.Context, version string) bool {
 	return true
 }
 
-func desktopStarterProfile() (*model.IssuanceProfile, error) {
-	profileId := operation_setting.GetDesktopSetting().StarterProfileId
+func desktopProfileById(profileId int) (*model.IssuanceProfile, error) {
 	if profileId <= 0 {
 		return nil, model.ErrDesktopStarterUnavailable
 	}
@@ -171,6 +171,26 @@ func desktopStarterProfile() (*model.IssuanceProfile, error) {
 	return profile, nil
 }
 
+func desktopStarterProfile() (*model.IssuanceProfile, error) {
+	return desktopProfileById(operation_setting.GetDesktopSetting().StarterProfileId)
+}
+
+// desktopPayAsYouGoProfile is issued to users who enroll without a valid beta
+// invite: a usable credential with no trial credit (unlimited token drawing
+// from the wallet, funded by top-up).
+func desktopPayAsYouGoProfile() (*model.IssuanceProfile, error) {
+	return desktopProfileById(operation_setting.GetDesktopSetting().PayAsYouGoProfileId)
+}
+
+// desktopGrantProfile picks the issuance profile for an enrollment: the starter
+// trial when a valid invite was supplied, otherwise pay-as-you-go.
+func desktopGrantProfile(grantStarter bool) (*model.IssuanceProfile, error) {
+	if grantStarter {
+		return desktopStarterProfile()
+	}
+	return desktopPayAsYouGoProfile()
+}
+
 func requireDesktopEnabled(c *gin.Context) bool {
 	if !operation_setting.GetDesktopSetting().Enabled {
 		desktopError(c, http.StatusServiceUnavailable, "desktop_disabled", "IterLoop 桌面端注册暂未开放")
@@ -179,18 +199,22 @@ func requireDesktopEnabled(c *gin.Context) bool {
 	return true
 }
 
-func requireDesktopInvite(c *gin.Context, inviteCode string) bool {
-	settings := operation_setting.GetDesktopSetting()
-	if !settings.BetaInviteRequired {
-		return true
-	}
-	expected := strings.TrimSpace(settings.BetaInviteSecret)
+// desktopInviteGrantsStarter decides beta-invite entitlement. The invite is no
+// longer mandatory: an empty invite enrolls without trial credits, a valid
+// invite unlocks the starter trial, and a wrong (non-empty) invite is rejected
+// so the user can correct a typo instead of silently losing the credits.
+// Returns (grantStarter, ok); when ok is false a 4xx response was written.
+func desktopInviteGrantsStarter(c *gin.Context, inviteCode string) (grantStarter bool, ok bool) {
 	provided := strings.TrimSpace(inviteCode)
+	if provided == "" {
+		return false, true
+	}
+	expected := strings.TrimSpace(operation_setting.GetDesktopSetting().BetaInviteSecret)
 	if expected == "" || len(expected) != len(provided) || subtle.ConstantTimeCompare([]byte(expected), []byte(provided)) != 1 {
 		desktopError(c, http.StatusForbidden, "invalid_beta_invite", "Beta 邀请码无效")
-		return false
+		return false, false
 	}
-	return true
+	return true, true
 }
 
 func desktopBearerToken(c *gin.Context) string {
@@ -223,7 +247,10 @@ func GetDesktopBootstrap(c *gin.Context) {
 		"enabled": settings.Enabled, "minimum_client_version": settings.MinimumClientVersion,
 		"recommended_codex_model":  settings.RecommendedCodexModel,
 		"recommended_claude_model": settings.RecommendedClaudeModel,
-		"legal_version":            settings.LegalVersion, "beta_invite_required": settings.BetaInviteRequired,
+		// The invite is optional now (a valid one only unlocks trial credits),
+		// so the client never blocks enrollment on it. The stored
+		// BetaInviteRequired value is left dormant for rollback safety.
+		"legal_version": settings.LegalVersion, "beta_invite_required": false,
 		"turnstile_enabled": common.TurnstileCheckEnabled, "turnstile_site_key": common.TurnstileSiteKey,
 		"google_oauth_enabled": googleProvider != nil && googleProvider.IsEnabled(),
 		"legal_urls":           gin.H{"user_agreement": "/user-agreement", "privacy_policy": "/privacy-policy"},
@@ -276,14 +303,18 @@ func PrepareDesktopOAuth(c *gin.Context) {
 		desktopError(c, http.StatusServiceUnavailable, "oauth_provider_unavailable", "Google 登录暂不可用")
 		return
 	}
-	if !requireDesktopClientVersion(c, request.AppVersion) || !requireDesktopInvite(c, request.BetaInviteCode) {
+	if !requireDesktopClientVersion(c, request.AppVersion) {
+		return
+	}
+	grantStarter, ok := desktopInviteGrantsStarter(c, request.BetaInviteCode)
+	if !ok {
 		return
 	}
 	if strings.TrimSpace(request.LegalVersion) != operation_setting.GetDesktopSetting().LegalVersion {
 		desktopError(c, http.StatusConflict, "legal_version_changed", "协议已更新，请重新确认")
 		return
 	}
-	if _, err := desktopStarterProfile(); err != nil {
+	if _, err := desktopGrantProfile(grantStarter); err != nil {
 		desktopError(c, http.StatusServiceUnavailable, "starter_unavailable", "Starter 发放方案暂不可用")
 		return
 	}
@@ -299,7 +330,8 @@ func PrepareDesktopOAuth(c *gin.Context) {
 		return
 	}
 	rawRequest, err := model.CreateDesktopOAuthRequest(model.DesktopOAuthRequestInput{
-		Provider: providerName, CallbackUrl: callback.String(), ClientState: clientState, CodeChallenge: challenge,
+		Provider: providerName, CallbackUrl: callback.String(), ClientState: clientState,
+		CodeChallenge: challenge, GrantStarter: grantStarter,
 	})
 	if err != nil {
 		handleDesktopModelError(c, err)
@@ -329,6 +361,7 @@ func StartDesktopOAuth(c *gin.Context) {
 	session.Set(desktopOAuthClientStateKey, oauthRequest.ClientState)
 	session.Set(desktopOAuthChallengeKey, oauthRequest.CodeChallenge)
 	session.Set(desktopOAuthProviderKey, providerName)
+	session.Set(desktopOAuthGrantStarterKey, oauthRequest.GrantStarter)
 	if err := session.Save(); err != nil {
 		desktopError(c, http.StatusInternalServerError, "oauth_session_failed", "无法初始化 Google 登录")
 		return
@@ -361,7 +394,7 @@ func clearDesktopOAuthSession(c *gin.Context) {
 	if session.Get("oauth_state") == nil && !desktopOAuthRequested(session) {
 		return
 	}
-	for _, key := range []string{"oauth_state", desktopOAuthCallbackKey, desktopOAuthClientStateKey, desktopOAuthChallengeKey, desktopOAuthProviderKey} {
+	for _, key := range []string{"oauth_state", desktopOAuthCallbackKey, desktopOAuthClientStateKey, desktopOAuthChallengeKey, desktopOAuthProviderKey, desktopOAuthGrantStarterKey} {
 		session.Delete(key)
 	}
 	if err := session.Save(); err != nil {
@@ -449,6 +482,7 @@ func HandleDesktopOAuthBrowserCallback(c *gin.Context) bool {
 		ProviderUserId: oauthUser.ProviderUserID, Username: oauthUser.Username,
 		DisplayName: oauthUser.DisplayName, Email: oauthUser.Email,
 		UsernamePrefix: genericProvider.GetProviderPrefix(), RegistrationOpen: common.RegisterEnabled,
+		GrantStarter: request.GrantStarter,
 	}, request.CodeChallenge)
 	if err != nil {
 		common.SysError("failed to create pending desktop OAuth code: " + err.Error())
@@ -472,6 +506,7 @@ func completeDesktopOAuth(user *model.User, providerName string, c *gin.Context)
 	callbackRaw, _ := session.Get(desktopOAuthCallbackKey).(string)
 	clientState, _ := session.Get(desktopOAuthClientStateKey).(string)
 	challenge, _ := session.Get(desktopOAuthChallengeKey).(string)
+	grantStarter, _ := session.Get(desktopOAuthGrantStarterKey).(bool)
 	if expectedProvider != providerName {
 		desktopError(c, http.StatusForbidden, "oauth_state_invalid", "Google 登录状态无效")
 		return true
@@ -481,7 +516,7 @@ func completeDesktopOAuth(user *model.User, providerName string, c *gin.Context)
 		desktopError(c, http.StatusForbidden, "oauth_state_invalid", "Google 登录状态无效")
 		return true
 	}
-	code, err := model.CreateDesktopOAuthCode(user.Id, providerName, challenge)
+	code, err := model.CreateDesktopOAuthCode(user.Id, providerName, challenge, grantStarter)
 	if err != nil {
 		handleDesktopModelError(c, err)
 		return true
@@ -490,7 +525,7 @@ func completeDesktopOAuth(user *model.User, providerName string, c *gin.Context)
 	query.Set("code", code)
 	query.Set("state", clientState)
 	callback.RawQuery = query.Encode()
-	for _, key := range []string{"oauth_state", desktopOAuthCallbackKey, desktopOAuthClientStateKey, desktopOAuthChallengeKey, desktopOAuthProviderKey} {
+	for _, key := range []string{"oauth_state", desktopOAuthCallbackKey, desktopOAuthClientStateKey, desktopOAuthChallengeKey, desktopOAuthProviderKey, desktopOAuthGrantStarterKey} {
 		session.Delete(key)
 	}
 	if err := session.Save(); err != nil {
@@ -510,8 +545,11 @@ func ExchangeDesktopOAuth(c *gin.Context) {
 	if !requireDesktopClientVersion(c, request.AppVersion) {
 		return
 	}
-	profile, _ := desktopStarterProfile()
-	result, err := model.ExchangeDesktopOAuthCode(profile, request.Code, request.CodeVerifier, model.DesktopEnrollmentInput{
+	// The code carries whether a valid invite was supplied at prepare; the model
+	// grants starter (trial) or pay-as-you-go accordingly.
+	starterProfile, _ := desktopStarterProfile()
+	payGoProfile, _ := desktopPayAsYouGoProfile()
+	result, err := model.ExchangeDesktopOAuthCode(starterProfile, payGoProfile, request.Code, request.CodeVerifier, model.DesktopEnrollmentInput{
 		InstallId: request.InstallId, DeviceName: request.DeviceName, Platform: request.Platform, AppVersion: request.AppVersion,
 	})
 	if err != nil {
@@ -631,7 +669,11 @@ func EnrollDesktop(c *gin.Context) {
 		desktopError(c, http.StatusBadRequest, "invalid_request", "注册信息无效")
 		return
 	}
-	if !requireDesktopClientVersion(c, request.AppVersion) || !requireDesktopInvite(c, request.BetaInviteCode) {
+	if !requireDesktopClientVersion(c, request.AppVersion) {
+		return
+	}
+	grantStarter, ok := desktopInviteGrantsStarter(c, request.BetaInviteCode)
+	if !ok {
 		return
 	}
 	settings := operation_setting.GetDesktopSetting()
@@ -644,7 +686,9 @@ func EnrollDesktop(c *gin.Context) {
 		desktopError(c, http.StatusBadRequest, "invalid_verification_code", "邮箱验证码无效或已过期")
 		return
 	}
-	profile, err := desktopStarterProfile()
+	// A valid invite unlocks the starter trial; otherwise issue a pay-as-you-go
+	// credential (usable after top-up) so enrollment still succeeds.
+	profile, err := desktopGrantProfile(grantStarter)
 	if err != nil {
 		desktopError(c, http.StatusServiceUnavailable, "starter_unavailable", "Starter 发放方案暂不可用")
 		return
@@ -675,7 +719,9 @@ func LinkDesktop(c *gin.Context) {
 		desktopError(c, http.StatusBadRequest, "invalid_verification_code", "邮箱验证码无效或已过期")
 		return
 	}
-	profile, _ := desktopStarterProfile()
+	// Linking never carries an invite; users who already hold a starter grant
+	// keep it, while first-time linkers receive pay-as-you-go (no trial credit).
+	profile, _ := desktopPayAsYouGoProfile()
 	result, err := model.LinkDesktopDevice(profile, request.Email, model.DesktopEnrollmentInput{
 		Email: request.Email, InstallId: request.InstallId, DeviceName: request.DeviceName,
 		Platform: request.Platform, AppVersion: request.AppVersion,

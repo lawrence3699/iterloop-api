@@ -3,8 +3,12 @@ package operation_setting
 import "github.com/QuantumNous/new-api/setting/config"
 
 type DesktopSetting struct {
-	Enabled                bool   `json:"enabled"`
-	StarterProfileId       int    `json:"starter_profile_id"`
+	Enabled          bool `json:"enabled"`
+	StarterProfileId int  `json:"starter_profile_id"`
+	// PayAsYouGoProfileId is the issuance profile granted to users who enroll
+	// without a valid beta invite: an unlimited token drawing from the wallet,
+	// with no trial credit. Zero disables no-invite enrollment.
+	PayAsYouGoProfileId    int    `json:"pay_as_you_go_profile_id"`
 	MinimumClientVersion   string `json:"minimum_client_version"`
 	RecommendedCodexModel  string `json:"recommended_codex_model"`
 	RecommendedClaudeModel string `json:"recommended_claude_model"`
@@ -16,6 +20,7 @@ type DesktopSetting struct {
 var desktopSetting = DesktopSetting{
 	Enabled:                false,
 	StarterProfileId:       0,
+	PayAsYouGoProfileId:    0,
 	MinimumClientVersion:   "0.1.0",
 	RecommendedCodexModel:  "gpt-5.6-sol",
 	RecommendedClaudeModel: "claude-sonnet-5",

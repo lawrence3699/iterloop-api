@@ -62,25 +62,32 @@ type DesktopOAuthCode struct {
 	OAuthEmail            string `json:"-" gorm:"column:oauth_email;type:varchar(256);not null;default:''"`
 	OAuthUsernamePrefix   string `json:"-" gorm:"column:oauth_username_prefix;type:varchar(64);not null;default:''"`
 	OAuthRegistrationOpen bool   `json:"-" gorm:"column:oauth_registration_open;not null;default:false"`
-	CodeHash              string `json:"-" gorm:"type:char(64);uniqueIndex;not null"`
-	CodeChallenge         string `json:"-" gorm:"type:varchar(128);not null"`
-	ExpiresTime           int64  `json:"expires_time" gorm:"bigint;index;not null"`
-	ConsumedTime          int64  `json:"consumed_time" gorm:"bigint;not null"`
-	CreatedTime           int64  `json:"created_time" gorm:"bigint;not null"`
+	// GrantStarter records whether a valid beta invite was supplied at prepare
+	// time, so the exchange can decide starter (trial credits) vs pay-as-you-go
+	// (no credits). Defaults false so a missing/lost flag never grants credits.
+	GrantStarter  bool   `json:"-" gorm:"column:grant_starter;not null;default:false"`
+	CodeHash      string `json:"-" gorm:"type:char(64);uniqueIndex;not null"`
+	CodeChallenge string `json:"-" gorm:"type:varchar(128);not null"`
+	ExpiresTime   int64  `json:"expires_time" gorm:"bigint;index;not null"`
+	ConsumedTime  int64  `json:"consumed_time" gorm:"bigint;not null"`
+	CreatedTime   int64  `json:"created_time" gorm:"bigint;not null"`
 }
 
 type DesktopOAuthRequest struct {
-	Id                   int     `json:"id"`
-	RequestHash          string  `json:"-" gorm:"type:char(64);uniqueIndex;not null"`
-	Provider             string  `json:"provider" gorm:"type:varchar(32);index;not null"`
-	CallbackUrl          string  `json:"-" gorm:"type:varchar(512);not null"`
-	ClientState          string  `json:"-" gorm:"type:varchar(128);not null"`
-	CodeChallenge        string  `json:"-" gorm:"type:varchar(128);not null"`
-	OAuthStateHash       *string `json:"-" gorm:"column:oauth_state_hash;type:char(64);unique"`
-	ExpiresTime          int64   `json:"expires_time" gorm:"bigint;index;not null"`
-	ConsumedTime         int64   `json:"consumed_time" gorm:"bigint;not null"`
-	CallbackConsumedTime int64   `json:"callback_consumed_time" gorm:"bigint;not null;default:0"`
-	CreatedTime          int64   `json:"created_time" gorm:"bigint;not null"`
+	Id             int     `json:"id"`
+	RequestHash    string  `json:"-" gorm:"type:char(64);uniqueIndex;not null"`
+	Provider       string  `json:"provider" gorm:"type:varchar(32);index;not null"`
+	CallbackUrl    string  `json:"-" gorm:"type:varchar(512);not null"`
+	ClientState    string  `json:"-" gorm:"type:varchar(128);not null"`
+	CodeChallenge  string  `json:"-" gorm:"type:varchar(128);not null"`
+	OAuthStateHash *string `json:"-" gorm:"column:oauth_state_hash;type:char(64);unique"`
+	// GrantStarter carries beta-invite entitlement from prepare through the
+	// browser callback so the exchanged code can grant trial credits.
+	GrantStarter         bool  `json:"-" gorm:"column:grant_starter;not null;default:false"`
+	ExpiresTime          int64 `json:"expires_time" gorm:"bigint;index;not null"`
+	ConsumedTime         int64 `json:"consumed_time" gorm:"bigint;not null"`
+	CallbackConsumedTime int64 `json:"callback_consumed_time" gorm:"bigint;not null;default:0"`
+	CreatedTime          int64 `json:"created_time" gorm:"bigint;not null"`
 }
 
 type DesktopOAuthCleanupResult struct {

@@ -56,6 +56,40 @@ func TestEnrollDesktopReturnsStableCodeForWrongVerificationCode(t *testing.T) {
 	assert.Equal(t, "invalid_verification_code", response["code"])
 }
 
+func TestDesktopInviteGrantsStarterEntitlement(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	settings := operation_setting.GetDesktopSetting()
+	original := *settings
+	t.Cleanup(func() { *settings = original })
+	settings.BetaInviteSecret = "ITERLOOP-BETA-TEST"
+
+	// Empty invite: enrollment allowed, no trial credits, nothing written.
+	recorder := httptest.NewRecorder()
+	context, _ := gin.CreateTestContext(recorder)
+	grant, ok := desktopInviteGrantsStarter(context, "")
+	assert.True(t, ok)
+	assert.False(t, grant)
+	assert.Equal(t, http.StatusOK, recorder.Code)
+
+	// Valid invite (whitespace-trimmed): unlocks the starter trial.
+	recorder = httptest.NewRecorder()
+	context, _ = gin.CreateTestContext(recorder)
+	grant, ok = desktopInviteGrantsStarter(context, "  ITERLOOP-BETA-TEST  ")
+	assert.True(t, ok)
+	assert.True(t, grant)
+
+	// Wrong non-empty invite: rejected so the user can fix a typo.
+	recorder = httptest.NewRecorder()
+	context, _ = gin.CreateTestContext(recorder)
+	grant, ok = desktopInviteGrantsStarter(context, "WRONG-CODE-VALUE")
+	assert.False(t, ok)
+	assert.False(t, grant)
+	assert.Equal(t, http.StatusForbidden, recorder.Code)
+	response := map[string]any{}
+	require.NoError(t, common.Unmarshal(recorder.Body.Bytes(), &response))
+	assert.Equal(t, "invalid_beta_invite", response["code"])
+}
+
 func TestDesktopTurnstileCallbackMustBeLoopback(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	recorder := httptest.NewRecorder()

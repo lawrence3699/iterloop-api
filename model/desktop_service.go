@@ -53,6 +53,7 @@ type DesktopOAuthRequestInput struct {
 	CallbackUrl   string
 	ClientState   string
 	CodeChallenge string
+	GrantStarter  bool
 }
 
 type DesktopOAuthIdentityInput struct {
@@ -64,6 +65,7 @@ type DesktopOAuthIdentityInput struct {
 	Email            string
 	UsernamePrefix   string
 	RegistrationOpen bool
+	GrantStarter     bool
 }
 
 var (
@@ -180,7 +182,7 @@ func createDesktopGrantWithTx(tx *gorm.DB, profile *IssuanceProfile, user *User)
 	return grant, issued.Credentials[0], nil
 }
 
-func CreateDesktopOAuthCode(userId int, provider string, codeChallenge string) (string, error) {
+func CreateDesktopOAuthCode(userId int, provider string, codeChallenge string, grantStarter bool) (string, error) {
 	provider = strings.ToLower(strings.TrimSpace(provider))
 	codeChallenge = strings.TrimSpace(codeChallenge)
 	if userId <= 0 || provider == "" || len(provider) > 32 || len(codeChallenge) < 32 || len(codeChallenge) > 128 {
@@ -193,7 +195,7 @@ func CreateDesktopOAuthCode(userId int, provider string, codeChallenge string) (
 	now := common.GetTimestamp()
 	code := &DesktopOAuthCode{
 		UserId: userId, Provider: provider, CodeHash: HashDesktopToken(rawCode),
-		CodeChallenge: codeChallenge, ExpiresTime: now + 300, CreatedTime: now,
+		CodeChallenge: codeChallenge, GrantStarter: grantStarter, ExpiresTime: now + 300, CreatedTime: now,
 	}
 	if err := DB.Create(code).Error; err != nil {
 		return "", err
@@ -228,7 +230,8 @@ func CreatePendingDesktopOAuthCode(identity DesktopOAuthIdentityInput, codeChall
 		OAuthProviderUserId: identity.ProviderUserId, OAuthUsername: identity.Username,
 		OAuthDisplayName: identity.DisplayName, OAuthEmail: identity.Email,
 		OAuthUsernamePrefix: identity.UsernamePrefix, OAuthRegistrationOpen: identity.RegistrationOpen,
-		CodeHash: HashDesktopToken(rawCode), CodeChallenge: codeChallenge,
+		GrantStarter: identity.GrantStarter,
+		CodeHash:     HashDesktopToken(rawCode), CodeChallenge: codeChallenge,
 		ExpiresTime: now + 300, CreatedTime: now,
 	}
 	if err := DB.Create(code).Error; err != nil {
@@ -254,7 +257,8 @@ func CreateDesktopOAuthRequest(input DesktopOAuthRequestInput) (string, error) {
 	request := &DesktopOAuthRequest{
 		RequestHash: HashDesktopToken(rawRequest), Provider: input.Provider,
 		CallbackUrl: input.CallbackUrl, ClientState: input.ClientState, CodeChallenge: input.CodeChallenge,
-		ExpiresTime: now + 300, CreatedTime: now,
+		GrantStarter: input.GrantStarter,
+		ExpiresTime:  now + 300, CreatedTime: now,
 	}
 	if err := DB.Create(request).Error; err != nil {
 		return "", err
@@ -573,6 +577,25 @@ func resolveDesktopOAuthUserWithTx(tx *gorm.DB, code *DesktopOAuthCode) (*User, 
 	if len(email) > 50 {
 		return nil, false, ErrDesktopOAuthIdentityInvalid
 	}
+	// If an account already owns this Google-verified email, link the OAuth
+	// identity to it and sign in, instead of failing with "email already
+	// registered". Google verifies email ownership, so linking is safe.
+	if email != "" {
+		existing := &User{}
+		lookup := lockForUpdate(tx).Where("email = ?", email).Limit(1).Find(existing)
+		if lookup.Error != nil {
+			return nil, false, lookup.Error
+		}
+		if lookup.RowsAffected > 0 && existing.Id > 0 {
+			binding = &UserOAuthBinding{
+				UserId: existing.Id, ProviderId: code.OAuthProviderId, ProviderUserId: code.OAuthProviderUserId,
+			}
+			if err := CreateUserOAuthBindingWithTx(tx, binding); err != nil {
+				return nil, false, err
+			}
+			return existing, false, nil
+		}
+	}
 	username, err := desktopOAuthUsernameWithTx(tx, code)
 	if err != nil {
 		return nil, false, err
@@ -600,7 +623,11 @@ func resolveDesktopOAuthUserWithTx(tx *gorm.DB, code *DesktopOAuthCode) (*User, 
 	return user, true, nil
 }
 
-func ExchangeDesktopOAuthCode(profile *IssuanceProfile, rawCode string, verifier string, rawInput DesktopEnrollmentInput) (*DesktopEnrollmentResult, error) {
+// ExchangeDesktopOAuthCode redeems a desktop OAuth code. starterProfile is
+// granted (trial credits) only when the code carries a valid beta invite;
+// otherwise fallbackProfile (pay-as-you-go, no credits) is issued so the user
+// still receives a usable credential.
+func ExchangeDesktopOAuthCode(starterProfile *IssuanceProfile, fallbackProfile *IssuanceProfile, rawCode string, verifier string, rawInput DesktopEnrollmentInput) (*DesktopEnrollmentResult, error) {
 	input, err := normalizeDesktopDeviceInput(rawInput)
 	if err != nil {
 		return nil, err
@@ -614,7 +641,7 @@ func ExchangeDesktopOAuthCode(profile *IssuanceProfile, rawCode string, verifier
 	if err != nil {
 		return nil, err
 	}
-	result := &DesktopEnrollmentResult{Profile: profile, RefreshToken: refreshToken}
+	result := &DesktopEnrollmentResult{RefreshToken: refreshToken}
 	createdUser := false
 	err = DB.Transaction(func(tx *gorm.DB) error {
 		code := &DesktopOAuthCode{}
@@ -635,6 +662,13 @@ func ExchangeDesktopOAuthCode(profile *IssuanceProfile, rawCode string, verifier
 		if len(challenge) != len(code.CodeChallenge) || subtle.ConstantTimeCompare([]byte(challenge), []byte(code.CodeChallenge)) != 1 {
 			return ErrDesktopOAuthCodeInvalid
 		}
+		// A valid invite (captured at prepare) unlocks the starter trial;
+		// everyone else gets the pay-as-you-go credential.
+		profile := fallbackProfile
+		if code.GrantStarter {
+			profile = starterProfile
+		}
+		result.Profile = profile
 		user, created, err := resolveDesktopOAuthUserWithTx(tx, code)
 		if err != nil {
 			return err
@@ -655,6 +689,7 @@ func ExchangeDesktopOAuthCode(profile *IssuanceProfile, rawCode string, verifier
 			"oauth_email":             "",
 			"oauth_username_prefix":   "",
 			"oauth_registration_open": false,
+			"grant_starter":           false,
 			"code_challenge":          "",
 		}).Error; err != nil {
 			return err

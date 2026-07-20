@@ -76,22 +76,22 @@ func TestDesktopOAuthCodeUsesPKCEAndCanOnlyBeExchangedOnce(t *testing.T) {
 	}
 	require.NoError(t, user.Insert(0))
 	verifier := strings.Repeat("v", 64)
-	code, err := CreateDesktopOAuthCode(user.Id, "google", desktopPKCEChallenge(verifier))
+	code, err := CreateDesktopOAuthCode(user.Id, "google", desktopPKCEChallenge(verifier), false)
 	require.NoError(t, err)
 
 	input := DesktopEnrollmentInput{
 		InstallId: "google-install", DeviceName: "Google Mac", Platform: "macos", AppVersion: "0.1.1",
 	}
-	_, err = ExchangeDesktopOAuthCode(profile, code, strings.Repeat("x", 64), input)
+	_, err = ExchangeDesktopOAuthCode(profile, profile, code, strings.Repeat("x", 64), input)
 	assert.ErrorIs(t, err, ErrDesktopOAuthCodeInvalid)
 
-	result, err := ExchangeDesktopOAuthCode(profile, code, verifier, input)
+	result, err := ExchangeDesktopOAuthCode(profile, profile, code, verifier, input)
 	require.NoError(t, err)
 	assert.Equal(t, user.Id, result.User.Id)
 	assert.Contains(t, result.Credential.ApiKey, "sk-")
 	assert.NotEmpty(t, result.RefreshToken)
 
-	_, err = ExchangeDesktopOAuthCode(profile, code, verifier, DesktopEnrollmentInput{
+	_, err = ExchangeDesktopOAuthCode(profile, profile, code, verifier, DesktopEnrollmentInput{
 		InstallId: "second-google-install", DeviceName: "Second Mac", Platform: "macos", AppVersion: "0.1.1",
 	})
 	assert.ErrorIs(t, err, ErrDesktopOAuthCodeInvalid)
@@ -102,6 +102,76 @@ func TestDesktopOAuthCodeUsesPKCEAndCanOnlyBeExchangedOnce(t *testing.T) {
 	require.NoError(t, DB.Model(&DesktopDevice{}).Count(&deviceCount).Error)
 	assert.EqualValues(t, 1, grantCount)
 	assert.EqualValues(t, 1, deviceCount)
+}
+
+func desktopPayAsYouGoProfileFixture(t *testing.T) *IssuanceProfile {
+	t.Helper()
+	profile := &IssuanceProfile{
+		Name: "Pay As You Go", Description: "No trial credit", Mode: IssuanceModeCombined,
+		BalanceQuota: 0, KeyQuota: 0, UnlimitedQuota: true, KeyCount: 1, ExpireDays: 0,
+		CodexModels: "gpt-5.5", ClaudeModels: "claude-sonnet-4-6",
+		CodexGroup: "codex-standard", ClaudeGroup: "claude-standard", GrokGroup: "grok-standard", CombinedGroup: "combined-standard",
+		Enabled: true, CreatedBy: 99,
+	}
+	require.NoError(t, profile.Insert())
+	return profile
+}
+
+// A valid beta invite (persisted as GrantStarter) unlocks the fixed-quota
+// starter trial; without it the exchange issues the unlimited pay-as-you-go
+// credential (wallet-funded, no trial credit).
+func TestDesktopOAuthExchangeGatesStarterCreditsOnInvite(t *testing.T) {
+	starter := setupDesktopTest(t)
+	payGo := desktopPayAsYouGoProfileFixture(t)
+	verifier := strings.Repeat("v", 64)
+
+	withInvite := desktopOAuthIdentityFixture()
+	withInvite.ProviderUserId = "starter-subject"
+	withInvite.Email = "starter@example.com"
+	withInvite.GrantStarter = true
+	starterCode, err := CreatePendingDesktopOAuthCode(withInvite, desktopPKCEChallenge(verifier))
+	require.NoError(t, err)
+	starterResult, err := ExchangeDesktopOAuthCode(starter, payGo, starterCode, verifier, DesktopEnrollmentInput{
+		InstallId: "starter-install", DeviceName: "Mac Starter", Platform: "macos", AppVersion: "0.1.1",
+	})
+	require.NoError(t, err)
+	assert.Equal(t, starter.Id, starterResult.Profile.Id)
+	assert.False(t, starterResult.Credential.Unlimited, "starter credential is a fixed-quota trial token")
+
+	noInvite := desktopOAuthIdentityFixture()
+	noInvite.ProviderUserId = "paygo-subject"
+	noInvite.Email = "paygo@example.com"
+	noInvite.GrantStarter = false
+	payGoCode, err := CreatePendingDesktopOAuthCode(noInvite, desktopPKCEChallenge(verifier))
+	require.NoError(t, err)
+	payGoResult, err := ExchangeDesktopOAuthCode(starter, payGo, payGoCode, verifier, DesktopEnrollmentInput{
+		InstallId: "paygo-install", DeviceName: "Mac PayGo", Platform: "macos", AppVersion: "0.1.1",
+	})
+	require.NoError(t, err)
+	assert.Equal(t, payGo.Id, payGoResult.Profile.Id)
+	assert.True(t, payGoResult.Credential.Unlimited, "pay-as-you-go credential draws from the wallet")
+	assert.EqualValues(t, 0, payGoResult.Credential.Quota, "pay-as-you-go grants no trial credit")
+}
+
+// A user who already exists (e.g. registered on the web) and links their first
+// desktop device without an invite receives the pay-as-you-go credential, not a
+// starter trial. Existing grants are covered by the reuse tests below.
+func TestLinkDesktopDeviceIssuesPayAsYouGoForFirstTimeLinker(t *testing.T) {
+	setupDesktopTest(t)
+	payGo := desktopPayAsYouGoProfileFixture(t)
+	user := &User{
+		Username: "web-user", DisplayName: "Web User", Email: "web@example.com",
+		Role: common.RoleCommonUser, Status: common.UserStatusEnabled, Group: "default",
+	}
+	require.NoError(t, user.Insert(0))
+
+	result, err := LinkDesktopDevice(payGo, "web@example.com", DesktopEnrollmentInput{
+		Email: "web@example.com", InstallId: "web-install", DeviceName: "Web Mac", Platform: "macos", AppVersion: "0.1.1",
+	})
+	require.NoError(t, err)
+	assert.Equal(t, payGo.Id, result.Profile.Id)
+	assert.True(t, result.Credential.Unlimited, "first-time linker without invite gets a wallet-funded credential")
+	assert.EqualValues(t, 0, result.Credential.Quota, "no trial credit for first-time linkers")
 }
 
 func desktopOAuthIdentityFixture() DesktopOAuthIdentityInput {
@@ -131,7 +201,7 @@ func TestPendingDesktopOAuthCreatesAtomicallyAndReusesStarterGrant(t *testing.T)
 	code, err := CreatePendingDesktopOAuthCode(identity, desktopPKCEChallenge(verifier))
 	require.NoError(t, err)
 
-	first, err := ExchangeDesktopOAuthCode(profile, code, verifier, DesktopEnrollmentInput{
+	first, err := ExchangeDesktopOAuthCode(profile, profile, code, verifier, DesktopEnrollmentInput{
 		InstallId: "google-install-one", DeviceName: "Google Mac", Platform: "macos", AppVersion: "0.1.1",
 	})
 	require.NoError(t, err)
@@ -151,7 +221,7 @@ func TestPendingDesktopOAuthCreatesAtomicallyAndReusesStarterGrant(t *testing.T)
 	identity.RegistrationOpen = false
 	secondCode, err := CreatePendingDesktopOAuthCode(identity, desktopPKCEChallenge(verifier))
 	require.NoError(t, err)
-	second, err := ExchangeDesktopOAuthCode(profile, secondCode, verifier, DesktopEnrollmentInput{
+	second, err := ExchangeDesktopOAuthCode(profile, profile, secondCode, verifier, DesktopEnrollmentInput{
 		InstallId: "google-install-two", DeviceName: "Second Google Mac", Platform: "macos", AppVersion: "0.1.1",
 	})
 	require.NoError(t, err)
@@ -263,7 +333,7 @@ func TestPendingDesktopOAuthRollsBackUserBindingGrantAndDeviceTogether(t *testin
 	code, err := CreatePendingDesktopOAuthCode(desktopOAuthIdentityFixture(), desktopPKCEChallenge(verifier))
 	require.NoError(t, err)
 
-	_, err = ExchangeDesktopOAuthCode(profile, code, verifier, DesktopEnrollmentInput{
+	_, err = ExchangeDesktopOAuthCode(profile, profile, code, verifier, DesktopEnrollmentInput{
 		InstallId: "claimed-google-install", DeviceName: "Conflicting Mac", Platform: "macos", AppVersion: "0.1.1",
 	})
 	assert.ErrorIs(t, err, ErrDesktopInstallClaimed)
