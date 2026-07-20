@@ -573,6 +573,25 @@ func resolveDesktopOAuthUserWithTx(tx *gorm.DB, code *DesktopOAuthCode) (*User, 
 	if len(email) > 50 {
 		return nil, false, ErrDesktopOAuthIdentityInvalid
 	}
+	// If an account already owns this Google-verified email, link the OAuth
+	// identity to it and sign in, instead of failing with "email already
+	// registered". Google verifies email ownership, so linking is safe.
+	if email != "" {
+		existing := &User{}
+		lookup := lockForUpdate(tx).Where("email = ?", email).Limit(1).Find(existing)
+		if lookup.Error != nil {
+			return nil, false, lookup.Error
+		}
+		if lookup.RowsAffected > 0 && existing.Id > 0 {
+			binding = &UserOAuthBinding{
+				UserId: existing.Id, ProviderId: code.OAuthProviderId, ProviderUserId: code.OAuthProviderUserId,
+			}
+			if err := CreateUserOAuthBindingWithTx(tx, binding); err != nil {
+				return nil, false, err
+			}
+			return existing, false, nil
+		}
+	}
 	username, err := desktopOAuthUsernameWithTx(tx, code)
 	if err != nil {
 		return nil, false, err
