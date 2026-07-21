@@ -72,6 +72,30 @@ For commercial licensing, please contact support@quantumnous.com
   color: var(--dash-muted);
 }
 
+.iterloop-console-shell .iterloop-console-website-link {
+  color: var(--dash-muted);
+}
+
+.iterloop-console-shell .iterloop-console-website-link:hover {
+  color: var(--dash-ink);
+}
+
+.iterloop-console-shell .iterloop-console-lang,
+.iterloop-console-shell .iterloop-console-theme {
+  background: var(--dash-faint);
+  color: var(--dash-ink);
+}
+
+.iterloop-console-shell .iterloop-console-lang:hover,
+.iterloop-console-shell .iterloop-console-theme:hover {
+  background: color-mix(in srgb, var(--dash-ink) 8%, transparent);
+  box-shadow: inset 0 0 0 1px var(--dash-line);
+}
+
+.iterloop-console-shell .iterloop-console-lang > svg {
+  color: var(--dash-muted);
+}
+
 /* Sidebar — clone .dashboard-sidebar (no card chrome, sits on canvas) */
 .iterloop-console-shell .iterloop-console-sidebar {
   border-right: 0;

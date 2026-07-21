@@ -1,3 +1,8 @@
+// Copyright (c) 2026 QuantumNous. All Rights Reserved.
+// This file is part of new-api (https://github.com/QuantumNous/new-api).
+// Licensed under the GNU Affero General Public License v3.0 or later.
+// See the LICENSE file in the project root for license terms.
+
 package controller
 
 import (
@@ -29,11 +34,38 @@ var stripeAdaptor = &StripeAdaptor{}
 const stripeWebhookMaxBodyBytes int64 = 65_536
 
 // StripePayRequest represents a one-time prepaid credit purchase.
+//
+// Exactly one of the following selects the purchased credit:
+//   - Preset: a server-side catalog entry such as "aud-5" or "cny-10".
+//   - AmountCents: cents-precise custom credit (USD cents, 1 credit = 100).
+//   - Amount: legacy whole-credit path validated against AmountOptions.
 type StripePayRequest struct {
 	Amount        int64  `json:"amount"`
+	AmountCents   int64  `json:"amount_cents,omitempty"`
+	Preset        string `json:"preset,omitempty"`
 	PaymentMethod string `json:"payment_method"`
 	SuccessURL    string `json:"success_url,omitempty"`
 	CancelURL     string `json:"cancel_url,omitempty"`
+}
+
+const (
+	// stripeMinChargeMinorUnits is the minimum charge for custom/preset
+	// orders in AUD minor units (A$1.00, safely above Stripe's A$0.50 floor).
+	stripeMinChargeMinorUnits int64 = 100
+	// stripeMaxCreditCents caps cents-precise purchases at the same 10000
+	// credit ceiling the legacy integer path enforces.
+	stripeMaxCreditCents int64 = 10000 * 100
+)
+
+// stripeOrderPricing is the resolved, immutable pricing snapshot for one
+// Stripe checkout: what the user requested, what they pay, and the exact
+// quota credited at settlement.
+type stripeOrderPricing struct {
+	Amount        int64   // whole USD credits (back-compat display; floor for cents orders)
+	AmountCents   int64   // authoritative credit in USD cents; 0 for legacy whole-credit orders
+	Money         float64 // charged credit after topup group ratio, in USD credits
+	ExpectedMinor int64   // charged amount in AUD minor units
+	CreditedQuota int64   // exact quota credited on settlement
 }
 
 type StripeAdaptor struct{}
@@ -43,24 +75,20 @@ func (*StripeAdaptor) RequestAmount(c *gin.Context, req *StripePayRequest) {
 		c.JSON(http.StatusOK, gin.H{"message": "error", "data": "Stripe 支付未启用或配置不完整"})
 		return
 	}
-	if err := validateStripeTopUpAmount(req.Amount); err != nil {
-		c.JSON(http.StatusOK, gin.H{"message": "error", "data": err.Error()})
-		return
-	}
 	id := c.GetInt("id")
 	group, err := model.GetUserGroup(id, true)
 	if err != nil {
 		c.JSON(http.StatusOK, gin.H{"message": "error", "data": "获取用户分组失败"})
 		return
 	}
-	expectedAmount, err := stripeCheckoutMinorAmount(req.Amount, group)
+	pricing, err := resolveStripeOrderPricing(req, group)
 	if err != nil {
 		c.JSON(http.StatusOK, gin.H{"message": "error", "data": err.Error()})
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{
 		"message": "success",
-		"data":    decimal.NewFromInt(expectedAmount).Div(decimal.NewFromInt(100)).StringFixed(2),
+		"data":    decimal.NewFromInt(pricing.ExpectedMinor).Div(decimal.NewFromInt(100)).StringFixed(2),
 	})
 }
 
@@ -74,10 +102,6 @@ func (*StripeAdaptor) RequestPay(c *gin.Context, req *StripePayRequest) {
 	}
 	if req.PaymentMethod != model.PaymentMethodStripe {
 		c.JSON(http.StatusOK, gin.H{"message": "error", "data": "不支持的支付渠道"})
-		return
-	}
-	if err := validateStripeTopUpAmount(req.Amount); err != nil {
-		c.JSON(http.StatusOK, gin.H{"message": "error", "data": err.Error()})
 		return
 	}
 	if req.SuccessURL != "" && common.ValidateRedirectURL(req.SuccessURL) != nil {
@@ -95,13 +119,12 @@ func (*StripeAdaptor) RequestPay(c *gin.Context, req *StripePayRequest) {
 		c.JSON(http.StatusOK, gin.H{"message": "error", "data": "获取用户信息失败"})
 		return
 	}
-	expectedAmount, err := stripeCheckoutMinorAmount(req.Amount, user.Group)
+	pricing, err := resolveStripeOrderPricing(req, user.Group)
 	if err != nil {
 		c.JSON(http.StatusOK, gin.H{"message": "error", "data": err.Error()})
 		return
 	}
-	creditedQuota := stripeCreditedQuota(req.Amount, *user)
-	if creditedQuota <= 0 {
+	if pricing.CreditedQuota <= 0 {
 		c.JSON(http.StatusOK, gin.H{"message": "error", "data": "充值额度配置无效"})
 		return
 	}
@@ -111,16 +134,17 @@ func (*StripeAdaptor) RequestPay(c *gin.Context, req *StripePayRequest) {
 	currency := strings.ToUpper(strings.TrimSpace(setting.StripeCurrency))
 	topUp := &model.TopUp{
 		UserId:          id,
-		Amount:          req.Amount,
-		Money:           GetChargedAmount(float64(req.Amount), *user),
+		Amount:          pricing.Amount,
+		AmountCents:     pricing.AmountCents,
+		Money:           pricing.Money,
 		TradeNo:         referenceId,
 		PaymentMethod:   model.PaymentMethodStripe,
 		PaymentProvider: model.PaymentProviderStripe,
 		CreateTime:      time.Now().Unix(),
 		Status:          common.TopUpStatusPending,
-		ExpectedAmount:  expectedAmount,
+		ExpectedAmount:  pricing.ExpectedMinor,
 		Currency:        currency,
-		CreditedQuota:   creditedQuota,
+		CreditedQuota:   pricing.CreditedQuota,
 	}
 	if err := topUp.Insert(); err != nil {
 		logger.LogError(c.Request.Context(), fmt.Sprintf("Stripe 创建本地订单失败 user_id=%d trade_no=%s error=%q", id, referenceId, err.Error()))
@@ -128,7 +152,7 @@ func (*StripeAdaptor) RequestPay(c *gin.Context, req *StripePayRequest) {
 		return
 	}
 
-	checkoutSession, err := genStripeLink(referenceId, user.StripeCustomer, user.Email, expectedAmount, currency, req.SuccessURL, req.CancelURL)
+	checkoutSession, err := genStripeLink(referenceId, user.StripeCustomer, user.Email, pricing.ExpectedMinor, currency, req.SuccessURL, req.CancelURL)
 	if err != nil {
 		_ = model.FailStripeCheckoutCreation(referenceId, err)
 		logger.LogError(c.Request.Context(), fmt.Sprintf("Stripe 创建 Checkout Session 失败 user_id=%d trade_no=%s error=%q", id, referenceId, err.Error()))
@@ -143,7 +167,7 @@ func (*StripeAdaptor) RequestPay(c *gin.Context, req *StripePayRequest) {
 		return
 	}
 
-	logger.LogInfo(c.Request.Context(), fmt.Sprintf("Stripe 充值订单创建成功 user_id=%d trade_no=%s amount_minor=%d currency=%s", id, referenceId, expectedAmount, currency))
+	logger.LogInfo(c.Request.Context(), fmt.Sprintf("Stripe 充值订单创建成功 user_id=%d trade_no=%s amount_minor=%d currency=%s", id, referenceId, pricing.ExpectedMinor, currency))
 	c.JSON(http.StatusOK, gin.H{
 		"message": "success",
 		"data": gin.H{
@@ -418,6 +442,135 @@ func genStripeLink(referenceId string, customerId string, email string, expected
 	return session.New(params)
 }
 
+// resolveStripeOrderPricing turns one StripePayRequest into an immutable
+// pricing snapshot. Exactly one purchase selector is honoured: preset,
+// amount_cents (custom, cents-precise), or the legacy whole-credit amount
+// whitelisted against AmountOptions. The legacy branch reproduces the
+// historical arithmetic exactly.
+func resolveStripeOrderPricing(req *StripePayRequest, group string) (*stripeOrderPricing, error) {
+	preset := strings.TrimSpace(req.Preset)
+	switch {
+	case preset != "":
+		if req.Amount != 0 || req.AmountCents != 0 {
+			return nil, errors.New("preset 与 amount/amount_cents 不能同时提供")
+		}
+		creditCents, err := stripePresetCreditCents(preset)
+		if err != nil {
+			return nil, err
+		}
+		return stripePricingFromCreditCents(creditCents, group)
+	case req.AmountCents != 0:
+		if req.Amount != 0 {
+			return nil, errors.New("amount 与 amount_cents 不能同时提供")
+		}
+		return stripePricingFromCreditCents(req.AmountCents, group)
+	default:
+		if err := validateStripeTopUpAmount(req.Amount); err != nil {
+			return nil, err
+		}
+		expectedMinor, err := stripeCheckoutMinorAmount(req.Amount, group)
+		if err != nil {
+			return nil, err
+		}
+		charged := GetChargedAmount(float64(req.Amount), group)
+		creditedQuota := decimal.NewFromFloat(charged).
+			Mul(decimal.NewFromFloat(common.QuotaPerUnit)).
+			IntPart()
+		return &stripeOrderPricing{
+			Amount:        req.Amount,
+			AmountCents:   0,
+			Money:         charged,
+			ExpectedMinor: expectedMinor,
+			CreditedQuota: creditedQuota,
+		}, nil
+	}
+}
+
+// stripePresetCreditCents validates a preset id ("aud-5", "cny-10") against
+// the server-side catalog and returns the purchased credit in USD cents.
+// AUD presets buy credits 1:1; CNY presets convert with the live Price
+// setting (¥ per $1 credit) using decimal division, rounded half-up to cents.
+func stripePresetCreditCents(preset string) (int64, error) {
+	parts := strings.SplitN(strings.ToLower(strings.TrimSpace(preset)), "-", 2)
+	if len(parts) != 2 {
+		return 0, errors.New("无效的充值档位")
+	}
+	face, err := strconv.Atoi(parts[1])
+	if err != nil || face <= 0 {
+		return 0, errors.New("无效的充值档位")
+	}
+	switch parts[0] {
+	case "aud":
+		for _, allowed := range operation_setting.GetStripeAudPresets() {
+			if allowed == face {
+				return int64(face) * 100, nil
+			}
+		}
+	case "cny":
+		for _, allowed := range operation_setting.GetStripeCnyPresets() {
+			if allowed != face {
+				continue
+			}
+			price := operation_setting.Price
+			if price <= 0 {
+				return 0, errors.New("汇率配置无效")
+			}
+			cents := decimal.NewFromInt(int64(face)).
+				Mul(decimal.NewFromInt(100)).
+				Div(decimal.NewFromFloat(price)).
+				Round(0)
+			if !cents.IsPositive() {
+				return 0, errors.New("无效的充值档位")
+			}
+			return cents.IntPart(), nil
+		}
+	}
+	return 0, errors.New("无效的充值档位")
+}
+
+// stripePricingFromCreditCents prices a cents-precise credit purchase.
+// Bounds are enforced before any arithmetic; the credited quota goes through
+// common.QuotaFromDecimalChecked and a clamped result rejects the order
+// instead of ever crediting a saturated value.
+func stripePricingFromCreditCents(creditCents int64, group string) (*stripeOrderPricing, error) {
+	if creditCents <= 0 {
+		return nil, errors.New("充值金额无效")
+	}
+	if creditCents > stripeMaxCreditCents {
+		return nil, errors.New("充值数量不能大于 10000")
+	}
+	ratio := common.GetTopupGroupRatio(group)
+	if ratio <= 0 {
+		ratio = 1
+	}
+	dCharged := decimal.NewFromInt(creditCents).
+		Div(decimal.NewFromInt(100)).
+		Mul(decimal.NewFromFloat(ratio))
+	expectedMinor := dCharged.
+		Mul(decimal.NewFromFloat(setting.StripeUnitPrice)).
+		Mul(decimal.NewFromInt(100)).
+		Round(0).
+		IntPart()
+	if expectedMinor < stripeMinChargeMinorUnits {
+		return nil, errors.New("充值金额不能低于 A$1.00")
+	}
+	quota, clamp := common.QuotaFromDecimalChecked(dCharged.Mul(decimal.NewFromFloat(common.QuotaPerUnit)))
+	if clamp != nil {
+		return nil, errors.New("充值额度超出允许范围")
+	}
+	if quota <= 0 {
+		return nil, errors.New("充值额度配置无效")
+	}
+	money, _ := dCharged.Float64()
+	return &stripeOrderPricing{
+		Amount:        creditCents / 100,
+		AmountCents:   creditCents,
+		Money:         money,
+		ExpectedMinor: expectedMinor,
+		CreditedQuota: int64(quota),
+	}, nil
+}
+
 func validateStripeTopUpAmount(amount int64) error {
 	if amount < getStripeMinTopup() {
 		return fmt.Errorf("充值数量不能小于 %d", getStripeMinTopup())
@@ -442,14 +595,10 @@ func stripeCheckoutMinorAmount(amount int64, group string) (int64, error) {
 	return minor, nil
 }
 
-func stripeCreditedQuota(amount int64, user model.User) int64 {
-	return decimal.NewFromFloat(GetChargedAmount(float64(amount), user)).
-		Mul(decimal.NewFromFloat(common.QuotaPerUnit)).
-		IntPart()
-}
-
-func GetChargedAmount(count float64, user model.User) float64 {
-	topUpGroupRatio := common.GetTopupGroupRatio(user.Group)
+// GetChargedAmount applies the top-up group ratio to a purchased credit
+// count, matching the historical Stripe charging arithmetic exactly.
+func GetChargedAmount(count float64, group string) float64 {
+	topUpGroupRatio := common.GetTopupGroupRatio(group)
 	if topUpGroupRatio == 0 {
 		topUpGroupRatio = 1
 	}

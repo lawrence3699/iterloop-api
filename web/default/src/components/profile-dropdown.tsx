@@ -17,7 +17,14 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 import { useNavigate } from '@tanstack/react-router'
-import { Languages, LogOut, MoonStar, ShieldCheck, User } from 'lucide-react'
+import {
+  Earth,
+  Languages,
+  LogOut,
+  MoonStar,
+  ShieldCheck,
+  User,
+} from 'lucide-react'
 import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 
@@ -36,7 +43,7 @@ import {
 import useDialogState from '@/hooks/use-dialog'
 import { useUserDisplay } from '@/hooks/use-user-display'
 import { getUserAvatarFallback, getUserAvatarStyle } from '@/lib/avatar'
-import { iterLoopAdminUrl } from '@/lib/iterloop-host'
+import { iterLoopAdminUrl, iterLoopPublicUrl } from '@/lib/iterloop-host'
 import { ROLE } from '@/lib/roles'
 import { useAuthStore } from '@/stores/auth-store'
 
@@ -106,6 +113,13 @@ export function ProfileDropdown() {
           <DropdownMenuItem onClick={() => navigate({ to: '/profile' })}>
             <User className='size-4' />
             {t('Profile')}
+          </DropdownMenuItem>
+
+          <DropdownMenuItem
+            onClick={() => window.location.assign(iterLoopPublicUrl('/'))}
+          >
+            <Earth className='size-4' />
+            {t('Website')}
           </DropdownMenuItem>
 
           {isAdmin && (

@@ -22,6 +22,7 @@ import type {
   RedemptionRequest,
   PaymentRequest,
   AmountRequest,
+  StripeCheckoutRequest,
   AffiliateTransferRequest,
   ApiResponse,
   TopupInfoResponse,
@@ -114,6 +115,19 @@ export async function requestPayment(
  */
 export async function requestStripePayment(
   request: PaymentRequest
+): Promise<StripePaymentResponse> {
+  const res = await api.post('/api/user/stripe/pay', request, {
+    skipBusinessError: true,
+  } as Record<string, unknown>)
+  return res.data
+}
+
+/**
+ * Request Stripe checkout with the language-aware contract:
+ * a preset id ("aud-5"/"cny-10"…) or a custom credited amount in cents.
+ */
+export async function requestStripeCheckout(
+  request: StripeCheckoutRequest
 ): Promise<StripePaymentResponse> {
   const res = await api.post('/api/user/stripe/pay', request, {
     skipBusinessError: true,

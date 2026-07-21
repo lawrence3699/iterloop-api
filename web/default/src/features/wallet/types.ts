@@ -134,6 +134,14 @@ export interface TopupInfo {
   stripe_currency?: string
   /** Whether Stripe only accepts configured preset amounts */
   stripe_preset_only?: boolean
+  /** AUD face values for en Stripe presets (e.g. [5, 20, 50]) */
+  aud_presets?: number[]
+  /** CNY face values for zh Stripe presets (e.g. [10, 30, 100]) */
+  cny_presets?: number[]
+  /** Minimum Stripe charge for custom amounts, in AUD minor units */
+  stripe_min_charge_minor?: number
+  /** ¥ per $1 credit conversion rate used for CNY presets (e.g. 7.3) */
+  usd_exchange_rate?: number
   /** Preset amount options */
   amount_options: number[]
   /** Discount rates by amount */
@@ -160,6 +168,40 @@ export interface TopupInfo {
   payment_compliance_confirmed?: boolean
   /** Current compliance terms version */
   payment_compliance_terms_version?: string
+}
+
+/**
+ * Display model for one Stripe preset button, derived from the backend's
+ * `aud_presets` / `cny_presets` face-value catalogs.
+ *
+ * `amount_cents` is the credited amount in USD-credit cents (exact int),
+ * `charge_cents` is the Stripe charge in AUD minor units — both mirror the
+ * server-side arithmetic for preview; the server recomputes them from `id`.
+ */
+export interface StripePreset {
+  /** Stable preset id, e.g. "aud-5" or "cny-10" */
+  id: string
+  /** Face currency the preset is denominated in */
+  currency: 'AUD' | 'CNY'
+  /** Face value in the preset currency (5 → A$5, 10 → ¥10) */
+  face_value: number
+  /** Credited USD credits in cents */
+  amount_cents: number
+  /** Charged AUD amount in minor units (cents) */
+  charge_cents: number
+}
+
+/**
+ * Stripe checkout request (new contract): either a preset id or a custom
+ * credited amount in USD-credit cents.
+ */
+export interface StripeCheckoutRequest {
+  /** Preset id such as "aud-5" / "cny-10" */
+  preset?: string
+  /** Custom credited amount in USD-credit cents */
+  amount_cents?: number
+  /** Always "stripe" */
+  payment_method: 'stripe'
 }
 
 /**

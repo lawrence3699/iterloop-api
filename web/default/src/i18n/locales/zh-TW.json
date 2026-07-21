@@ -5514,6 +5514,21 @@
     "Routing settings": "路由设置",
     "API keys": "API 密钥",
     "Wallet balance": "钱包余额",
-    "Top up": "充值"
+    "Top up": "充值",
+    "Custom amount": "Custom amount",
+    "Minimum charge A$1.00": "Minimum charge A$1.00",
+    "Please select a valid top-up preset": "Please select a valid top-up preset",
+    "Amount and cents amount cannot both be provided": "Amount and cents amount cannot both be provided",
+    "Top-up amount is invalid": "Top-up amount is invalid",
+    "Top-up amount cannot exceed 10000 credits": "Top-up amount cannot exceed 10000 credits",
+    "Exchange rate is not configured": "Exchange rate is not configured",
+    "Credited amount exceeds the allowed range": "Credited amount exceeds the allowed range",
+    "Website": "Website",
+    "Please enter a valid amount": "Please enter a valid amount",
+    "Minimum charge {{amount}}": "Minimum charge {{amount}}",
+    "Amount exceeds the maximum of {{amount}} credits": "Amount exceeds the maximum of {{amount}} credits",
+    "Credited {{amount}}": "Credited {{amount}}",
+    "Charged {{amount}}": "Charged {{amount}}",
+    "Pay with Stripe": "Pay with Stripe"
   }
 }

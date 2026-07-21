@@ -1,3 +1,8 @@
+// Copyright (c) 2026 QuantumNous. All Rights Reserved.
+// This file is part of new-api (https://github.com/QuantumNous/new-api).
+// Licensed under the GNU Affero General Public License v3.0 or later.
+// See the LICENSE file in the project root for license terms.
+
 package model
 
 import (
@@ -12,9 +17,14 @@ import (
 )
 
 type TopUp struct {
-	Id              int     `json:"id"`
-	UserId          int     `json:"user_id" gorm:"index"`
-	Amount          int64   `json:"amount"`
+	Id     int   `json:"id"`
+	UserId int   `json:"user_id" gorm:"index"`
+	Amount int64 `json:"amount"`
+	// AmountCents is the purchased credit expressed in USD cents. It is the
+	// authoritative credit amount when > 0 (cents-precise Stripe orders);
+	// legacy rows keep AmountCents = 0 and remain governed by Amount.
+	// Additive bigint column: never change the type of existing columns.
+	AmountCents     int64   `json:"amount_cents" gorm:"type:bigint;not null;default:0"`
 	Money           float64 `json:"money"`
 	TradeNo         string  `json:"trade_no" gorm:"unique;type:varchar(255);index"`
 	PaymentMethod   string  `json:"payment_method" gorm:"type:varchar(50)"`

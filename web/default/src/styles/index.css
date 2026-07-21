@@ -4066,6 +4066,73 @@ For commercial licensing, please contact support@quantumnous.com
     box-shadow: 0 0 0 4px rgb(45 139 87 / 11%);
   }
 
+  .iterloop-console-website-link {
+    color: var(--muted-foreground);
+    font-size: 13px;
+    font-weight: 550;
+    transition: color 0.16s ease;
+  }
+
+  .iterloop-console-website-link:hover {
+    color: var(--foreground);
+  }
+
+  /* Compact clone-style pill mirroring the public header's 中文/EN control */
+  .iterloop-console-lang {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    height: 32px;
+    padding: 0 12px;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--muted) 72%, transparent);
+    color: var(--foreground);
+    font-size: 12.5px;
+    font-weight: 650;
+    cursor: pointer;
+    transition:
+      background-color 0.16s ease,
+      box-shadow 0.16s ease;
+  }
+
+  .iterloop-console-lang:hover {
+    background: var(--muted);
+    box-shadow: inset 0 0 0 1px
+      color-mix(in srgb, var(--border) 80%, transparent);
+  }
+
+  .iterloop-console-lang > svg {
+    width: 15px;
+    height: 15px;
+    color: var(--muted-foreground);
+  }
+
+  .iterloop-console-theme {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--muted) 72%, transparent);
+    color: var(--foreground);
+    cursor: pointer;
+    transition:
+      background-color 0.16s ease,
+      box-shadow 0.16s ease;
+  }
+
+  .iterloop-console-theme:hover {
+    background: var(--muted);
+    box-shadow: inset 0 0 0 1px
+      color-mix(in srgb, var(--border) 80%, transparent);
+  }
+
+  .iterloop-console-theme > svg {
+    width: 15px;
+    height: 15px;
+  }
+
   .iterloop-console-body {
     display: flex;
     min-height: 0;
@@ -4889,6 +4956,7 @@ For commercial licensing, please contact support@quantumnous.com
   }
 
   .iterloop-console-status,
+  .iterloop-console-website-link,
   .iterloop-console-brand > i {
     display: none;
   }

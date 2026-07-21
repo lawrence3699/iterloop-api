@@ -21,15 +21,26 @@ import {
   ChartNoAxesCombined,
   CircleDollarSign,
   CreditCard,
+  Earth,
   KeyRound,
+  Moon,
   Route as RouteIcon,
+  Sun,
 } from 'lucide-react'
 import { useLayoutEffect, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { IterLoopMark } from '@/components/iterloop-mark'
 import { ProfileDropdown } from '@/components/profile-dropdown'
+import { useTheme } from '@/context/theme-provider'
+import {
+  INTERFACE_LANGUAGE_OPTIONS,
+  normalizeInterfaceLanguage,
+} from '@/i18n/languages'
+import { api } from '@/lib/api'
+import { iterLoopPublicUrl } from '@/lib/iterloop-host'
 import { cn } from '@/lib/utils'
+import { useAuthStore } from '@/stores/auth-store'
 
 const consoleTabItems = [
   { id: 'billing' as const, label: 'Billing', icon: CreditCard },
@@ -38,6 +49,67 @@ const consoleTabItems = [
   { id: 'usage' as const, label: 'Usage', icon: ChartNoAxesCombined },
   { id: 'cost' as const, label: 'Cost', icon: CircleDollarSign },
 ]
+
+/** Clone-styled compact language pill (globe + 中文/EN), mirroring the
+ * public header's `.il-top-nav-lang` control. Persists the choice onto the
+ * user profile like the shared LanguageSwitcher does. */
+function ConsoleLanguagePill() {
+  const { i18n, t } = useTranslation()
+  const user = useAuthStore((s) => s.auth.user)
+  const language = normalizeInterfaceLanguage(i18n.language)
+  const shortLabel = language === 'en' ? 'EN' : '中文'
+
+  const handleChangeLanguage = async (code: string) => {
+    await i18n.changeLanguage(code)
+    if (user) {
+      try {
+        await api.put('/api/user/self', { language: code })
+      } catch {
+        // Best-effort persistence; don't block the UI on failure
+      }
+    }
+  }
+
+  return (
+    <label className='iterloop-console-lang iterloop-native-select'>
+      <Earth aria-hidden='true' />
+      <span>{shortLabel}</span>
+      <span className='sr-only'>{t('Change language')}</span>
+      <select
+        aria-label={t('Change language')}
+        value={language}
+        onChange={(event) => void handleChangeLanguage(event.target.value)}
+      >
+        {INTERFACE_LANGUAGE_OPTIONS.map((option) => (
+          <option key={option.code} value={option.code}>
+            {option.label}
+          </option>
+        ))}
+      </select>
+    </label>
+  )
+}
+
+function ConsoleThemePill() {
+  const { t } = useTranslation()
+  const { resolvedTheme, setTheme } = useTheme()
+  const isDark = resolvedTheme === 'dark'
+
+  return (
+    <button
+      type='button'
+      className='iterloop-console-theme'
+      aria-label={t('Toggle theme')}
+      onClick={() => setTheme(isDark ? 'light' : 'dark')}
+    >
+      {isDark ? (
+        <Moon aria-hidden='true' />
+      ) : (
+        <Sun aria-hidden='true' />
+      )}
+    </button>
+  )
+}
 
 export function IterLoopConsoleHeader() {
   const { t } = useTranslation()
@@ -54,10 +126,18 @@ export function IterLoopConsoleHeader() {
         <i>{t('Console')}</i>
       </Link>
       <div className='iterloop-console-header-meta'>
+        <a
+          href={iterLoopPublicUrl('/')}
+          className='iterloop-console-website-link'
+        >
+          {t('Website')}
+        </a>
         <span className='iterloop-console-status'>
           <i aria-hidden='true' />
           {t('All systems operational')}
         </span>
+        <ConsoleLanguagePill />
+        <ConsoleThemePill />
         <ProfileDropdown />
       </div>
     </header>

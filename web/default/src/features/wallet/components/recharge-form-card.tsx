@@ -52,6 +52,7 @@ import type {
   WaffoPayMethod,
 } from '../types'
 import { CreemProductsSection } from './creem-products-section'
+import { StripeTopupSection } from './stripe-topup-section'
 
 interface RechargeFormCardProps {
   topupInfo: TopupInfo | null
@@ -139,13 +140,16 @@ export function RechargeFormCard({
     Array.isArray(waffoPayMethods) && waffoPayMethods.length > 0
   const minTopup = getMinTopupAmount(topupInfo)
   const redemptionEnabled = topupInfo?.enable_redemption !== false
-  const stripePresetOnly = Boolean(
-    topupInfo?.stripe_preset_only &&
-    topupInfo.enable_stripe_topup &&
+  // Stripe-only deployments get the dedicated language-aware preset UI
+  // (zh ¥ face values, en A$ face values, custom amount in both) instead of
+  // the generic USD-credit presets + payment-method grid.
+  const stripeOnlyMode = Boolean(
+    topupInfo?.enable_stripe_topup &&
     !topupInfo.enable_online_topup &&
     !enableWaffoTopup &&
     !enableWaffoPancakeTopup
   )
+  const stripePresetOnly = Boolean(topupInfo?.stripe_preset_only && stripeOnlyMode)
 
   if (loading) {
     return (
@@ -223,7 +227,10 @@ export function RechargeFormCard({
       {/* Online Topup Section */}
       {hasAnyTopup ? (
         <div className='space-y-4 sm:space-y-6'>
-          {hasConfigurableTopup && (
+          {stripeOnlyMode && topupInfo && (
+            <StripeTopupSection topupInfo={topupInfo} />
+          )}
+          {hasConfigurableTopup && !stripeOnlyMode && (
             <>
               {presetAmounts.length > 0 && (
                 <div className='space-y-2.5 sm:space-y-3'>
