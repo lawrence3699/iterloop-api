@@ -22,6 +22,7 @@ import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 
 import { api } from '@/lib/api'
+import { ITERLOOP_CONSOLE_ORIGIN } from '@/lib/iterloop-host'
 import { useAuthStore } from '@/stores/auth-store'
 
 import { getOAuthState } from '../api'
@@ -203,7 +204,14 @@ export function useOAuthLogin(status: SystemStatus | null) {
         return
       }
 
-      const redirectUri = `${window.location.origin}/oauth/${provider.slug}`
+      // The redirect URI must exactly match both the URI registered with the
+      // provider (Google) and the one the backend uses at token exchange,
+      // which is always ServerAddress (the console origin) — never the
+      // current page origin, which differs on the public host.
+      const redirectUri = new URL(
+        `/oauth/${provider.slug}`,
+        ITERLOOP_CONSOLE_ORIGIN
+      ).toString()
       const url = new URL(provider.authorization_endpoint)
       url.searchParams.set('client_id', provider.client_id)
       url.searchParams.set('redirect_uri', redirectUri)

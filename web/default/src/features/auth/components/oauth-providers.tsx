@@ -50,6 +50,9 @@ type ProviderButton = {
   onClick: () => void
   icon?: ReactNode
   disabled?: boolean
+  /** Featured providers render as a full-width labeled button instead of a
+   *  small icon — used for Google, the primary social login. */
+  featured?: boolean
 }
 
 export function OAuthProviders({
@@ -132,7 +135,9 @@ export function OAuthProviders({
     })
   }
 
-  // Custom OAuth providers
+  // Custom OAuth providers. Google is the primary social login for the
+  // site, so it renders as a prominent labeled button rather than a small
+  // icon that users overlook.
   const customProviders = status?.custom_oauth_providers
   if (customProviders && customProviders.length > 0) {
     for (const provider of customProviders) {
@@ -145,13 +150,34 @@ export function OAuthProviders({
         ) : (
           <Globe className='h-6 w-6' aria-hidden='true' />
         ),
+        featured: provider.slug === 'google',
       })
     }
   }
 
   if (providerButtons.length === 0) return null
 
-  const buttons = providerButtons.map(
+  const iconButtons = providerButtons.filter((b) => !b.featured)
+  const featuredButtons = providerButtons.filter((b) => b.featured)
+
+  const renderFeatured = featuredButtons.map(
+    ({ key, label, onClick, icon, disabled: extraDisabled }) => (
+      <button
+        key={key}
+        type='button'
+        className='il-auth-featured-btn'
+        disabled={disabled || isLoading || extraDisabled}
+        onClick={onClick}
+      >
+        <span className='il-auth-featured-icon' aria-hidden='true'>
+          {icon}
+        </span>
+        {label}
+      </button>
+    )
+  )
+
+  const renderIcons = iconButtons.map(
     ({ key, label, onClick, icon, disabled: extraDisabled }) => (
       <button
         key={key}
@@ -168,7 +194,12 @@ export function OAuthProviders({
   )
 
   if (bare) {
-    return buttons
+    return (
+      <>
+        {renderFeatured}
+        {renderIcons}
+      </>
+    )
   }
 
   const separator = (
@@ -178,7 +209,12 @@ export function OAuthProviders({
   return (
     <div className={cn('il-auth-alt', className)}>
       {separatorPosition === 'before' && separator}
-      <div className='il-auth-alt-row'>{buttons}</div>
+      {renderFeatured.length > 0 && (
+        <div className='il-auth-featured-row'>{renderFeatured}</div>
+      )}
+      {renderIcons.length > 0 && (
+        <div className='il-auth-alt-row'>{renderIcons}</div>
+      )}
       {separatorPosition === 'after' && separator}
     </div>
   )

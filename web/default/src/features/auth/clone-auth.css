@@ -375,6 +375,62 @@ For commercial licensing, please contact support@quantumnous.com
     color 0.15s ease;
 }
 
+/* Featured provider (Google): full-width white labeled button so the
+   primary social login is unmissable on the dark auth canvas. */
+.il-auth-featured-row {
+  display: flex;
+  width: 100%;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.il-auth-featured-btn {
+  display: inline-flex;
+  width: 100%;
+  min-height: 48px;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 12px;
+  background: #ffffff;
+  color: #1f1f1f;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    background-color 0.15s ease,
+    box-shadow 0.15s ease,
+    transform 0.12s ease;
+  box-shadow: 0 10px 24px -14px rgba(0, 0, 0, 0.55);
+}
+
+.il-auth-featured-btn:hover {
+  background: #f3f3f3;
+  box-shadow: 0 14px 30px -14px rgba(0, 0, 0, 0.6);
+}
+
+.il-auth-featured-btn:active {
+  transform: translateY(1px);
+}
+
+.il-auth-featured-btn:disabled {
+  opacity: 0.4;
+  pointer-events: none;
+}
+
+.il-auth-featured-icon {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+}
+
+/* In the bare icon row, the featured button takes its own full line. */
+.il-auth-alt-row .il-auth-featured-btn {
+  flex-basis: 100%;
+  margin-left: 10px;
+}
+
 .il-auth-icon-btn:hover {
   background: #252525;
   color: #ffffff;

@@ -294,6 +294,16 @@ export function UserAuthForm({
   const alternativeLoginMethods = (
     <div className='il-auth-alt'>
       <div className='il-auth-alt-row'>
+        {/* OAuth providers first: Google renders as a prominent full-width
+            labeled button (own line), remaining providers as icon buttons. */}
+        <OAuthProviders
+          status={status}
+          disabled={isLoading || (requiresLegalConsent && !agreedToLegal)}
+          onWeChatLogin={hasWeChatLogin ? handleOpenWeChatDialog : undefined}
+          isWeChatLoading={isWeChatSubmitting}
+          bare
+        />
+
         {passkeyLoginEnabled && (
           <button
             type='button'
@@ -310,15 +320,6 @@ export function UserAuthForm({
             )}
           </button>
         )}
-
-        {/* OAuth Providers rendered as clone-style round icon buttons */}
-        <OAuthProviders
-          status={status}
-          disabled={isLoading || (requiresLegalConsent && !agreedToLegal)}
-          onWeChatLogin={hasWeChatLogin ? handleOpenWeChatDialog : undefined}
-          isWeChatLoading={isWeChatSubmitting}
-          bare
-        />
       </div>
       {passkeyLoginEnabled && !passkeySupported && (
         <p className='il-auth-alt-note'>
