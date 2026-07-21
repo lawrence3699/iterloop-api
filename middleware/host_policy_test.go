@@ -31,6 +31,7 @@ func hostPolicyRouter(t *testing.T) *gin.Engine {
 	router.GET("/iterloop-desktop-preview.svg", func(c *gin.Context) { c.Status(http.StatusOK) })
 	router.GET("/media/home/story/overview.avif", func(c *gin.Context) { c.Status(http.StatusOK) })
 	router.GET("/docs", func(c *gin.Context) { c.Status(http.StatusOK) })
+	router.GET("/download", func(c *gin.Context) { c.Status(http.StatusOK) })
 	router.GET("/sign-in", func(c *gin.Context) { c.Status(http.StatusOK) })
 	router.GET("/keys", func(c *gin.Context) { c.Status(http.StatusOK) })
 	router.GET("/issuances", func(c *gin.Context) { c.Status(http.StatusOK) })
@@ -41,6 +42,7 @@ func hostPolicyRouter(t *testing.T) *gin.Engine {
 func TestPublicHostAllowsOnlyPublicPagesAndReadOnlyData(t *testing.T) {
 	router := hostPolicyRouter(t)
 	require.Equal(t, http.StatusOK, performHostRequest(router, "iter-loop.com", "/docs").Code)
+	require.Equal(t, http.StatusOK, performHostRequest(router, "iter-loop.com", "/download").Code)
 	require.Equal(t, http.StatusOK, performHostRequest(router, "iter-loop.com", "/static/app.js").Code)
 	require.Equal(t, http.StatusOK, performHostRequest(router, "iter-loop.com", "/media/home/story/overview.avif").Code)
 	require.Equal(t, http.StatusOK, performHostRequest(router, "iter-loop.com", "/api/status").Code)

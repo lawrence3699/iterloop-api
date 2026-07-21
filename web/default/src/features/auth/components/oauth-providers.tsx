@@ -16,6 +16,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
+import { Globe, Send, Shield } from 'lucide-react'
 import type { ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 
@@ -25,7 +26,6 @@ import {
   IconLinuxDo,
   IconWeChat,
 } from '@/assets/brand-icons'
-import { Button } from '@/components/ui/button'
 import { getLobeIcon } from '@/lib/lobe-icon'
 import { cn } from '@/lib/utils'
 
@@ -39,6 +39,9 @@ type OAuthProvidersProps = {
   onWeChatLogin?: () => void
   isWeChatLoading?: boolean
   separatorPosition?: 'before' | 'after'
+  /** Render only the icon buttons (no wrapper/separator) so the caller
+   *  can place them inside its own clone-style icon row. */
+  bare?: boolean
 }
 
 type ProviderButton = {
@@ -56,6 +59,7 @@ export function OAuthProviders({
   onWeChatLogin,
   isWeChatLoading = false,
   separatorPosition = 'before',
+  bare = false,
 }: OAuthProvidersProps) {
   const { t } = useTranslation()
   const {
@@ -77,7 +81,7 @@ export function OAuthProviders({
       key: 'wechat',
       label: t('Continue with WeChat'),
       onClick: onWeChatLogin,
-      icon: <IconWeChat className='h-4 w-4' />,
+      icon: <IconWeChat className='h-6 w-6' />,
       disabled: isWeChatLoading,
     })
   }
@@ -87,7 +91,7 @@ export function OAuthProviders({
       key: 'github',
       label: githubButtonText || t('Continue with GitHub'),
       onClick: handleGitHubLogin,
-      icon: <IconGithub className='h-4 w-4' />,
+      icon: <IconGithub className='h-6 w-6' />,
       disabled: githubButtonDisabled,
     })
   }
@@ -97,7 +101,7 @@ export function OAuthProviders({
       key: 'discord',
       label: t('Continue with Discord'),
       onClick: handleDiscordLogin,
-      icon: <IconDiscord className='h-4 w-4' />,
+      icon: <IconDiscord className='h-6 w-6' />,
     })
   }
 
@@ -106,6 +110,7 @@ export function OAuthProviders({
       key: 'oidc',
       label: t('Continue with OIDC'),
       onClick: handleOIDCLogin,
+      icon: <Shield className='h-6 w-6' aria-hidden='true' />,
     })
   }
 
@@ -114,7 +119,7 @@ export function OAuthProviders({
       key: 'linuxdo',
       label: t('Continue with LinuxDO'),
       onClick: handleLinuxDOLogin,
-      icon: <IconLinuxDo className='h-4 w-4' />,
+      icon: <IconLinuxDo className='h-6 w-6' />,
     })
   }
 
@@ -123,6 +128,7 @@ export function OAuthProviders({
       key: 'telegram',
       label: t('Continue with Telegram'),
       onClick: handleTelegramLogin,
+      icon: <Send className='h-6 w-6' aria-hidden='true' />,
     })
   }
 
@@ -134,47 +140,45 @@ export function OAuthProviders({
         key: `custom-${provider.slug}`,
         label: t('Continue with {{name}}', { name: provider.name }),
         onClick: () => handleCustomOAuthLogin(provider),
-        icon: provider.icon ? getLobeIcon(provider.icon, 16) : undefined,
+        icon: provider.icon ? (
+          getLobeIcon(provider.icon, 24)
+        ) : (
+          <Globe className='h-6 w-6' aria-hidden='true' />
+        ),
       })
     }
   }
 
   if (providerButtons.length === 0) return null
 
+  const buttons = providerButtons.map(
+    ({ key, label, onClick, icon, disabled: extraDisabled }) => (
+      <button
+        key={key}
+        type='button'
+        className='il-auth-icon-btn'
+        disabled={disabled || isLoading || extraDisabled}
+        onClick={onClick}
+        aria-label={label}
+        title={label}
+      >
+        {icon}
+      </button>
+    )
+  )
+
+  if (bare) {
+    return buttons
+  }
+
   const separator = (
-    <div className='relative'>
-      <div className='absolute inset-0 flex items-center'>
-        <span className='w-full border-t' />
-      </div>
-      <div className='relative flex justify-center text-xs uppercase'>
-        <span className='bg-background text-muted-foreground px-2'>
-          {t('Or continue with')}
-        </span>
-      </div>
-    </div>
+    <span className='il-auth-alt-sep'>{t('Or continue with')}</span>
   )
 
   return (
-    <div className={cn('space-y-3', className)}>
+    <div className={cn('il-auth-alt', className)}>
       {separatorPosition === 'before' && separator}
-
-      <div className='flex flex-col gap-2'>
-        {providerButtons.map(
-          ({ key, label, onClick, icon, disabled: extraDisabled }) => (
-            <Button
-              key={key}
-              variant='outline'
-              type='button'
-              disabled={disabled || isLoading || extraDisabled}
-              onClick={onClick}
-              className='h-11 w-full justify-center gap-2 rounded-lg'
-            >
-              {icon}
-              {label}
-            </Button>
-          )
-        )}
-      </div>
+      <div className='il-auth-alt-row'>{buttons}</div>
       {separatorPosition === 'after' && separator}
     </div>
   )

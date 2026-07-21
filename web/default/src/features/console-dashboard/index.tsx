@@ -30,22 +30,24 @@ import { BillingPanel } from './components/billing-panel'
 import { RoutingPanel } from './components/routing-panel'
 import type { ConsoleLayoutMode } from './types'
 
+import './clone-console.css'
+
 const route = getRouteApi('/_authenticated/dashboard/')
 const LAYOUT_STORAGE_KEY = 'iterloop:console-layout'
 
 const TAB_COPY = {
   billing: {
-    title: 'Billing',
+    title: 'Balance & billing',
     description:
       'Manage balance, add funds, and understand every settled charge.',
   },
   routing: {
-    title: 'Routing',
+    title: 'Routing settings',
     description:
       'See how IterLoop chooses the production path for each request.',
   },
   'api-keys': {
-    title: 'API Keys',
+    title: 'API keys',
     description:
       'Connect OpenAI and Anthropic-compatible clients with scoped credentials.',
   },

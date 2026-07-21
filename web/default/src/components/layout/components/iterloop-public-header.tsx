@@ -17,18 +17,16 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 import { Link, useRouterState } from '@tanstack/react-router'
-import { Languages, Moon, Search, Sun, UserRound, X } from 'lucide-react'
+import { Earth, Menu, Moon, Sun, UserRound, X } from 'lucide-react'
 import {
   lazy,
   Suspense,
   useEffect,
-  useRef,
   useState,
   type ReactNode,
 } from 'react'
 import { useTranslation } from 'react-i18next'
 
-import { IterLoopMark } from '@/components/iterloop-mark'
 import { useTheme } from '@/context/theme-provider'
 import {
   INTERFACE_LANGUAGE_OPTIONS,
@@ -73,13 +71,20 @@ function HeaderLink(props: HeaderLinkProps) {
   )
 }
 
+/** Clone's `.top-nav-lang` pill: globe icon + short language label. The
+ * original functionality (native select overlay) is preserved. */
 function PublicLanguageSwitcher() {
   const { i18n, t } = useTranslation()
   const language = normalizeInterfaceLanguage(i18n.language)
+  const shortLabel = language === 'en' ? 'EN' : '中文'
 
   return (
-    <label className='iterloop-global-icon iterloop-native-select'>
-      <Languages className='size-[17px]' aria-hidden='true' />
+    <label className='il-top-nav-lang iterloop-native-select'>
+      <span className='il-top-nav-lang-icon' aria-hidden='true'>
+        <Earth className='size-4' aria-hidden='true' />
+        <span className='il-top-nav-lang-dot' />
+      </span>
+      <span className='il-top-nav-lang-label'>{shortLabel}</span>
       <span className='sr-only'>{t('Change language')}</span>
       <select
         aria-label={t('Change language')}
@@ -104,7 +109,7 @@ function PublicThemeSwitch() {
   return (
     <button
       type='button'
-      className='iterloop-global-icon'
+      className='il-top-nav-icon-btn'
       aria-label={t('Toggle theme')}
       onClick={() => setTheme(isDark ? 'light' : 'dark')}
     >
@@ -123,238 +128,142 @@ export function IterLoopPublicHeader(props: IterLoopPublicHeaderProps) {
     select: (state) => state.location.pathname,
   })
   const user = useAuthStore((state) => state.auth.user)
-  const [megaOpen, setMegaOpen] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
-  const megaButtonRef = useRef<HTMLButtonElement>(null)
 
-  const primaryLinks = [
-    { label: t('Pricing'), href: iterLoopPublicUrl('/pricing') },
-    { label: t('API docs'), href: iterLoopPublicUrl('/docs') },
-    { label: t('Service status'), href: 'https://api.iter-loop.com/healthz' },
+  const navLinks = [
+    { label: t('Home'), href: iterLoopPublicUrl('/'), path: '/' },
     {
-      label: user ? t('Open console') : t('Sign in'),
-      href: iterLoopConsoleUrl(user ? '/dashboard' : '/sign-in'),
+      label: t('Pricing'),
+      href: iterLoopPublicUrl('/pricing'),
+      path: '/pricing',
+    },
+    {
+      label: t('Download'),
+      href: iterLoopPublicUrl('/download'),
+      path: '/download',
+    },
+    { label: t('Docs'), href: iterLoopPublicUrl('/docs'), path: '/docs' },
+    {
+      label: t('Dashboard'),
+      href: iterLoopConsoleUrl('/dashboard'),
+      path: '/dashboard',
     },
   ]
 
+  const isActive = (path: string) =>
+    path === '/' ? pathname === '/' : pathname.startsWith(path)
+
   useEffect(() => {
-    setMegaOpen(false)
     setMobileOpen(false)
   }, [pathname])
 
   useEffect(() => {
-    document.body.style.overflow = megaOpen || mobileOpen ? 'hidden' : ''
-    return () => {
-      document.body.style.overflow = ''
-    }
-  }, [megaOpen, mobileOpen])
-
-  useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key !== 'Escape') return
-      const shouldRestoreFocus = megaOpen
-      setMegaOpen(false)
-      setMobileOpen(false)
-      if (shouldRestoreFocus) {
-        window.requestAnimationFrame(() => megaButtonRef.current?.focus())
-      }
+      if (event.key === 'Escape') setMobileOpen(false)
     }
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [megaOpen])
+  }, [])
 
   return (
-    <>
-      <header className={cn('iterloop-public-header', props.className)}>
-        <div className='iterloop-public-header-inner'>
-          <nav
-            className='iterloop-public-nav'
-            aria-label={t('Main navigation')}
-          >
+    <header
+      className={cn('il-navbar-glass', props.className)}
+      data-menu-open={mobileOpen || undefined}
+    >
+      <div className='il-top-nav-inner'>
+        <HeaderLink href={iterLoopPublicUrl('/')} className='il-top-nav-brand'>
+          <img
+            src='/media/clone/iterloop-logo-transparent.svg'
+            alt='IterLoop'
+            className='il-top-nav-logo'
+            loading='lazy'
+          />
+        </HeaderLink>
+
+        <nav className='il-top-nav-links' aria-label={t('Main navigation')}>
+          {navLinks.map((link) => (
             <HeaderLink
-              href={iterLoopPublicUrl('/')}
-              className='flex h-11 items-center px-2'
-            >
-              <IterLoopMark compact />
-              <span className='sr-only'>IterLoop API</span>
-            </HeaderLink>
-
-            <div className='hidden h-11 items-center lg:flex'>
-              <button
-                ref={megaButtonRef}
-                type='button'
-                className={cn(
-                  'iterloop-global-link',
-                  megaOpen && 'text-foreground'
-                )}
-                aria-expanded={megaOpen}
-                aria-controls='iterloop-mega-menu'
-                onClick={() => setMegaOpen((open) => !open)}
-              >
-                {t('Models')}
-              </button>
-              <HeaderLink
-                href={iterLoopPublicUrl('/pricing')}
-                className='iterloop-global-link'
-              >
-                {t('Pricing')}
-              </HeaderLink>
-              <HeaderLink
-                href={iterLoopPublicUrl('/#integrations')}
-                className='iterloop-global-link'
-              >
-                {t('Connect')}
-              </HeaderLink>
-              <HeaderLink
-                href={iterLoopPublicUrl('/docs')}
-                className='iterloop-global-link'
-              >
-                {t('Docs')}
-              </HeaderLink>
-              <HeaderLink
-                href='https://api.iter-loop.com/healthz'
-                className='iterloop-global-link'
-              >
-                {t('Status')}
-              </HeaderLink>
-            </div>
-
-            <div className='flex h-11 items-center'>
-              <HeaderLink
-                href={iterLoopPublicUrl('/docs')}
-                className='iterloop-global-icon hidden sm:inline-flex'
-              >
-                <Search className='size-[17px]' aria-hidden='true' />
-                <span className='sr-only'>{t('Search')}</span>
-              </HeaderLink>
-              {props.showLanguageSwitcher !== false && (
-                <PublicLanguageSwitcher />
-              )}
-              {props.showThemeSwitch !== false && <PublicThemeSwitch />}
-              {props.showAuthButtons !== false &&
-                (user ? (
-                  <Suspense
-                    fallback={
-                      <HeaderLink
-                        href={iterLoopConsoleUrl('/dashboard')}
-                        className='iterloop-global-icon hidden sm:inline-flex'
-                      >
-                        <UserRound className='size-[18px]' aria-hidden='true' />
-                      </HeaderLink>
-                    }
-                  >
-                    <ProfileDropdown />
-                  </Suspense>
-                ) : (
-                  <HeaderLink
-                    href={iterLoopConsoleUrl('/sign-in')}
-                    className='iterloop-global-icon hidden sm:inline-flex'
-                  >
-                    <UserRound className='size-[18px]' aria-hidden='true' />
-                    <span className='sr-only'>{t('Sign in')}</span>
-                  </HeaderLink>
-                ))}
-              <button
-                type='button'
-                className='iterloop-global-icon size-11 rounded-none lg:hidden'
-                aria-expanded={mobileOpen}
-                aria-label={mobileOpen ? t('Close menu') : t('Open menu')}
-                onClick={() => setMobileOpen((open) => !open)}
-              >
-                {mobileOpen ? (
-                  <X className='size-5' />
-                ) : (
-                  <span className='iterloop-menu-lines' aria-hidden='true'>
-                    <span />
-                    <span />
-                  </span>
-                )}
-              </button>
-            </div>
-          </nav>
-        </div>
-      </header>
-
-      <div
-        id='iterloop-mega-menu'
-        className={cn('iterloop-mega-menu', megaOpen && 'is-open')}
-        aria-hidden={!megaOpen}
-      >
-        <div className='iterloop-mega-menu-inner'>
-          <section>
-            <span>{t('Explore')}</span>
-            <HeaderLink href={iterLoopPublicUrl('/pricing')}>
-              {t('Models and pricing')}
-            </HeaderLink>
-          </section>
-          <section>
-            <span>{t('Quick links')}</span>
-            <HeaderLink href={iterLoopPublicUrl('/#integrations')}>
-              Responses
-            </HeaderLink>
-            <HeaderLink href={iterLoopPublicUrl('/#integrations')}>
-              Messages
-            </HeaderLink>
-            <HeaderLink href={iterLoopPublicUrl('/docs')}>Codex CLI</HeaderLink>
-            <HeaderLink href={iterLoopPublicUrl('/docs')}>
-              Claude Code
-            </HeaderLink>
-          </section>
-          <section>
-            <span>{t('Account')}</span>
-            {primaryLinks.map((link) => (
-              <HeaderLink key={link.href} href={link.href}>
-                {link.label}
-              </HeaderLink>
-            ))}
-          </section>
-        </div>
-      </div>
-      <button
-        type='button'
-        className={cn('iterloop-mega-backdrop', megaOpen && 'is-open')}
-        aria-label={t('Close menu')}
-        tabIndex={megaOpen ? 0 : -1}
-        onClick={() => setMegaOpen(false)}
-      />
-
-      <div
-        className={cn('iterloop-mobile-menu', mobileOpen && 'is-open')}
-        aria-hidden={!mobileOpen}
-      >
-        <nav aria-label={t('Mobile navigation')}>
-          {[
-            {
-              label: t('Models and pricing'),
-              href: iterLoopPublicUrl('/pricing'),
-            },
-            { label: t('Connect'), href: iterLoopPublicUrl('/#integrations') },
-            { label: t('API docs'), href: iterLoopPublicUrl('/docs') },
-            {
-              label: t('Service status'),
-              href: 'https://api.iter-loop.com/healthz',
-            },
-          ].map((link, index) => (
-            <HeaderLink
-              key={link.href + link.label}
+              key={link.path}
               href={link.href}
-              className={mobileOpen ? 'is-visible' : undefined}
-              onClick={() => setMobileOpen(false)}
+              className={cn(
+                'il-top-nav-link',
+                isActive(link.path) && 'is-active'
+              )}
             >
-              <span style={{ transitionDelay: `${80 + index * 45}ms` }}>
-                {link.label}
-              </span>
+              {link.label}
             </HeaderLink>
           ))}
         </nav>
-        <HeaderLink
-          href={iterLoopConsoleUrl(user ? '/dashboard' : '/sign-in')}
-          className='iterloop-mobile-account'
-          onClick={() => setMobileOpen(false)}
-        >
-          {user ? t('Open console') : t('Sign in')}
-        </HeaderLink>
+
+        <div className='il-top-nav-actions'>
+          {props.showLanguageSwitcher !== false && <PublicLanguageSwitcher />}
+          {props.showThemeSwitch !== false && <PublicThemeSwitch />}
+          <button
+            type='button'
+            className='il-top-nav-menu-button'
+            aria-expanded={mobileOpen}
+            aria-label={mobileOpen ? t('Close menu') : t('Open menu')}
+            onClick={() => setMobileOpen((open) => !open)}
+          >
+            {mobileOpen ? (
+              <X className='size-[23px]' aria-hidden='true' />
+            ) : (
+              <Menu className='size-[23px]' aria-hidden='true' />
+            )}
+          </button>
+          {props.showAuthButtons !== false &&
+            (user ? (
+              <Suspense
+                fallback={
+                  <HeaderLink
+                    href={iterLoopConsoleUrl('/dashboard')}
+                    className='il-top-nav-icon-btn max-[640px]:hidden'
+                  >
+                    <UserRound className='size-[18px]' aria-hidden='true' />
+                    <span className='sr-only'>{t('Dashboard')}</span>
+                  </HeaderLink>
+                }
+              >
+                <ProfileDropdown />
+              </Suspense>
+            ) : (
+              <HeaderLink
+                href={iterLoopConsoleUrl('/sign-in')}
+                className='il-btn-outline il-btn-sm max-[640px]:hidden'
+              >
+                {t('Sign in')}
+              </HeaderLink>
+            ))}
+        </div>
       </div>
-    </>
+
+      <div
+        className={cn('il-top-nav-mobile', mobileOpen && 'is-open')}
+        aria-hidden={!mobileOpen}
+      >
+        {navLinks.map((link) => (
+          <HeaderLink
+            key={link.path}
+            href={link.href}
+            className={cn(
+              'il-top-nav-link',
+              isActive(link.path) && 'is-active'
+            )}
+            onClick={() => setMobileOpen(false)}
+          >
+            {link.label}
+          </HeaderLink>
+        ))}
+        {props.showAuthButtons !== false && !user && (
+          <HeaderLink
+            href={iterLoopConsoleUrl('/sign-in')}
+            className='il-top-nav-link'
+            onClick={() => setMobileOpen(false)}
+          >
+            {t('Sign in')}
+          </HeaderLink>
+        )}
+      </div>
+    </header>
   )
 }

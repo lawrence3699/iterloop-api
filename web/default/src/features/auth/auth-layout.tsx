@@ -17,11 +17,13 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 import { Link } from '@tanstack/react-router'
+import { Power } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
-import { IterLoopMark } from '@/components/iterloop-mark'
 import { LanguageSwitcher } from '@/components/language-switcher'
 import { ThemeSwitch } from '@/components/theme-switch'
+
+import './clone-auth.css'
 
 type AuthLayoutProps = {
   children: React.ReactNode
@@ -38,69 +40,50 @@ export function AuthLayout({
   const isSignUp = variant === 'sign-up'
 
   return (
-    <div className='iterloop-auth-shell'>
-      <header className='iterloop-auth-global'>
-        <div className='iterloop-auth-global-inner'>
-          <Link
-            to='/'
-            className='iterloop-auth-brand'
-            aria-label='IterLoop API'
-          >
-            <IterLoopMark compact />
+    <div className='il-auth-shell'>
+      <div className='il-auth-canvas animate-page-enter'>
+        <div className='il-auth-top'>
+          <Link to='/' className='il-auth-wordmark' aria-label='IterLoop'>
+            IterLoop
           </Link>
 
-          <nav aria-label={t('Main navigation')}>
-            <Link to='/pricing'>{t('Pricing')}</Link>
-            <Link to='/docs'>{t('API docs')}</Link>
-            <Link to='/sign-in'>{t('Console')}</Link>
-          </nav>
-
-          <div className='iterloop-auth-actions'>
+          <div className='il-auth-actions'>
             <LanguageSwitcher />
             <ThemeSwitch />
+            <Link
+              to='/'
+              className='il-auth-power'
+              aria-label={t('Back to home')}
+            >
+              <Power aria-hidden='true' />
+            </Link>
           </div>
         </div>
-      </header>
 
-      {isSignUp ? (
-        <div className='iterloop-account-local'>
-          <div className='iterloop-account-local-inner'>
-            <strong>IterLoop Account</strong>
-            <nav>
-              <Link to='/sign-in'>{t('Sign in')}</Link>
-              <Link to='/sign-up'>{t('Create account')}</Link>
-              <Link to='/docs'>{t('FAQ')}</Link>
-            </nav>
+        <main
+          className={
+            isSignUp
+              ? 'il-auth-main il-auth-main--top'
+              : 'il-auth-main il-auth-main--center'
+          }
+        >
+          <div className='il-auth-content'>
+            {pageTitle ? <p className='il-auth-hero'>{pageTitle}</p> : null}
+            {children}
           </div>
-        </div>
-      ) : null}
+        </main>
 
-      <main
-        className={
-          isSignUp
-            ? 'iterloop-auth-main iterloop-auth-main-signup'
-            : 'iterloop-auth-main iterloop-auth-main-signin'
-        }
-      >
-        {pageTitle ? (
-          <h1 className='iterloop-auth-page-title'>{pageTitle}</h1>
-        ) : null}
-        <div className='iterloop-auth-content'>{children}</div>
-      </main>
-
-      <div className='iterloop-auth-help'>
-        <div>
-          {t('Need help?')}{' '}
-          <Link to='/docs'>{t('View docs or contact support.')}</Link>
-        </div>
+        <footer className='il-auth-bottom'>
+          <span>{t('Encrypted connection')}</span>
+          <Link to='/privacy-policy'>{t('Privacy Policy')}</Link>
+          <Link to='/user-agreement'>{t('Terms of Use')}</Link>
+          <Link to='/about'>{t('Running source')}</Link>
+          <span className='il-auth-bottom-help'>
+            {t('Need help?')}{' '}
+            <Link to='/docs'>{t('View docs or contact support.')}</Link>
+          </span>
+        </footer>
       </div>
-
-      <footer className='iterloop-auth-footer'>
-        <span>{t('Encrypted connection')}</span>
-        <Link to='/privacy-policy'>{t('Privacy Policy')}</Link>
-        <Link to='/user-agreement'>{t('Terms of Use')}</Link>
-        <Link to='/about'>{t('Running source')}</Link>
-      </footer>
     </div>
   )
 }

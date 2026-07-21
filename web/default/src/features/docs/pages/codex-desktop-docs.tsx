@@ -16,18 +16,16 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
-import { Download, Expand, KeyRound, Settings2, X } from 'lucide-react'
-import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-
-import { Button } from '@/components/ui/button'
 
 import {
   CodeSample,
+  DocNote,
   DocSection,
   DocsLayout,
   DocsPager,
 } from '../components/docs-layout'
+import { ScreenshotLightbox } from '../components/screenshot-lightbox'
 
 const CODEX_CONFIG = `model = "gpt-5.5"
 model_provider = "iterloop"
@@ -46,206 +44,139 @@ $EDITOR ~/.codex/config.toml`
 const WINDOWS_COMMAND = `New-Item -ItemType Directory -Force "$env:USERPROFILE\\.codex"
 notepad "$env:USERPROFILE\\.codex\\config.toml"`
 
-function ScreenshotLightbox() {
-  const { t } = useTranslation()
-  const [open, setOpen] = useState(false)
-  const triggerRef = useRef<HTMLButtonElement>(null)
-  const closeRef = useRef<HTMLButtonElement>(null)
-
-  useEffect(() => {
-    if (!open) return
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
-        setOpen(false)
-        window.requestAnimationFrame(() => triggerRef.current?.focus())
-      }
-    }
-    window.addEventListener('keydown', handleKeyDown)
-    window.requestAnimationFrame(() => closeRef.current?.focus())
-    return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [open])
-
-  return (
-    <>
-      <button
-        ref={triggerRef}
-        type='button'
-        className='iterloop-doc-screenshot'
-        onClick={() => setOpen(true)}
-      >
-        <img
-          src='/iterloop-desktop-preview.svg'
-          alt={t('IterLoop Desktop connections dashboard')}
-          width='1400'
-          height='900'
-        />
-        <span>
-          <Expand aria-hidden='true' />
-          {t('Open screenshot')}
-        </span>
-      </button>
-      {open ? (
-        <div
-          className='iterloop-doc-lightbox'
-          role='dialog'
-          aria-modal='true'
-          aria-label={t('IterLoop Desktop screenshot')}
-          onMouseDown={(event) => {
-            if (event.currentTarget === event.target) {
-              setOpen(false)
-              window.requestAnimationFrame(() => triggerRef.current?.focus())
-            }
-          }}
-        >
-          <button
-            ref={closeRef}
-            type='button'
-            aria-label={t('Close')}
-            onClick={() => {
-              setOpen(false)
-              window.requestAnimationFrame(() => triggerRef.current?.focus())
-            }}
-          >
-            <X aria-hidden='true' />
-          </button>
-          <img
-            src='/iterloop-desktop-preview.svg'
-            alt={t('IterLoop Desktop connections dashboard')}
-            width='1400'
-            height='900'
-          />
-        </div>
-      ) : null}
-    </>
-  )
-}
-
 export function CodexDesktopDocs() {
   const { t } = useTranslation()
   return (
     <DocsLayout
-      active='desktop'
-      eyebrow='Install · Codex Desktop'
+      active='codex-desktop'
       title='Connect Codex Desktop to IterLoop'
       description='Use the upcoming IterLoop Desktop app for one-click configuration, or connect Codex manually on macOS and Windows today.'
-      sections={[
-        { id: 'app', label: 'One-click app setup' },
-        { id: 'manual', label: 'Manual configuration' },
-        { id: 'verify', label: 'Verify the connection' },
-      ]}
     >
-      <DocSection id='app' number='01' title='One-click app setup'>
-        <div className='iterloop-doc-callout'>
-          <div>
-            <Download aria-hidden='true' />
-            <div>
-              <strong>IterLoop Desktop</strong>
-              <p>
-                {t('Public downloads for macOS and Windows are coming soon.')}
-              </p>
+      <DocSection
+        id='app'
+        title='One-click setup with the IterLoop client (recommended)'
+      >
+        <p>
+          {t(
+            'IterLoop Desktop is the official IterLoop client. It can download Codex Desktop, connect it to IterLoop, and apply the model configuration for you, so the whole setup can be finished in a few minutes.'
+          )}
+        </p>
+        <div className='doc-note doc-note-download'>
+          <div className='note-body'>
+            <strong>IterLoop Desktop</strong>
+            <p>
+              {t('Public downloads for macOS and Windows are coming soon.')}
+            </p>
+          </div>
+          <button type='button' className='btn btn-ghost' disabled>
+            {t('Coming soon')}
+          </button>
+        </div>
+        <DocNote>
+          <p>
+            {t(
+              'Tip: If your system shows a risk warning during installation, choose trust or continue.'
+            )}
+          </p>
+        </DocNote>
+        <div className='ti-steps'>
+          <div className='ti-step'>
+            <span className='ti-step-n' aria-hidden='true'>
+              1
+            </span>
+            <p className='ti-step-t'>{t('Sign in')}</p>
+            <div className='ti-step-body'>
+              <p>{t('Use the same IterLoop account as the web console.')}</p>
+              <ScreenshotLightbox
+                src='/media/clone/docs-images/install-codex-desktop-iterloop-switch-register.png'
+                alt={t('IterLoop client sign-in and registration screen')}
+              />
             </div>
           </div>
-          <Button disabled>{t('Coming soon')}</Button>
-        </div>
-        <ol className='iterloop-doc-steps'>
-          <li>
-            <span>1</span>
-            <div>
-              <strong>{t('Sign in')}</strong>
-              <p>{t('Use the same IterLoop account as the web console.')}</p>
-            </div>
-          </li>
-          <li>
-            <span>2</span>
-            <div>
-              <strong>{t('Select Codex Desktop')}</strong>
+          <div className='ti-step'>
+            <span className='ti-step-n' aria-hidden='true'>
+              2
+            </span>
+            <p className='ti-step-t'>{t('Select Codex Desktop')}</p>
+            <div className='ti-step-body'>
               <p>
                 {t(
                   'The app detects supported local tools and prepares the correct Base URL.'
                 )}
               </p>
+              <ScreenshotLightbox
+                src='/media/clone/docs-images/install-codex-desktop-one-click.png'
+                alt={t('One-click connect button in the IterLoop client')}
+              />
             </div>
-          </li>
-          <li>
-            <span>3</span>
-            <div>
-              <strong>{t('Apply configuration')}</strong>
+          </div>
+          <div className='ti-step'>
+            <span className='ti-step-n' aria-hidden='true'>
+              3
+            </span>
+            <p className='ti-step-t'>{t('Apply configuration')}</p>
+            <div className='ti-step-body'>
               <p>
                 {t(
                   'Confirm once; the credential is stored in the operating system secure store.'
                 )}
               </p>
+              <ScreenshotLightbox
+                src='/media/clone/docs-images/install-codex-desktop-usage.png'
+                alt={t('Codex Desktop after connecting to IterLoop')}
+              />
             </div>
-          </li>
-        </ol>
-        <ScreenshotLightbox />
-      </DocSection>
-
-      <DocSection id='manual' number='02' title='Manual configuration'>
-        <div className='iterloop-doc-platform-grid'>
-          <article>
-            <span>macOS</span>
-            <h3>~/.codex/config.toml</h3>
-            <p>
-              {t(
-                'Create the Codex config directory, then open the configuration file.'
-              )}
-            </p>
-            <CodeSample title='Terminal' value={MACOS_COMMAND} />
-          </article>
-          <article>
-            <span>Windows</span>
-            <h3>%USERPROFILE%\.codex\config.toml</h3>
-            <p>
-              {t(
-                'Create the Codex config directory, then open the configuration file.'
-              )}
-            </p>
-            <CodeSample title='PowerShell' value={WINDOWS_COMMAND} />
-          </article>
-        </div>
-        <div className='iterloop-doc-config-block'>
-          <div>
-            <Settings2 aria-hidden='true' />
-            <p>
-              {t(
-                'Paste the same provider block on either operating system. Replace only the API key value.'
-              )}
-            </p>
           </div>
-          <CodeSample title='config.toml' value={CODEX_CONFIG} />
         </div>
       </DocSection>
 
-      <DocSection id='verify' number='03' title='Verify the connection'>
-        <div className='iterloop-doc-checklist'>
+      <DocSection id='manual' title='Manual configuration'>
+        <h3>macOS</h3>
+        <p>
+          {t(
+            'Create the Codex config directory, then open the configuration file.'
+          )}{' '}
+          <code>~/.codex/config.toml</code>
+        </p>
+        <CodeSample title='Terminal' value={MACOS_COMMAND} />
+        <h3>Windows</h3>
+        <p>
+          {t(
+            'Create the Codex config directory, then open the configuration file.'
+          )}{' '}
+          <code>%USERPROFILE%\.codex\config.toml</code>
+        </p>
+        <CodeSample title='PowerShell' value={WINDOWS_COMMAND} />
+        <DocNote>
           <p>
-            <KeyRound aria-hidden='true' />
-            <span>
-              <strong>{t('Use an active key')}</strong>
-              {t('Create or copy one from Console → API Keys.')}
-            </span>
+            {t(
+              'Paste the same provider block on either operating system. Replace only the API key value.'
+            )}
           </p>
-          <p>
-            <Settings2 aria-hidden='true' />
-            <span>
-              <strong>{t('Keep Responses API enabled')}</strong>
-              {t('The IterLoop Codex provider uses wire_api = responses.')}
-            </span>
-          </p>
-          <p>
-            <Download aria-hidden='true' />
-            <span>
-              <strong>{t('Restart Codex')}</strong>
-              {t(
-                'Restart the client after changing config.toml so it reloads the provider.'
-              )}
-            </span>
-          </p>
-        </div>
+        </DocNote>
+        <CodeSample title='config.toml' value={CODEX_CONFIG} />
+      </DocSection>
+
+      <DocSection id='verify' title='Verify the connection'>
+        <ul>
+          <li>
+            <strong>{t('Use an active key')}</strong>{' '}
+            {t('Create or copy one from Console → API Keys.')}
+          </li>
+          <li>
+            <strong>{t('Keep Responses API enabled')}</strong>{' '}
+            {t('The IterLoop Codex provider uses wire_api = responses.')}
+          </li>
+          <li>
+            <strong>{t('Restart Codex')}</strong>{' '}
+            {t(
+              'Restart the client after changing config.toml so it reloads the provider.'
+            )}
+          </li>
+        </ul>
       </DocSection>
       <DocsPager
-        next={{ label: 'API integration', to: '/docs/api-integration' }}
+        next={{ label: 'API Integration', to: '/docs/api-integration' }}
       />
     </DocsLayout>
   )

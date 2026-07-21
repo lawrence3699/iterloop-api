@@ -292,39 +292,40 @@ export function UserAuthForm({
   }
 
   const alternativeLoginMethods = (
-    <>
-      {passkeyLoginEnabled && (
-        <div className='mt-2 space-y-1'>
-          <Button
+    <div className='il-auth-alt'>
+      <div className='il-auth-alt-row'>
+        {passkeyLoginEnabled && (
+          <button
             type='button'
-            variant='outline'
+            className='il-auth-icon-btn'
             disabled={passkeyButtonDisabled}
             onClick={handlePasskeyLogin}
-            className='h-11 w-full justify-center gap-2 rounded-lg'
+            aria-label={t('Sign in with Passkey')}
+            title={t('Sign in with Passkey')}
           >
             {isPasskeyLoading ? (
-              <Loader2 className='h-4 w-4 animate-spin' />
+              <Loader2 className='h-6 w-6 animate-spin' aria-hidden='true' />
             ) : (
-              <KeyRound className='h-4 w-4' />
+              <KeyRound className='h-6 w-6' aria-hidden='true' />
             )}
-            {t('Sign in with Passkey')}
-          </Button>
-          {!passkeySupported && (
-            <p className='text-muted-foreground text-xs'>
-              {t('Passkey is not supported on this device.')}
-            </p>
-          )}
-        </div>
-      )}
+          </button>
+        )}
 
-      {/* OAuth Providers */}
-      <OAuthProviders
-        status={status}
-        disabled={isLoading || (requiresLegalConsent && !agreedToLegal)}
-        onWeChatLogin={hasWeChatLogin ? handleOpenWeChatDialog : undefined}
-        isWeChatLoading={isWeChatSubmitting}
-      />
-    </>
+        {/* OAuth Providers rendered as clone-style round icon buttons */}
+        <OAuthProviders
+          status={status}
+          disabled={isLoading || (requiresLegalConsent && !agreedToLegal)}
+          onWeChatLogin={hasWeChatLogin ? handleOpenWeChatDialog : undefined}
+          isWeChatLoading={isWeChatSubmitting}
+          bare
+        />
+      </div>
+      {passkeyLoginEnabled && !passkeySupported && (
+        <p className='il-auth-alt-note'>
+          {t('Passkey is not supported on this device.')}
+        </p>
+      )}
+    </div>
   )
 
   return (
@@ -417,12 +418,6 @@ export function UserAuthForm({
                   />
                 ) : null}
 
-                <LegalConsent
-                  status={status}
-                  checked={agreedToLegal}
-                  onCheckedChange={setAgreedToLegal}
-                />
-
                 <Button
                   type='submit'
                   className='iterloop-auth-primary'
@@ -433,23 +428,20 @@ export function UserAuthForm({
                   {isLoading ? <Loader2 className='animate-spin' /> : null}
                   {t('Sign in')}
                 </Button>
-
-                {hasAlternativeLogin ? alternativeLoginMethods : null}
               </div>
             ) : null}
           </>
         )}
 
-        {!passwordLoginEnabled ? (
-          <>
-            <LegalConsent
-              status={status}
-              checked={agreedToLegal}
-              onCheckedChange={setAgreedToLegal}
-            />
-            {alternativeLoginMethods}
-          </>
-        ) : null}
+        <LegalConsent
+          status={status}
+          checked={agreedToLegal}
+          onCheckedChange={setAgreedToLegal}
+        />
+
+        {hasAlternativeLogin || !passwordLoginEnabled
+          ? alternativeLoginMethods
+          : null}
       </form>
 
       {hasWeChatLogin && (

@@ -92,7 +92,7 @@ func publicHostPathAllowed(method string, path string) bool {
 	if method != http.MethodGet && method != http.MethodHead {
 		return false
 	}
-	if hasPathPrefix(path, "/pricing", "/docs", "/about") {
+	if hasPathPrefix(path, "/pricing", "/docs", "/about", "/download") {
 		return true
 	}
 	if hasPathPrefix(path, "/static", "/assets", "/media") {

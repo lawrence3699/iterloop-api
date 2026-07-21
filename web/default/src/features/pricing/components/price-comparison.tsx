@@ -53,16 +53,21 @@ export function PriceComparison(props: PriceComparisonProps) {
   )
 
   return (
-    <div className={cn('rounded-xl border bg-muted/20 p-3', props.className)}>
+    <div
+      className={cn(
+        'rounded-xl border border-[var(--color-brand-cell-line)] bg-[var(--color-brand-cell)] p-3',
+        props.className
+      )}
+    >
       <div className='text-muted-foreground mb-2 text-xs font-semibold tracking-wide uppercase'>
         {t(props.label)}
       </div>
       <div className='space-y-1.5'>
         <div className='flex items-baseline justify-between gap-2'>
-          <span className='text-muted-foreground text-[11px]'>
+          <span className='text-[11px] text-[var(--text-tertiary)]'>
             {t('Official price')}
           </span>
-          <span className='font-mono text-sm font-semibold tabular-nums'>
+          <span className='font-mono text-sm font-semibold text-[var(--text-secondary)] tabular-nums line-through decoration-[var(--text-tertiary)] decoration-1'>
             {officialPrice}
           </span>
         </div>
@@ -75,10 +80,10 @@ export function PriceComparison(props: PriceComparisonProps) {
           <span className='bg-border h-px flex-1' />
         </div>
         <div className='flex items-baseline justify-between gap-2'>
-          <span className='text-primary text-[11px] font-semibold'>
+          <span className='text-[11px] font-semibold text-[var(--color-brand-accent-muted)]'>
             {t('IterLoop price')}
           </span>
-          <span className='text-primary font-mono text-sm font-bold tabular-nums'>
+          <span className='font-mono text-sm font-bold text-[var(--color-brand-accent)] tabular-nums'>
             {iterLoopPrice}
           </span>
         </div>

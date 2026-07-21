@@ -58,7 +58,15 @@ function EndpointCard() {
   const baseURL = BASE_URLS[protocol]
 
   return (
-    <section className='iterloop-endpoint-card'>
+    // Background image set inline: the bundler rewrites absolute url()
+    // in CSS as module imports and breaks the build.
+    <section
+      className='iterloop-endpoint-card'
+      style={{
+        backgroundImage:
+          "linear-gradient(90deg, rgba(255,254,251,0.92), rgba(255,254,251,0.58) 54%, rgba(255,254,251,0.18)), url('/media/clone/api-setup-bg.png')",
+      }}
+    >
       <header>
         <div>
           <span>{t('Connection endpoint')}</span>

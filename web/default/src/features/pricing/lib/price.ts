@@ -179,6 +179,48 @@ function applyRechargeRate(
 }
 
 /**
+ * Percent saved versus the provider's official list price (0-100, rounded).
+ *
+ * Compares the same USD amounts the table renders: the IterLoop settlement
+ * price (with the optional recharge rate applied) against the official list
+ * price. Returns null when either side is unavailable or there is no saving.
+ */
+export function getDiscountPercent(
+  model: PricingModel,
+  type: PriceType,
+  showWithRecharge = false,
+  priceRate = 1,
+  usdExchangeRate = 1,
+  selectedGroup?: string
+): number | null {
+  if (model.quota_type === QUOTA_TYPE_VALUES.REQUEST) return null
+
+  const officialUSD = getOfficialPriceInUSD(model, type)
+  if (
+    officialUSD == null ||
+    !Number.isFinite(officialUSD) ||
+    officialUSD <= 0
+  ) {
+    return null
+  }
+
+  const displayGroupRatio = getDisplayGroupRatio(model, selectedGroup)
+  let priceInUSD = calculateTokenPrice(model, type, displayGroupRatio)
+  if (!Number.isFinite(priceInUSD)) return null
+
+  priceInUSD = applyRechargeRate(
+    priceInUSD,
+    showWithRecharge,
+    priceRate,
+    usdExchangeRate
+  )
+
+  if (priceInUSD >= officialUSD) return null
+  const percent = Math.round((1 - priceInUSD / officialUSD) * 100)
+  return percent > 0 ? percent : null
+}
+
+/**
  * Format token-based price for display
  */
 export function formatPrice(

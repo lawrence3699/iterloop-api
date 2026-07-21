@@ -91,12 +91,6 @@ export function BillingPanel() {
 
   const cards = [
     {
-      label: t('Available balance'),
-      value: formatQuota(user?.quota ?? 0),
-      detail: t('Ready for API requests'),
-      icon: WalletCards,
-    },
-    {
       label: t('Spent this month'),
       value: formatLogQuota(analyticsQuery.data?.totals.quota ?? 0),
       detail: t('{{count}} settled requests', {
@@ -112,8 +106,34 @@ export function BillingPanel() {
     },
   ]
 
+  const scrollToAddFunds = () => {
+    document
+      .querySelector('#wallet-add-funds')
+      ?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }
+
   return (
     <div className='iterloop-dashboard-stack iterloop-billing-panel'>
+      {/* Background image set inline: the bundler rewrites absolute url()
+          in CSS as module imports and breaks the build. */}
+      <section
+        className='dashboard-wallet-card'
+        style={{ backgroundImage: "url('/media/clone/hero-art-bg.png')" }}
+      >
+        <div className='dashboard-wallet-top'>
+          <div>
+            <p>{t('Wallet balance')}</p>
+            <p className='dashboard-wallet-amount'>
+              {formatQuota(user?.quota ?? 0)}
+            </p>
+          </div>
+          <button type='button' onClick={scrollToAddFunds}>
+            <WalletCards aria-hidden='true' />
+            {t('Top up')}
+          </button>
+        </div>
+      </section>
+
       <div className='iterloop-billing-summary'>
         {cards.map((card) => (
           <article key={card.label}>

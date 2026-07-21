@@ -53,19 +53,16 @@ function FooterLinkItem(props: { link: FooterLink }) {
         href={props.link.href}
         target='_blank'
         rel='noopener noreferrer'
-        className='text-muted-foreground hover:text-foreground text-sm transition-colors duration-200'
+        className='il-footer-link'
       >
-        {label}
+        <span>{label}</span>
       </a>
     )
   }
 
   return (
-    <Link
-      to={props.link.href}
-      className='text-muted-foreground hover:text-foreground text-sm transition-colors duration-200'
-    >
-      {label}
+    <Link to={props.link.href} className='il-footer-link'>
+      <span>{label}</span>
     </Link>
   )
 }
@@ -99,13 +96,13 @@ function LegalLinks(props: { leadingSeparator?: boolean }) {
       {items.map((item, index) => (
         <Fragment key={item.key}>
           {(props.leadingSeparator || index > 0) && (
-            <span aria-hidden='true' className='text-muted-foreground/30'>
+            <span aria-hidden='true' className='opacity-40'>
               ·
             </span>
           )}
           <Link
             to={item.href}
-            className='hover:text-foreground transition-colors duration-200'
+            className='transition-colors hover:text-[var(--text-primary)]'
           >
             {item.label}
           </Link>
@@ -122,13 +119,13 @@ function ProjectAttribution(props: { currentYear: number; inline?: boolean }) {
   const { status } = useStatus()
   const version = String(status?.version || 'source')
   const content = (
-    <span className='text-muted-foreground/45'>
+    <span>
       &copy; {props.currentYear}{' '}
       <a
         href='https://github.com/lawrence3699/iterloop-api'
         target='_blank'
         rel='noopener noreferrer'
-        className='text-foreground/70 hover:text-foreground font-medium transition-colors'
+        className='font-medium transition-colors hover:text-[var(--text-primary)]'
       >
         IterLoop API
       </a>
@@ -139,19 +136,14 @@ function ProjectAttribution(props: { currentYear: number; inline?: boolean }) {
   if (props.inline) {
     return content
   }
-  return (
-    <div className='text-muted-foreground/45 text-center text-xs sm:text-right'>
-      {content}
-    </div>
-  )
+  return <div className='text-center sm:text-right'>{content}</div>
 }
 
 export function Footer(props: FooterProps) {
   const { t } = useTranslation()
-  const { systemName, logo: systemLogo, footerHtml } = useSystemConfig()
+  const { systemName, footerHtml } = useSystemConfig()
 
-  const displayLogo = systemLogo || props.logo || '/logo.png'
-  const displayName = systemName || props.name || 'New API'
+  const displayName = systemName || props.name || 'IterLoop'
   const currentYear = new Date().getFullYear()
 
   const fallbackColumns = useMemo<FooterColumnProps[]>(
@@ -215,19 +207,14 @@ export function Footer(props: FooterProps) {
 
   if (footerHtml) {
     return (
-      <footer
-        className={cn(
-          'border-border/40 relative z-10 border-t',
-          props.className
-        )}
-      >
-        <div className='mx-auto w-full max-w-6xl px-6 py-5'>
-          <div className='bg-muted/20 border-border/50 flex flex-col items-center justify-between gap-4 rounded-2xl border px-4 py-4 backdrop-blur-sm sm:flex-row sm:px-5'>
+      <footer className={cn('il-footer', props.className)}>
+        <div className='il-footer-inner py-5'>
+          <div className='il-card flex flex-col items-center justify-between gap-4 px-4 py-4 sm:flex-row sm:px-5'>
             <div
-              className='custom-footer text-muted-foreground min-w-0 text-center text-sm sm:text-left'
+              className='custom-footer il-footer-tagline min-w-0 text-center sm:text-left'
               dangerouslySetInnerHTML={{ __html: footerHtml }}
             />
-            <div className='border-border/60 text-muted-foreground/45 flex w-full flex-wrap items-center justify-center gap-x-3 gap-y-1 border-t pt-4 text-xs sm:w-auto sm:justify-end sm:border-t-0 sm:border-l sm:pt-0 sm:pl-5'>
+            <div className='il-footer-bottom flex w-full flex-wrap items-center justify-center gap-x-3 gap-y-1 !border-t-0 !py-0 sm:w-auto sm:justify-end'>
               <LegalLinks />
               <ProjectAttribution currentYear={currentYear} inline />
             </div>
@@ -238,37 +225,36 @@ export function Footer(props: FooterProps) {
   }
 
   return (
-    <footer
-      className={cn('border-border/40 relative z-10 border-t', props.className)}
-    >
-      <div className='mx-auto max-w-7xl px-6 py-12 md:py-16'>
-        <div className='flex flex-col justify-between gap-10 md:flex-row md:gap-16'>
-          {/* Brand column */}
-          <div className='shrink-0'>
-            <Link to='/' className='group flex items-center gap-2.5'>
+    <footer className={cn('il-footer', props.className)}>
+      <div className='il-footer-inner'>
+        <div className='grid gap-10 py-10 md:grid-cols-3 md:items-start md:gap-12 md:py-14'>
+          {/* Brand column — clone: wordmark logo + one-line tagline. */}
+          <div className='max-w-sm space-y-4'>
+            <Link to='/' className='inline-flex' aria-label={displayName}>
               <img
-                src={displayLogo}
+                src='/media/clone/iterloop-logo-transparent.svg'
                 alt={displayName}
-                className='size-7 rounded-lg object-contain'
+                width={150}
+                height={35}
+                className='dark:invert'
+                loading='lazy'
               />
-              <span className='font-display text-sm font-semibold'>
-                {displayName}
-              </span>
             </Link>
-            <p className='text-muted-foreground/60 mt-3 max-w-[200px] text-xs leading-relaxed'>
-              {t('Governed Codex and Claude access.')}
+            <p className='il-footer-tagline'>
+              {t('The native billing and routing layer built for developers.')}
             </p>
           </div>
 
-          {/* Links columns */}
+          {/* Link columns — clone: two-column footer nav. */}
           {displayColumns.length > 0 && (
-            <div className='grid grid-cols-3 gap-8 md:gap-16'>
+            <nav
+              className='grid grid-cols-2 gap-10 sm:gap-16 md:col-span-2 md:grid-cols-3 md:gap-12'
+              aria-label={t('Footer navigation')}
+            >
               {displayColumns.map((column) => (
                 <div key={column.title}>
-                  <p className='text-muted-foreground/50 mb-3 text-xs font-medium tracking-wider uppercase'>
-                    {t(column.title)}
-                  </p>
-                  <ul className='space-y-2.5'>
+                  <h2 className='il-footer-col-title'>{t(column.title)}</h2>
+                  <ul className='mt-3.5 space-y-1.5'>
                     {column.links.map((link) => (
                       <li key={`${link.href}-${link.text}`}>
                         <FooterLinkItem link={link} />
@@ -277,14 +263,14 @@ export function Footer(props: FooterProps) {
                   </ul>
                 </div>
               ))}
-            </div>
+            </nav>
           )}
         </div>
 
-        {/* Copyright + optional legal links inline on the left, project
-            attribution on the right; wraps on narrow screens. */}
-        <div className='border-border/30 mt-12 flex flex-col items-center justify-between gap-x-3 gap-y-2 border-t pt-6 sm:flex-row'>
-          <div className='text-muted-foreground/40 flex flex-wrap items-center justify-center gap-x-2 gap-y-1 text-xs sm:justify-start'>
+        {/* Bottom bar — clone: © line left, tagline right; legal links and
+            AGPL attribution preserved. */}
+        <div className='il-footer-bottom'>
+          <div className='flex flex-wrap items-center justify-center gap-x-2 gap-y-1 sm:justify-start'>
             <span>
               &copy; {currentYear} {displayName}.{' '}
               {props.copyright ?? t('footer.defaultCopyright')}

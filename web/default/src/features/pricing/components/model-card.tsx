@@ -158,8 +158,7 @@ export const ModelCard = memo(function ModelCard(props: ModelCardProps) {
   return (
     <article
       className={cn(
-        'group relative flex min-h-[280px] cursor-pointer flex-col rounded-2xl border bg-card p-5 shadow-sm transition-all',
-        'hover:border-primary/20 hover:-translate-y-0.5 hover:shadow-md'
+        'il-card group relative flex min-h-[280px] cursor-pointer flex-col p-5'
       )}
     >
       <button
@@ -209,7 +208,7 @@ export const ModelCard = memo(function ModelCard(props: ModelCardProps) {
             {props.model.vendor_name}
           </span>
         )}
-        <span className='rounded-full bg-violet-100 px-2.5 py-1 text-xs font-medium text-violet-700 dark:bg-violet-500/15 dark:text-violet-300'>
+        <span className='rounded-full bg-[var(--color-brand-subtle)] px-2.5 py-1 text-xs font-medium text-[var(--color-brand-accent-muted)]'>
           {t('Pay as you go')}
         </span>
         <span className='text-muted-foreground/60 ml-auto text-xs'>

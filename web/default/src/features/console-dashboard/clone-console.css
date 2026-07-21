@@ -1,0 +1,930 @@
+/*
+Copyright (C) 2023-2026 QuantumNous
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU Affero General Public License as
+published by the Free Software Foundation, either version 3 of the
+License, or (at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+GNU Affero General Public License for more details.
+
+You should have received a copy of the GNU Affero General Public License
+along with this program. If not, see <https://www.gnu.org/licenses/>.
+
+For commercial licensing, please contact support@quantumnous.com
+*/
+/* ------------------------------------------------------------------ *
+ * clone-console.css — authenticated console skin ported 1:1 from the
+ * old iter-loop.com dashboard (design-reference/iterloop.css,
+ * `.dashboard-*` / `.rt-*` rules). Scoped under .iterloop-console-shell
+ * so nothing leaks into the admin workspace or public pages.
+ * Light mode is pixel-faithful; dark mode remaps the --dash-* tokens
+ * onto legible values (warm art cards keep a locally dark ink).
+ * ------------------------------------------------------------------ */
+
+.iterloop-console-shell {
+  /* clone tokens: .dashboard-new-ui + body.dashboard-warm */
+  --dash-stage-bg: #fffefb;
+  --dash-ink: #14110f;
+  --dash-card: #ffffff;
+  --dash-amber: #f97316;
+  --dash-amber-deep: #c2410c;
+  --dash-line: color-mix(in srgb, var(--dash-ink) 10%, transparent);
+  --dash-line-strong: color-mix(in srgb, var(--dash-ink) 18%, transparent);
+  --dash-muted: color-mix(in srgb, var(--dash-ink) 58%, transparent);
+  --dash-faint: color-mix(in srgb, var(--dash-ink) 4%, transparent);
+  --dash-dot-rule: radial-gradient(
+    circle,
+    color-mix(in srgb, var(--dash-ink) 34%, transparent) 0.85px,
+    transparent 1.2px
+  );
+  background: var(--dash-stage-bg);
+  color: var(--dash-ink);
+}
+
+.dark .iterloop-console-shell {
+  --dash-stage-bg: #161210;
+  --dash-ink: #f2ece5;
+  --dash-card: #201a16;
+}
+
+/* Header — body.dashboard-warm header: solid canvas, hairline hidden */
+.iterloop-console-shell .iterloop-console-header {
+  border-bottom-color: var(--dash-line);
+  background: var(--dash-stage-bg);
+  backdrop-filter: none;
+  color: var(--dash-ink);
+}
+
+.iterloop-console-shell .iterloop-console-brand {
+  color: var(--dash-ink);
+}
+
+.iterloop-console-shell .iterloop-console-brand > i {
+  border-left-color: var(--dash-line-strong);
+  color: var(--dash-muted);
+}
+
+.iterloop-console-shell .iterloop-console-status {
+  color: var(--dash-muted);
+}
+
+/* Sidebar — clone .dashboard-sidebar (no card chrome, sits on canvas) */
+.iterloop-console-shell .iterloop-console-sidebar {
+  border-right: 0;
+  padding: clamp(18px, 2.6vh, 26px) 14px clamp(18px, 2.6vh, 26px)
+    clamp(16px, 2vw, 24px);
+  background: transparent;
+}
+
+.iterloop-console-shell .iterloop-console-sidebar-label {
+  padding: 0 14px 14px;
+  color: color-mix(in srgb, var(--dash-ink) 42%, transparent);
+  font-size: 12px;
+  font-weight: 400;
+  letter-spacing: 0.2em;
+}
+
+/* Menu — clone .dashboard-menu + sliding .dashboard-menu-indicator */
+.iterloop-console-shell .iterloop-console-navigation {
+  position: relative;
+  gap: 3px;
+}
+
+.iterloop-console-menu-indicator {
+  position: absolute;
+  top: 0;
+  right: 0;
+  left: 0;
+  height: var(--console-menu-indicator-h, 42px);
+  border-radius: 8px;
+  background: var(--dash-card);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--dash-ink) 9%, transparent);
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(var(--console-menu-indicator-y, 0));
+  transition:
+    transform 0.26s cubic-bezier(0.22, 1, 0.36, 1),
+    height 0.26s cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 0.16s ease;
+  will-change: transform, height;
+}
+
+.iterloop-console-navigation.has-indicator .iterloop-console-menu-indicator {
+  opacity: 1;
+}
+
+.iterloop-console-shell .iterloop-console-navigation > a {
+  z-index: 1;
+  min-height: 0;
+  gap: 11px;
+  border: 0;
+  border-radius: 8px;
+  padding: 9px 13px;
+  color: color-mix(in srgb, var(--dash-ink) 64%, transparent);
+  font-size: 14px;
+  font-weight: 500;
+  white-space: nowrap;
+  transition:
+    background-color 0.16s ease,
+    color 0.16s ease,
+    box-shadow 0.16s ease,
+    transform 0.16s ease;
+}
+
+.iterloop-console-shell .iterloop-console-navigation > a:hover {
+  background: color-mix(in srgb, var(--dash-ink) 4%, transparent);
+  color: var(--dash-ink);
+}
+
+.iterloop-console-shell .iterloop-console-navigation > a:active {
+  transform: none;
+}
+
+.iterloop-console-shell .iterloop-console-navigation > a.is-active {
+  border: 0;
+  background: var(--dash-card);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--dash-ink) 9%, transparent);
+  color: var(--dash-ink);
+  font-weight: 650;
+}
+
+.iterloop-console-shell
+  .iterloop-console-navigation.has-indicator
+  > a.is-active {
+  background: transparent;
+  box-shadow: none;
+}
+
+.iterloop-console-shell .iterloop-console-navigation > a.is-active::before {
+  content: none;
+}
+
+.iterloop-console-shell .iterloop-console-navigation svg {
+  width: 16px;
+  height: 16px;
+  color: var(--dash-ink);
+  transition:
+    transform 0.22s cubic-bezier(0.34, 1.45, 0.64, 1),
+    color 0.16s ease;
+}
+
+.iterloop-console-shell .iterloop-console-navigation > a.is-active svg {
+  transform: scale(1.06);
+}
+
+/* Page head — clone .dashboard-page-head + .dashboard-rule */
+.iterloop-console-shell .iterloop-dashboard-header {
+  position: relative;
+  margin-bottom: clamp(16px, 2.4vh, 22px);
+  padding-bottom: clamp(16px, 2.4vh, 22px);
+}
+
+.iterloop-console-shell .iterloop-dashboard-header::after {
+  content: '';
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  height: 2px;
+  background: var(--dash-dot-rule) 0 100% / 4px 2px repeat-x;
+}
+
+.iterloop-console-shell .iterloop-dashboard-header > div:first-child > span {
+  display: none;
+}
+
+.iterloop-console-shell .iterloop-dashboard-header h1 {
+  margin-top: 0;
+  color: var(--dash-ink);
+  font-family: var(--font-sans);
+  font-size: clamp(1.35rem, 2vw, 1.7rem);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+}
+
+.iterloop-console-shell .iterloop-dashboard-header p {
+  max-width: 780px;
+  margin-top: 7px;
+  color: var(--dash-muted);
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 1.55;
+}
+
+/* Layout toggle re-skinned as clone white control */
+.iterloop-console-shell .iterloop-layout-toggle {
+  border: 1px solid var(--dash-line-strong);
+  border-radius: 8px;
+  background: var(--dash-card);
+}
+
+.iterloop-console-shell .iterloop-layout-toggle button {
+  border-radius: 6px;
+  color: var(--dash-muted);
+  font-weight: 600;
+}
+
+.iterloop-console-shell .iterloop-layout-toggle button.is-active {
+  background: var(--dash-ink);
+  color: var(--dash-stage-bg);
+}
+
+/* Summary / KPI cards — clone .dashboard-kpi-card */
+.iterloop-console-shell .iterloop-billing-summary article,
+.iterloop-console-shell .iterloop-analytics-cards article {
+  border: 1px solid var(--dash-line);
+  border-radius: 12px;
+  padding: clamp(16px, 1.8vw, 20px);
+  background: var(--dash-card);
+}
+
+.iterloop-console-shell .iterloop-billing-summary article > svg {
+  color: var(--dash-amber-deep);
+}
+
+.iterloop-console-shell .iterloop-billing-summary span,
+.iterloop-console-shell .iterloop-analytics-cards span {
+  color: var(--dash-muted);
+  font-size: 13.5px;
+  font-weight: 400;
+  letter-spacing: 0;
+  line-height: 1.4;
+  text-transform: none;
+}
+
+.iterloop-console-shell .iterloop-billing-summary strong,
+.iterloop-console-shell .iterloop-analytics-cards strong {
+  margin-top: 9px;
+  color: var(--dash-ink);
+  font-family: var(--font-sans);
+  font-size: clamp(1.6rem, 2.4vw, 2rem);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0;
+  line-height: 1.08;
+}
+
+.iterloop-console-shell .iterloop-billing-summary small,
+.iterloop-console-shell .iterloop-analytics-cards small {
+  color: color-mix(in srgb, var(--dash-ink) 45%, transparent);
+  font-size: 12px;
+}
+
+.iterloop-console-shell .iterloop-billing-panel .iterloop-billing-summary {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+/* Wallet balance card — clone .dashboard-wallet-card (warm gradient art).
+ * Ink is locally pinned dark so text stays legible on the cream art in
+ * dark mode too. */
+.iterloop-console-shell .dashboard-wallet-card {
+  --dash-ink: #14110f;
+
+  position: relative;
+  isolation: isolate;
+  display: flex;
+  overflow: hidden;
+  flex-direction: column;
+  gap: clamp(16px, 2vw, 22px);
+  border: 0;
+  border-radius: 14px;
+  padding: clamp(20px, 2.6vw, 30px);
+  /* background image is set inline from billing-panel.tsx because the
+     bundler rewrites absolute url() paths in CSS as module imports */
+  background-color: #ffe7d6;
+  background-position: center 36%;
+  background-size: cover;
+  background-repeat: no-repeat;
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 55%);
+  color: var(--dash-ink);
+}
+
+.iterloop-console-shell .dashboard-wallet-card::after {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(
+    102deg,
+    rgb(255 251 246 / 84%),
+    rgb(255 251 246 / 40%) 44%,
+    rgb(255 251 246 / 0%)
+  );
+}
+
+.iterloop-console-shell .dashboard-wallet-card > * {
+  position: relative;
+  z-index: 1;
+}
+
+.iterloop-console-shell .dashboard-wallet-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.iterloop-console-shell .dashboard-wallet-top p:first-child {
+  color: color-mix(in srgb, var(--dash-ink) 58%, transparent);
+  font-size: 13px;
+}
+
+.iterloop-console-shell .dashboard-wallet-amount {
+  margin-top: 4px;
+  color: var(--dash-ink);
+  font-size: clamp(1.9rem, 3.4vw, 2.5rem);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+  line-height: 1;
+}
+
+.iterloop-console-shell .dashboard-wallet-top button {
+  display: inline-flex;
+  align-items: center;
+  flex: none;
+  gap: 7px;
+  height: 38px;
+  border: 1px solid #1a1511;
+  border-radius: 8px;
+  padding-inline: 18px;
+  background: #1a1511;
+  color: #fffdf9;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 650;
+  white-space: nowrap;
+  box-shadow: none;
+  transition:
+    background-color 0.16s ease,
+    border-color 0.16s ease,
+    box-shadow 0.22s ease,
+    transform 0.22s cubic-bezier(0.34, 1.45, 0.64, 1);
+}
+
+.iterloop-console-shell .dashboard-wallet-top button:hover {
+  box-shadow: 0 12px 24px -18px rgb(20 17 15 / 55%);
+  transform: translateY(-1px);
+}
+
+.iterloop-console-shell .dashboard-wallet-top button:active {
+  transform: translateY(0) scale(0.98);
+}
+
+.iterloop-console-shell .dashboard-wallet-top button svg {
+  width: 16px;
+  height: 16px;
+}
+
+/* Per-request billing callout — warm card language */
+.iterloop-console-shell .iterloop-request-billing-callout {
+  border: 1px solid var(--dash-line);
+  border-radius: 14px;
+  background: linear-gradient(
+    105deg,
+    color-mix(in srgb, var(--dash-amber) 9%, var(--dash-card)),
+    var(--dash-card) 58%
+  );
+}
+
+.iterloop-console-shell .iterloop-request-billing-callout span {
+  color: var(--dash-ink);
+  font-size: 13.5px;
+  font-weight: 650;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.iterloop-console-shell .iterloop-request-billing-callout p {
+  color: var(--dash-muted);
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+/* Routing — clone .rt-card / .dashboard-routing-card */
+.iterloop-console-shell .iterloop-routing-intro h2 {
+  color: var(--dash-ink);
+  font-size: clamp(1.35rem, 2vw, 1.7rem);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+}
+
+.iterloop-console-shell .iterloop-routing-intro > span {
+  color: var(--dash-amber-deep);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+}
+
+.iterloop-console-shell .iterloop-routing-intro p {
+  color: var(--dash-muted);
+  font-size: 14px;
+  line-height: 1.55;
+}
+
+.iterloop-console-shell .iterloop-routing-cards article {
+  border: 1.5px solid color-mix(in srgb, var(--dash-ink) 11%, transparent);
+  border-radius: 14px;
+  padding: 18px 20px;
+  background: var(--dash-card);
+  transition:
+    border-color 0.16s ease,
+    background 0.16s ease,
+    box-shadow 0.16s ease;
+}
+
+.iterloop-console-shell .iterloop-routing-cards article.is-selected {
+  --dash-ink: #14110f;
+
+  border-color: var(--dash-amber);
+  background: linear-gradient(150deg, #fff6ee, #ffeede);
+  color: var(--dash-ink);
+}
+
+.iterloop-console-shell .iterloop-routing-cards article.is-disabled {
+  opacity: 0.72;
+}
+
+.iterloop-console-shell .iterloop-routing-cards header > span {
+  display: grid;
+  width: 30px;
+  height: 30px;
+  place-items: center;
+  border: 0;
+  border-radius: 9px;
+  background: color-mix(in srgb, var(--dash-ink) 6%, transparent);
+  color: color-mix(in srgb, var(--dash-ink) 72%, transparent);
+}
+
+.iterloop-console-shell
+  .iterloop-routing-cards
+  article.is-selected
+  header
+  > span {
+  background: rgb(255 255 255 / 72%);
+  color: var(--dash-amber-deep);
+}
+
+.iterloop-console-shell .iterloop-routing-cards h3 {
+  color: var(--dash-ink);
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: 0;
+}
+
+.iterloop-console-shell .iterloop-routing-cards header p {
+  color: color-mix(in srgb, var(--dash-ink) 56%, transparent);
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.iterloop-console-shell .iterloop-routing-cards header > i {
+  border: 0;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--dash-ink) 8%, transparent);
+  color: color-mix(in srgb, var(--dash-ink) 52%, transparent);
+  font-weight: 700;
+}
+
+.iterloop-console-shell
+  .iterloop-routing-cards
+  article.is-selected
+  header
+  > i {
+  background: var(--dash-amber);
+  color: #fff;
+}
+
+.iterloop-console-shell .iterloop-routing-cards li {
+  color: color-mix(in srgb, var(--dash-ink) 72%, transparent);
+}
+
+.iterloop-console-shell .iterloop-routing-cards li svg {
+  color: var(--dash-amber-deep);
+}
+
+.iterloop-console-shell .iterloop-routing-cards article > button {
+  border: 1px solid color-mix(in srgb, var(--dash-ink) 22%, transparent);
+  border-radius: 8px;
+  background: rgb(255 255 255 / 55%);
+  color: var(--dash-ink);
+  font-size: 13.5px;
+  font-weight: 650;
+}
+
+.iterloop-console-shell
+  .iterloop-routing-cards
+  article.is-selected
+  > button {
+  border-color: transparent;
+  background: var(--dash-ink);
+  color: #fffefb;
+}
+
+/* API keys — clone .dashboard-keys-guide (endpoint card) */
+.iterloop-console-shell .iterloop-endpoint-card {
+  --dash-ink: #14110f;
+
+  position: relative;
+  overflow: hidden;
+  border: 0;
+  border-radius: 16px;
+  /* background image is set inline from api-keys-panel.tsx because the
+     bundler rewrites absolute url() paths in CSS as module imports */
+  background-color: #fffefb;
+  background-position: 50%;
+  background-size: cover;
+  color: var(--dash-ink);
+}
+
+.iterloop-console-shell .iterloop-endpoint-card header span {
+  color: var(--dash-ink);
+  font-size: 12.5px;
+  font-weight: 700;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.iterloop-console-shell .iterloop-endpoint-card h2 {
+  color: var(--dash-ink);
+}
+
+.iterloop-console-shell .iterloop-endpoint-card > p {
+  color: color-mix(in srgb, var(--dash-ink) 58%, transparent);
+  font-size: 12.5px;
+}
+
+/* protocol tabs — clone .home-install-product-tab */
+.iterloop-console-shell .iterloop-endpoint-card .iterloop-segmented-control {
+  gap: 18px;
+  border: 0;
+  border-radius: 0;
+  padding: 0;
+  background: transparent;
+}
+
+.iterloop-console-shell
+  .iterloop-endpoint-card
+  .iterloop-segmented-control
+  button {
+  position: relative;
+  border: 0;
+  border-radius: 0;
+  padding: 4px 0;
+  background: none;
+  color: #737373;
+  font-size: 13.5px;
+  font-weight: 650;
+}
+
+.iterloop-console-shell
+  .iterloop-endpoint-card
+  .iterloop-segmented-control
+  button:hover {
+  color: #525252;
+}
+
+.iterloop-console-shell
+  .iterloop-endpoint-card
+  .iterloop-segmented-control
+  button.is-active {
+  background: none;
+  color: #d0240f;
+}
+
+.iterloop-console-shell
+  .iterloop-endpoint-card
+  .iterloop-segmented-control
+  button.is-active::after {
+  content: '';
+  position: absolute;
+  bottom: -4px;
+  left: 0;
+  width: 24px;
+  height: 2px;
+  background: #d0240f;
+}
+
+.iterloop-console-shell .iterloop-endpoint-value {
+  border: 1px solid color-mix(in srgb, var(--dash-ink) 10%, transparent);
+  border-radius: 10px;
+  background: rgb(255 255 255 / 72%);
+}
+
+.iterloop-console-shell .iterloop-endpoint-value code {
+  color: var(--dash-ink);
+  font-size: 13px;
+}
+
+.iterloop-console-shell .iterloop-download-card {
+  border: 1px solid var(--dash-line);
+  border-radius: 14px;
+  background: var(--dash-card);
+}
+
+.iterloop-console-shell .iterloop-download-card > div > span {
+  color: var(--dash-muted);
+  font-size: 12px;
+  letter-spacing: 0.05em;
+}
+
+.iterloop-console-shell .iterloop-download-card h2 {
+  color: var(--dash-ink);
+}
+
+.iterloop-console-shell .iterloop-download-card p {
+  color: var(--dash-muted);
+  font-size: 12.5px;
+}
+
+/* API keys table — clone .dashboard-cost-table language */
+.iterloop-console-shell .iterloop-api-keys-table {
+  border: 1px solid var(--dash-line);
+  border-radius: 14px;
+  background: var(--dash-card);
+}
+
+.iterloop-console-shell .iterloop-api-keys-table > header span {
+  color: var(--dash-muted);
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.05em;
+  font-family: var(--font-mono);
+}
+
+.iterloop-console-shell .iterloop-api-keys-table h2 {
+  color: var(--dash-ink);
+  font-size: 16.5px;
+  font-weight: 650;
+}
+
+/* black create button — clone .dashboard-create-key-button */
+.iterloop-console-shell .iterloop-api-keys-table > header [data-slot='button'] {
+  height: 38px;
+  border: 0;
+  border-radius: 8px;
+  background: var(--dash-ink);
+  color: var(--dash-stage-bg);
+  font-weight: 600;
+}
+
+.iterloop-console-shell
+  .iterloop-api-keys-table
+  > header
+  [data-slot='button']:hover {
+  background: color-mix(in srgb, var(--dash-ink) 85%, #fff);
+  color: var(--dash-stage-bg);
+}
+
+.iterloop-console-shell .iterloop-api-keys-table-scroll {
+  border-top-color: color-mix(in srgb, var(--dash-ink) 11%, transparent);
+}
+
+.iterloop-console-shell .iterloop-api-keys-table th {
+  border-bottom: 1px solid color-mix(in srgb, var(--dash-ink) 11%, transparent);
+  color: color-mix(in srgb, var(--dash-ink) 50%, transparent);
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.iterloop-console-shell .iterloop-api-keys-table td {
+  border-bottom: 1px solid color-mix(in srgb, var(--dash-ink) 7%, transparent);
+  color: var(--dash-ink);
+  font-size: 13.5px;
+  font-variant-numeric: tabular-nums;
+  transition:
+    background-color 0.16s ease,
+    color 0.16s ease;
+}
+
+.iterloop-console-shell .iterloop-api-keys-table tbody tr:hover td {
+  background-color: color-mix(in srgb, var(--dash-ink) 5%, transparent);
+}
+
+.iterloop-console-shell .iterloop-api-keys-table td small {
+  color: var(--dash-muted);
+  font-size: 11px;
+}
+
+.iterloop-console-shell .iterloop-api-keys-table td code {
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+}
+
+/* Completed-style green chip */
+.iterloop-console-shell .iterloop-key-status {
+  border-radius: 999px;
+  padding: 2px 8px;
+  background: var(--il-color-success-bg, #f0fdf4);
+  color: var(--il-color-success, #16a34a);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.iterloop-console-shell .iterloop-key-copy {
+  color: var(--dash-muted);
+}
+
+.iterloop-console-shell .iterloop-key-copy:hover {
+  color: var(--dash-ink);
+}
+
+.iterloop-console-shell .iterloop-table-empty {
+  border-radius: 12px;
+  background: var(--dash-faint);
+  color: var(--dash-muted);
+  font-size: 13px;
+}
+
+/* Analytics — clone filter bar + chart card + table typography */
+.iterloop-console-shell .iterloop-analytics-filters {
+  gap: 12px;
+  border: 0;
+  border-radius: 0;
+  padding: 0;
+  background: transparent;
+}
+
+.iterloop-console-shell .iterloop-analytics-filters label > span {
+  color: var(--dash-muted);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.05em;
+  font-family: var(--font-mono);
+}
+
+.iterloop-console-shell .iterloop-analytics-filters select,
+.iterloop-console-shell .iterloop-analytics-filters input {
+  height: 40px;
+  border: 1px solid var(--dash-line-strong);
+  border-radius: 8px;
+  background: var(--dash-card);
+  color: var(--dash-ink);
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.iterloop-console-shell .iterloop-analytics-filters select:focus,
+.iterloop-console-shell .iterloop-analytics-filters input:focus {
+  border-color: var(--dash-amber);
+  outline: none;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--dash-amber) 16%, transparent);
+}
+
+.iterloop-console-shell .iterloop-analytics-panel {
+  border: 1px solid var(--dash-line-strong);
+  border-radius: 12px;
+  background: var(--dash-card);
+}
+
+.iterloop-console-shell .iterloop-analytics-panel > header span {
+  color: var(--dash-ink);
+  font-size: 16.5px;
+  font-weight: 600;
+}
+
+.iterloop-console-shell .iterloop-analytics-panel > header p {
+  color: var(--dash-muted);
+  font-size: 13px;
+}
+
+.iterloop-console-shell .iterloop-analytics-panel > header svg {
+  color: var(--dash-muted);
+}
+
+.iterloop-console-shell .iterloop-analytics-chart,
+.iterloop-console-shell .iterloop-model-bars {
+  border-top-color: color-mix(in srgb, var(--dash-ink) 9%, transparent);
+}
+
+.iterloop-console-shell .iterloop-model-bars > div > div {
+  color: var(--dash-ink);
+  font-size: 12.5px;
+}
+
+.iterloop-console-shell .iterloop-model-bars > div > div strong {
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+}
+
+.iterloop-console-shell .iterloop-model-bars > div > i {
+  background: color-mix(in srgb, var(--dash-ink) 7%, transparent);
+}
+
+.iterloop-console-shell .iterloop-model-bars > div > i > span {
+  background: linear-gradient(90deg, var(--dash-amber), var(--dash-amber-deep));
+}
+
+.iterloop-console-shell .iterloop-model-bars small {
+  color: var(--dash-muted);
+  font-size: 10.5px;
+}
+
+/* Empty state — clone .dashboard-empty */
+.iterloop-console-shell .iterloop-analytics-empty {
+  border: 0;
+  border-radius: 14px;
+  background: var(--dash-faint);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--dash-ink) 7%, transparent);
+}
+
+.iterloop-console-shell .iterloop-analytics-empty svg {
+  color: var(--dash-muted);
+}
+
+.iterloop-console-shell .iterloop-analytics-empty h2 {
+  color: var(--dash-ink);
+}
+
+.iterloop-console-shell .iterloop-analytics-empty p {
+  color: var(--dash-muted);
+}
+
+/* Flat mode — clone tables sit directly on the canvas */
+.iterloop-console-shell .iterloop-dashboard.is-flat .iterloop-billing-summary,
+.iterloop-console-shell .iterloop-dashboard.is-flat .iterloop-analytics-cards {
+  border-color: var(--dash-line);
+  border-radius: 12px;
+}
+
+.iterloop-console-shell
+  .iterloop-dashboard.is-flat
+  .iterloop-billing-summary
+  article,
+.iterloop-console-shell
+  .iterloop-dashboard.is-flat
+  .iterloop-analytics-cards
+  article {
+  border-right-color: var(--dash-line);
+  border-radius: 0;
+}
+
+.iterloop-console-shell
+  .iterloop-dashboard.is-flat
+  .iterloop-request-billing-callout,
+.iterloop-console-shell .iterloop-dashboard.is-flat .iterloop-analytics-panel,
+.iterloop-console-shell .iterloop-dashboard.is-flat .iterloop-api-keys-table,
+.iterloop-console-shell .iterloop-dashboard.is-flat .iterloop-endpoint-card,
+.iterloop-console-shell .iterloop-dashboard.is-flat .iterloop-download-card {
+  border-radius: 10px;
+}
+
+/* Mobile tabs — clone .dashboard-mobile-tabs (dotted baseline chips) */
+@media (max-width: 767px) {
+  .iterloop-console-shell .iterloop-console-navigation-mobile {
+    height: auto;
+    gap: 4px;
+    border-bottom: 0;
+    padding: 12px 12px 14px;
+    background:
+      var(--dash-dot-rule) 0 100% / 4px 2px repeat-x,
+      var(--dash-stage-bg);
+    backdrop-filter: none;
+  }
+
+  .iterloop-console-shell .iterloop-console-navigation-mobile > a {
+    min-height: 0;
+    height: auto;
+    border: 1px solid transparent;
+    border-radius: 8px;
+    padding: 8px 12px;
+    color: var(--dash-muted);
+    font-size: 14px;
+    font-weight: 400;
+  }
+
+  .iterloop-console-shell .iterloop-console-navigation-mobile > a:hover {
+    background: transparent;
+    color: var(--dash-ink);
+  }
+
+  .iterloop-console-shell .iterloop-console-navigation-mobile > a.is-active {
+    border-color: var(--dash-line);
+    background: var(--dash-card);
+    box-shadow: 0 1px 2px rgb(18 18 18 / 4%);
+    color: var(--dash-ink);
+    font-weight: 500;
+  }
+
+  .iterloop-console-shell
+    .iterloop-console-navigation-mobile
+    > a.is-active::before {
+    content: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .iterloop-console-menu-indicator,
+  .iterloop-console-shell .dashboard-wallet-top button {
+    transition: none !important;
+  }
+}

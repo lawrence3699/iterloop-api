@@ -18,8 +18,6 @@ For commercial licensing, please contact support@quantumnous.com
 */
 import { useTranslation } from 'react-i18next'
 
-import { Badge } from '@/components/ui/badge'
-
 import {
   CodeSample,
   DocSection,
@@ -47,55 +45,65 @@ const CURL_EXAMPLE = `curl https://api.iter-loop.com/v1/responses \\
   -H "Content-Type: application/json" \\
   -d '{"model":"gpt-5.5","input":"Say hello in one sentence."}'`
 
+const ENDPOINTS = [
+  ['POST', '/v1/responses', 'Codex Responses API and SSE'],
+  ['POST', '/v1/chat/completions', 'OpenAI-compatible chat'],
+  ['POST', '/v1/messages', 'Anthropic-compatible Messages API'],
+  ['GET', '/v1/models', 'Models visible to the current key'],
+] as const
+
 export function ApiIntegrationDocs() {
   const { t } = useTranslation()
   return (
     <DocsLayout
-      active='api'
-      eyebrow='Reference · API integration'
+      active='api-integration'
       title='Connect Codex CLI, Claude Code, and your API client'
       description='Use one scoped IterLoop key with the Responses, Chat Completions, or Anthropic Messages protocol.'
-      sections={[
-        { id: 'endpoints', label: 'Compatible endpoints' },
-        { id: 'codex-cli', label: 'Codex CLI' },
-        { id: 'claude-code', label: 'Claude Code' },
-        { id: 'direct', label: 'Direct API request' },
-      ]}
     >
-      <DocSection id='endpoints' number='01' title='Compatible endpoints'>
-        <div className='iterloop-doc-endpoints'>
-          {[
-            ['POST', '/v1/responses', 'Codex Responses API and SSE'],
-            ['POST', '/v1/chat/completions', 'OpenAI-compatible chat'],
-            ['POST', '/v1/messages', 'Anthropic-compatible Messages API'],
-            ['GET', '/v1/models', 'Models visible to the current key'],
-          ].map(([method, path, description]) => (
-            <div key={path}>
-              <Badge variant='outline'>{method}</Badge>
-              <code>{path}</code>
-              <span>{t(description)}</span>
-            </div>
-          ))}
+      <DocSection id='endpoints' title='Compatible endpoints'>
+        <div className='ti-table-wrap'>
+          <table className='ti-table'>
+            <thead>
+              <tr>
+                <th>{t('Method')}</th>
+                <th>{t('Path')}</th>
+                <th>{t('Description')}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {ENDPOINTS.map(([method, path, description]) => (
+                <tr key={path}>
+                  <td>
+                    <code>{method}</code>
+                  </td>
+                  <td>
+                    <code>{path}</code>
+                  </td>
+                  <td>{t(description)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       </DocSection>
-      <DocSection id='codex-cli' number='02' title='Codex CLI'>
-        <p className='iterloop-doc-copy'>
+      <DocSection id='codex-cli' title='Codex CLI'>
+        <p>
           {t(
             'Add the IterLoop provider to your Codex config file. WebSockets stay disabled until their billing path is verified.'
           )}
         </p>
         <CodeSample title='config.toml' value={CODEX_CONFIG} />
       </DocSection>
-      <DocSection id='claude-code' number='03' title='Claude Code'>
-        <p className='iterloop-doc-copy'>
+      <DocSection id='claude-code' title='Claude Code'>
+        <p>
           {t(
             'Set these variables in the shell that launches Claude Code. Use a Claude-enabled or combined IterLoop key.'
           )}
         </p>
         <CodeSample title='shell' value={CLAUDE_CONFIG} />
       </DocSection>
-      <DocSection id='direct' number='04' title='Direct API request'>
-        <p className='iterloop-doc-copy'>
+      <DocSection id='direct' title='Direct API request'>
+        <p>
           {t(
             'Send a standard Responses API request with the same key. The model whitelist and quota remain enforced server-side.'
           )}

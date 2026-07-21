@@ -17,86 +17,51 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 import { Link } from '@tanstack/react-router'
-import { ArrowLeft, ArrowRight } from 'lucide-react'
-import { motion, useReducedMotion } from 'motion/react'
+import { Check, Copy, Info } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
-import { CopyButton } from '@/components/copy-button'
 import { Footer } from '@/components/layout/components/footer'
 import { PublicLayout } from '@/components/layout/components/public-layout'
+import { useCopyToClipboard } from '@/hooks/use-copy-to-clipboard'
 import { cn } from '@/lib/utils'
 
-const DOC_TABS = [
-  { id: 'desktop', label: 'Codex Desktop', to: '/docs/install-codex-desktop' },
-  { id: 'api', label: 'API integration', to: '/docs/api-integration' },
-] as const
+import '../docs-clone.css'
 
+import { DocsMobileNav, DocsSidebarNav, type DocsNavActiveId } from './docs-nav'
+
+/** Clone docs shell: warm paper stage, sticky "Quick Start for Agents"
+ * sidebar, article column with the original entrance animation. */
 export function DocsLayout(props: {
-  active: (typeof DOC_TABS)[number]['id']
-  eyebrow: string
+  active: DocsNavActiveId
   title: string
   description: string
-  sections: { id: string; label: string }[]
   children: React.ReactNode
 }) {
   const { t } = useTranslation()
-  const reduceMotion = useReducedMotion()
 
   return (
     <PublicLayout showMainContainer={false}>
-      <main className='iterloop-docs-page'>
-        <motion.header
-          className='iterloop-docs-hero'
-          initial={reduceMotion ? false : { opacity: 0, y: 18 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{
-            duration: reduceMotion ? 0 : 0.72,
-            ease: [0.22, 1, 0.36, 1],
-          }}
-        >
-          <span>{t(props.eyebrow)}</span>
-          <h1>{t(props.title)}</h1>
-          <p>{t(props.description)}</p>
-        </motion.header>
-
-        <div
-          className='iterloop-docs-tabs'
-          role='navigation'
-          aria-label={t('Documentation')}
-        >
-          {DOC_TABS.map((tab) => (
-            <Link
-              key={tab.id}
-              to={tab.to}
-              className={props.active === tab.id ? 'is-active' : undefined}
-            >
-              {t(tab.label)}
-            </Link>
-          ))}
-        </div>
-
-        <div className='iterloop-docs-layout'>
-          <aside>
-            <span>{t('On this page')}</span>
-            <nav aria-label={t('On this page')}>
-              {props.sections.map((section) => (
-                <a key={section.id} href={`#${section.id}`}>
-                  {t(section.label)}
-                </a>
-              ))}
-            </nav>
-          </aside>
-          <motion.article
-            initial={reduceMotion ? false : { opacity: 0, y: 24 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{
-              duration: reduceMotion ? 0 : 0.68,
-              delay: reduceMotion ? 0 : 0.08,
-              ease: [0.22, 1, 0.36, 1],
-            }}
-          >
-            {props.children}
-          </motion.article>
+      <main className='pt-[76px] max-[640px]:pt-[60px]'>
+        <div className='docs-new-ui'>
+          <div className='doc-shell'>
+            <aside className='doc-aside'>
+              <DocsSidebarNav active={props.active} />
+            </aside>
+            <div className='doc-main'>
+              <DocsMobileNav active={props.active} />
+              <div className='doc-article-transition'>
+                <div className='doc-article-content'>
+                  <div className='docs-body ti-panel'>
+                    <div className='ti-head'>
+                      <h1>{t(props.title)}</h1>
+                    </div>
+                    <p className='ti-blurb'>{t(props.description)}</p>
+                    {props.children}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </main>
       <Footer />
@@ -106,19 +71,14 @@ export function DocsLayout(props: {
 
 export function DocSection(props: {
   id: string
-  number: string
   title: string
   children: React.ReactNode
   className?: string
 }) {
   const { t } = useTranslation()
   return (
-    <section
-      id={props.id}
-      className={cn('iterloop-doc-section', props.className)}
-    >
-      <header>
-        <span>{props.number}</span>
+    <section id={props.id} className={cn('doc-sec', props.className)}>
+      <header className='doc-sec-head'>
         <h2>{t(props.title)}</h2>
       </header>
       {props.children}
@@ -126,21 +86,43 @@ export function DocSection(props: {
   )
 }
 
+/** Amber tip callout — the clone `.doc-note` box. */
+export function DocNote(props: { children: React.ReactNode }) {
+  return (
+    <div className='doc-note'>
+      <Info className='ic' aria-hidden='true' />
+      <div className='note-body'>{props.children}</div>
+    </div>
+  )
+}
+
+/** Clone `.code` block: dark panel, language bar, mono copy button. */
 export function CodeSample(props: { title: string; value: string }) {
   const { t } = useTranslation()
+  const { copiedText, copyToClipboard } = useCopyToClipboard({ notify: false })
+  const isCopied = copiedText === props.value
+
   return (
-    <div className='iterloop-doc-code'>
-      <header>
-        <span>{props.title}</span>
-        <CopyButton
-          value={props.value}
-          tooltip={`${t('Copy')} ${props.title}`}
-        />
-      </header>
+    <div className='code'>
+      <div className='code-bar'>
+        <span className='code-lang'>{props.title}</span>
+        <button
+          type='button'
+          className='code-copy'
+          onClick={() => copyToClipboard(props.value)}
+          aria-label={`${t('Copy')} ${props.title}`}
+        >
+          {isCopied ? (
+            <Check aria-hidden='true' />
+          ) : (
+            <Copy aria-hidden='true' />
+          )}
+          <span>{isCopied ? t('Copied') : t('Copy')}</span>
+        </button>
+      </div>
       <pre>
         <code>{props.value}</code>
       </pre>
-      <i aria-hidden='true' />
     </div>
   )
 }
@@ -157,28 +139,19 @@ export function DocsPager(props: {
 }) {
   const { t } = useTranslation()
   return (
-    <nav
-      className='iterloop-docs-pager'
-      aria-label={t('Documentation pagination')}
-    >
+    <nav className='doc-pager' aria-label={t('Documentation pagination')}>
       {props.previous ? (
-        <Link to={props.previous.to}>
-          <ArrowLeft aria-hidden='true' />
-          <span>
-            <small>{t('Previous')}</small>
-            {t(props.previous.label)}
-          </span>
+        <Link to={props.previous.to} className='doc-pager-card'>
+          <span className='doc-pager-kicker'>{t('Previous')}</span>
+          <span className='doc-pager-title'>{t(props.previous.label)}</span>
         </Link>
       ) : (
-        <span />
+        <span className='doc-pager-spacer' aria-hidden='true' />
       )}
       {props.next ? (
-        <Link to={props.next.to}>
-          <span>
-            <small>{t('Next')}</small>
-            {t(props.next.label)}
-          </span>
-          <ArrowRight aria-hidden='true' />
+        <Link to={props.next.to} className='doc-pager-card is-next'>
+          <span className='doc-pager-kicker'>{t('Next')}</span>
+          <span className='doc-pager-title'>{t(props.next.label)}</span>
         </Link>
       ) : null}
     </nav>

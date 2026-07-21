@@ -24,6 +24,7 @@ import {
   KeyRound,
   Route as RouteIcon,
 } from 'lucide-react'
+import { useLayoutEffect, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { IterLoopMark } from '@/components/iterloop-mark'
@@ -66,17 +67,43 @@ export function IterLoopConsoleHeader() {
 function ConsoleNavigation(props: { mobile?: boolean }) {
   const { t } = useTranslation()
   const location = useLocation()
+  const navRef = useRef<HTMLElement>(null)
   const activeTab =
     new URLSearchParams(location.searchStr).get('tab') || 'billing'
+  const withIndicator = !props.mobile
+
+  // Slide the clone's active-item indicator to match the active link
+  // (original .dashboard-menu-indicator behavior).
+  useLayoutEffect(() => {
+    if (!withIndicator) return
+    const nav = navRef.current
+    if (!nav) return
+    const activeLink = nav.querySelector<HTMLElement>('a.is-active')
+    if (activeLink) {
+      nav.style.setProperty(
+        '--console-menu-indicator-y',
+        `${activeLink.offsetTop}px`
+      )
+      nav.style.setProperty(
+        '--console-menu-indicator-h',
+        `${activeLink.offsetHeight}px`
+      )
+    }
+  }, [activeTab, withIndicator])
 
   return (
     <nav
+      ref={navRef}
       className={cn(
         'iterloop-console-navigation',
+        withIndicator && 'has-indicator',
         props.mobile && 'iterloop-console-navigation-mobile'
       )}
       aria-label={t('Console navigation')}
     >
+      {withIndicator && (
+        <span className='iterloop-console-menu-indicator' aria-hidden='true' />
+      )}
       {consoleTabItems.map((item) => (
         <Link
           key={item.id}
@@ -100,11 +127,6 @@ export function IterLoopConsoleSidebar() {
     <aside className='iterloop-console-sidebar'>
       <div className='iterloop-console-sidebar-label'>{t('Workspace')}</div>
       <ConsoleNavigation />
-      <div className='iterloop-console-sidebar-note'>
-        <span>{t('Production route')}</span>
-        <strong>{t('Curated routing')}</strong>
-        <p>{t('One verified channel is active.')}</p>
-      </div>
     </aside>
   )
 }

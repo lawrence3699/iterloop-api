@@ -31,10 +31,14 @@ export function SignUp() {
   const period = i18n.resolvedLanguage?.startsWith('zh') ? '。' : '.'
 
   return (
-    <AuthLayout variant='sign-up'>
+    <AuthLayout
+      variant='sign-up'
+      pageTitle={t(
+        'I am IterLoop, the God of Agents, governing Codex, Claude Code, and Gemini. Sign up to begin.'
+      )}
+    >
       <div className='iterloop-signup-panel'>
         <div className='iterloop-signup-heading'>
-          <h2>{t('Create an account')}</h2>
           <p>
             {t('Create your IterLoop Account to manage API access and usage.')}
           </p>

@@ -1,0 +1,403 @@
+/*
+Copyright (C) 2023-2026 QuantumNous
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU Affero General Public License as
+published by the Free Software Foundation, either version 3 of the
+License, or (at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+GNU Affero General Public License for more details.
+
+You should have received a copy of the GNU Affero General Public License
+along with this program. If not, see <https://www.gnu.org/licenses/>.
+
+For commercial licensing, please contact support@quantumnous.com
+*/
+/* /download page — styles extracted 1:1 from the clone's captured
+   markup (design-reference/download.ts + iterloop.css). */
+
+.il-download-hero {
+  position: relative;
+  overflow: hidden;
+  padding-top: 2.5rem;
+  padding-bottom: 0.5rem;
+  background: var(--bg-elevated);
+}
+
+@media (min-width: 768px) {
+  .il-download-hero {
+    padding-top: 3rem;
+  }
+}
+
+.il-download-hero-fade {
+  pointer-events: none;
+  position: absolute;
+  inset: auto 0 0 0;
+  height: 8rem;
+  background: linear-gradient(to bottom, transparent, var(--bg-elevated));
+}
+
+.il-download-hero-grid {
+  position: relative;
+  display: grid;
+  max-width: 72rem;
+  margin: 0 auto;
+  align-items: center;
+  gap: 2.5rem;
+  padding: 2rem 1rem;
+}
+
+@media (min-width: 768px) {
+  .il-download-hero-grid {
+    padding: 3rem 1.5rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .il-download-hero-grid {
+    grid-template-columns: 0.85fr 1.15fr;
+  }
+}
+
+.il-download-hero-copy {
+  text-align: center;
+}
+
+@media (min-width: 1024px) {
+  .il-download-hero-copy {
+    text-align: left;
+  }
+}
+
+.il-download-hero-copy h1 {
+  color: var(--text-primary);
+  font-size: 1.75rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+  text-wrap: balance;
+}
+
+@media (min-width: 768px) {
+  .il-download-hero-copy h1 {
+    font-size: 2.5rem;
+    line-height: 1.1;
+  }
+}
+
+@media (min-width: 1024px) {
+  .il-download-hero-copy h1 {
+    white-space: nowrap;
+  }
+}
+
+.il-download-hero-copy > p {
+  max-width: 28rem;
+  margin: 1rem auto 0;
+  color: var(--text-secondary);
+  font-size: 1rem;
+  line-height: 1.75rem;
+}
+
+@media (min-width: 768px) {
+  .il-download-hero-copy > p {
+    font-size: 1.125rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .il-download-hero-copy > p {
+    margin-inline: 0;
+  }
+}
+
+.il-download-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.875rem;
+  margin-top: 2rem;
+}
+
+@media (min-width: 1024px) {
+  .il-download-actions {
+    align-items: flex-start;
+  }
+}
+
+.il-download-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+@media (min-width: 640px) {
+  .il-download-buttons {
+    flex-direction: row;
+  }
+}
+
+/* Clone's rounded-full download pills (h-[52px] px-7). */
+.il-download-btn {
+  position: relative;
+  display: inline-flex;
+  height: 52px;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 0 28px;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  font-size: 1rem;
+  font-weight: 600;
+  line-height: 1.5rem;
+  white-space: nowrap;
+  transition: opacity 0.16s ease-out;
+}
+
+.il-download-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.il-download-btn-mac {
+  border-color: var(--color-brand-solid);
+  background: var(--color-brand-solid);
+  color: var(--color-brand-text);
+  box-shadow: 0 18px 40px -24px rgba(208, 36, 15, 0.7);
+}
+
+.il-download-btn-win {
+  border-color: var(--border-default);
+  background: var(--bg-elevated);
+  color: var(--text-primary);
+}
+
+/* Small "Coming soon" pill anchored on the disabled buttons. */
+.il-download-soon {
+  position: absolute;
+  top: -10px;
+  right: 14px;
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 2px 8px;
+  background: var(--text-primary);
+  color: var(--bg-elevated);
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 16px;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+  box-shadow: 0 4px 10px -4px rgba(18, 18, 18, 0.4);
+}
+
+/* Framed product screenshot with the clone's soft rust glow + fade. */
+.il-download-preview {
+  position: relative;
+  margin: 0;
+}
+
+@media (min-width: 1024px) {
+  .il-download-preview {
+    margin-right: -2rem;
+  }
+}
+
+@media (min-width: 1280px) {
+  .il-download-preview {
+    margin-right: -4rem;
+  }
+}
+
+.il-download-preview img {
+  display: block;
+  width: 100%;
+  border: 1px solid var(--border-subtle);
+  border-radius: 1rem;
+  background: var(--bg-elevated);
+  box-shadow:
+    0 2px 8px -2px rgba(18, 18, 18, 0.08),
+    0 30px 60px -24px rgba(174, 69, 63, 0.32);
+  mask-image: linear-gradient(to bottom, black 72%, transparent 100%);
+  -webkit-mask-image: linear-gradient(to bottom, black 72%, transparent 100%);
+}
+
+/* ------------------------- live pricing teaser -------------------- */
+
+.il-download-pricing {
+  border-top: 1px solid
+    color-mix(in srgb, var(--border-subtle) 60%, transparent);
+  background: var(--bg-canvas);
+}
+
+.il-download-pricing-inner {
+  max-width: 72rem;
+  margin: 0 auto;
+  padding: 3rem 1rem;
+}
+
+@media (min-width: 768px) {
+  .il-download-pricing-inner {
+    padding: 4rem 1.5rem;
+  }
+}
+
+.il-download-pricing-heading h2 {
+  color: var(--text-primary);
+  font-size: 1.875rem;
+  font-weight: 600;
+  line-height: 2.25rem;
+}
+
+.il-download-pricing-heading p {
+  margin-top: 0.25rem;
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+}
+
+.il-download-table-wrap {
+  position: relative;
+  margin-top: 1.25rem;
+  overflow-x: auto;
+  border: 1px solid color-mix(in srgb, var(--border-subtle) 70%, transparent);
+  border-radius: 0.75rem;
+  background: var(--bg-elevated);
+}
+
+.il-download-table-wrap .il-table {
+  min-width: 1024px;
+}
+
+.il-download-model-name {
+  color: var(--text-primary);
+  font-weight: 500;
+  transition: color 0.16s ease;
+}
+
+tr:hover .il-download-model-name {
+  color: var(--text-link);
+}
+
+.il-download-provider-badge {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 4px 8px;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 16px;
+  background: #f1f5f9;
+  color: #334155;
+}
+
+.il-download-provider-badge.is-openai {
+  background: #e9f7ef;
+  color: #0f6b3d;
+}
+
+.il-download-provider-badge.is-anthropic {
+  background: #fef3e2;
+  color: #8a5900;
+}
+
+.il-download-provider-badge.is-glm {
+  background: #f3ecff;
+  color: #5933b6;
+}
+
+.dark .il-download-provider-badge {
+  background: rgba(241, 245, 249, 0.12);
+  color: #cbd5e1;
+}
+
+.dark .il-download-provider-badge.is-openai {
+  background: rgba(15, 107, 61, 0.2);
+  color: #6ee7a8;
+}
+
+.dark .il-download-provider-badge.is-anthropic {
+  background: rgba(138, 89, 0, 0.22);
+  color: #fbd38d;
+}
+
+.dark .il-download-provider-badge.is-glm {
+  background: rgba(89, 51, 182, 0.24);
+  color: #cdb6ff;
+}
+
+.il-download-price-stack {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+}
+
+.il-download-price-list {
+  color: var(--text-primary);
+  text-decoration: line-through;
+  text-decoration-thickness: 1px;
+  text-decoration-color: var(--text-tertiary);
+}
+
+.il-download-price-cache {
+  color: var(--text-tertiary);
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 16px;
+}
+
+.il-download-price-final {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+}
+
+.il-download-discount {
+  display: inline-flex;
+  border-radius: 999px;
+  padding: 2px 8px;
+  background: #fff1e6;
+  color: #d0240f;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 16px;
+}
+
+.dark .il-download-discount {
+  background: #3a2520;
+  color: #ffb49a;
+}
+
+.il-download-pricing-footer {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 1rem;
+}
+
+.il-download-pricing-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--text-link);
+  font-size: 0.875rem;
+  font-weight: 500;
+  line-height: 1.25rem;
+  transition: color 0.15s ease;
+}
+
+.il-download-pricing-link:hover {
+  color: var(--text-link-hover);
+}
+
+.il-download-pricing-loading {
+  display: grid;
+  gap: 0.5rem;
+  margin-top: 1.25rem;
+}

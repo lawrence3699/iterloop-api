@@ -16,28 +16,35 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
-import { ArrowRight } from 'lucide-react'
+import { useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { Footer } from '@/components/layout/components/footer'
+import { useScrollReveal } from '@/hooks/use-scroll-reveal'
 import { iterLoopConsoleUrl, iterLoopPublicUrl } from '@/lib/iterloop-host'
 
-import { DownloadFirstHero } from './download-first-hero'
-import {
-  HomeFaq,
-  ModelIntelligenceSections,
-  PerformanceBand,
-  ProductPrinciples,
-  RoutingFlow,
-} from './home-data-sections'
-import { LivePricingGrid } from './live-pricing-grid'
+import { HomeHero } from './clone/home-hero'
+import { HomeInstallGuide } from './clone/home-install-guide'
+import { HomeLeaderboard } from './clone/home-leaderboard'
+import { HomeLiveDiscounts } from './clone/home-live-discounts'
+import { HomeLivePricing } from './clone/home-live-pricing'
+import { HomePaylessBand } from './clone/home-payless-band'
+import { HomeWhySection, HomeHowSection } from './clone/home-why-how'
+import './clone/home-clone.css'
 
 export function IterLoopHome(props: { isAuthenticated: boolean }) {
   const { t } = useTranslation()
-  const hasStaticHero =
-    typeof document !== 'undefined' &&
-    document.documentElement.classList.contains('iterloop-static-home') &&
-    document.querySelector('#iterloop-static-hero') !== null
+  // Rescan reveal targets if the auth state flips after mount (header CTA
+  // swap re-renders the page shell).
+  useScrollReveal(props.isAuthenticated)
+
+  // The pre-React shell (index.html) may still show the static hero while
+  // this component mounts; the clone hero replaces it, so drop the shell.
+  useEffect(() => {
+    document.documentElement.classList.remove('iterloop-static-home')
+    document.querySelector('#iterloop-static-hero')?.remove()
+  }, [])
+
   const footerColumns = [
     {
       title: 'Product',
@@ -92,36 +99,32 @@ export function IterLoopHome(props: { isAuthenticated: boolean }) {
   ]
 
   return (
-    <div className='iterloop-download-home'>
-      {!hasStaticHero && (
-        <DownloadFirstHero isAuthenticated={props.isAuthenticated} />
-      )}
-      <PerformanceBand />
-      <LivePricingGrid />
-      <ModelIntelligenceSections />
-      <ProductPrinciples />
-      <RoutingFlow />
-      <HomeFaq />
-      <section className='iterloop-download-cta'>
-        <div>
-          <span>{t('Start with the manual guide today.')}</span>
-          <h2>{t('Desktop is coming soon. The API is ready now.')}</h2>
+    <>
+      <main className='hc-main'>
+        <div className='animate-page-enter'>
+          <div className='hc-container'>
+            <HomeHero />
+            <HomeLiveDiscounts />
+            <HomePaylessBand staggerDelay='160ms' />
+            <HomeInstallGuide />
+            <HomeWhySection />
+            <HomeHowSection />
+            {/* The footer links to /#pricing; the clone section id is
+                home-pricing-models, so provide both anchors. */}
+            <div id='pricing' className='hc-pricing-anchor'>
+              <HomeLivePricing />
+            </div>
+            <HomeLeaderboard />
+            <HomePaylessBand staggerDelay='300ms' />
+          </div>
         </div>
-        <a
-          className='iterloop-download-cta-button'
-          href={iterLoopPublicUrl('/docs/install-codex-desktop')}
-        >
-          {t('Open documentation')}
-          <ArrowRight aria-hidden='true' />
-        </a>
-      </section>
+      </main>
       <Footer
         name='IterLoop API'
-        logo='/logo.png'
+        logo='/media/clone/iterloop-logo-transparent.svg'
         columns={footerColumns}
         copyright={t('All rights reserved.')}
-        className='iterloop-store-footer'
       />
-    </div>
+    </>
   )
 }

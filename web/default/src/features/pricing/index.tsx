@@ -16,23 +16,24 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
-import { Sparkles } from 'lucide-react'
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useMemo, useState, type CSSProperties } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { PublicLayout } from '@/components/layout'
-import { PageTransition } from '@/components/page-transition'
+import { useScrollReveal } from '@/hooks/use-scroll-reveal'
+import { cn } from '@/lib/utils'
 
 import {
   LoadingSkeleton,
   EmptyState,
   SearchBar,
   ModelCardGrid,
-  PricingSidebar,
-  PricingToolbar,
   ModelDetailsDrawer,
 } from './components'
-import { VIEW_MODES } from './constants'
+import { ClonePricingTable } from './components/clone-pricing-table'
+import { PricingControls } from './components/pricing-controls'
+import { PricingHero } from './components/pricing-hero'
+import { FILTER_ALL, VIEW_MODES } from './constants'
 import { useFilters } from './hooks/use-filters'
 import { usePricingData } from './hooks/use-pricing-data'
 
@@ -60,18 +61,21 @@ export function Pricing() {
     sortBy,
     vendorFilter,
     tokenUnit,
+    viewMode,
     showRechargePrice,
     setSearchInput,
     setSortBy,
     setVendorFilter,
     setTokenUnit,
+    setViewMode,
     setShowRechargePrice,
     filteredModels,
     hasActiveFilters,
-    activeFilterCount,
     clearFilters,
     clearSearch,
   } = useFilters(models || [])
+
+  useScrollReveal(isLoading)
 
   const handleModelClick = useCallback((modelName: string) => {
     setSelectedModelName(modelName)
@@ -92,6 +96,15 @@ export function Pricing() {
     clearSearch()
   }, [clearFilters, clearSearch])
 
+  const vendorChips = useMemo(() => {
+    const availableVendors = (vendors || [])
+      .filter((vendor) =>
+        (models || []).some((model) => model.vendor_name === vendor.name)
+      )
+      .map((vendor) => vendor.name)
+    return [FILTER_ALL, ...availableVendors]
+  }, [vendors, models])
+
   const renderPricingContent = () => {
     if (filteredModels.length === 0) {
       return (
@@ -103,8 +116,21 @@ export function Pricing() {
       )
     }
 
+    if (viewMode === VIEW_MODES.CARD) {
+      return (
+        <ModelCardGrid
+          models={filteredModels}
+          priceRate={priceRate}
+          usdExchangeRate={usdExchangeRate}
+          tokenUnit={tokenUnit}
+          showRechargePrice={showRechargePrice}
+          onModelClick={handleModelClick}
+        />
+      )
+    }
+
     return (
-      <ModelCardGrid
+      <ClonePricingTable
         models={filteredModels}
         priceRate={priceRate}
         usdExchangeRate={usdExchangeRate}
@@ -118,8 +144,10 @@ export function Pricing() {
   if (isLoading) {
     return (
       <PublicLayout showMainContainer={false}>
-        <div className='mx-auto w-full max-w-[1560px] px-4 pt-16 pb-10 sm:px-6'>
-          <LoadingSkeleton viewMode={VIEW_MODES.CARD} />
+        <div className='pt-[76px] max-[640px]:pt-[60px]'>
+          <div className='mx-auto w-full max-w-6xl px-4 pt-10 pb-10 md:px-6'>
+            <LoadingSkeleton viewMode={VIEW_MODES.TABLE} />
+          </div>
         </div>
       </PublicLayout>
     )
@@ -127,44 +155,31 @@ export function Pricing() {
 
   return (
     <PublicLayout showMainContainer={false}>
-      <div className='relative pt-11'>
-        <PageTransition className='mx-auto w-full max-w-[1560px] px-4 pt-6 pb-12 sm:px-6 lg:pt-8'>
-          <div className='grid gap-5 xl:grid-cols-[220px_minmax(0,1fr)]'>
-            <PricingSidebar
-              vendorFilter={vendorFilter}
-              onVendorChange={setVendorFilter}
-              vendors={vendors || []}
-              models={models || []}
-              hasActiveFilters={hasActiveFilters}
-              onClearFilters={clearFilters}
-              className='sticky top-16 hidden self-start xl:block'
-            />
+      <div className='bg-[var(--bg-canvas)] pt-[76px] text-[var(--text-primary)] max-[640px]:pt-[60px]'>
+        <main className='animate-page-enter space-y-12 pb-10'>
+          <PricingHero />
 
-            <main className='min-w-0'>
-              <header className='relative isolate overflow-hidden rounded-t-2xl bg-[linear-gradient(120deg,#0a3aa8_0%,#155ad4_44%,#2447c7_72%,#12369d_100%)] px-6 py-7 text-white sm:px-8 sm:py-8'>
-                <div className='iterloop-pricing-hero-art absolute inset-0 -z-10 opacity-50' />
-                <Sparkles className='absolute top-7 right-7 size-8 text-cyan-200 drop-shadow sm:size-10' />
-                <div className='flex flex-wrap items-center gap-3 pr-12'>
-                  <h1 className='text-2xl font-semibold tracking-tight sm:text-3xl'>
-                    {t('Models and pricing')}
-                  </h1>
-                  <span className='rounded-full bg-white/90 px-3 py-1 text-xs font-semibold text-blue-700 shadow-sm'>
-                    {t('{{count}} models', { count: models?.length || 0 })}
-                  </span>
-                  <span className='rounded-full border border-white/25 bg-white/10 px-3 py-1 text-xs font-semibold text-white shadow-sm backdrop-blur-sm'>
-                    {t('Prices in {{currency}}', {
+          <section
+            id='pricing-models'
+            className='motion-item mx-auto w-full max-w-6xl scroll-mt-24 space-y-5 px-4 md:px-6'
+            style={{ '--stagger-delay': '80ms' } as CSSProperties}
+          >
+            <div className='flex flex-col gap-2 md:flex-row md:items-end md:justify-between'>
+              <div>
+                <h2 className='il-section-title text-3xl font-semibold'>
+                  {t('Live pricing')}
+                </h2>
+                <p className='mt-1 text-sm text-[var(--text-secondary)]'>
+                  {t(
+                    'Live prices — discounts may vary with upstream costs. Prices in {{currency}} / {{unit}} Tokens.',
+                    {
                       currency: pricingCurrency.code,
-                    })}
-                  </span>
-                </div>
-                <p className='mt-2 max-w-2xl text-sm text-blue-50/90 sm:text-base'>
-                  {t('This site currently has {{count}} models enabled', {
-                    count: models?.length || 0,
-                  })}
+                      unit: tokenUnit === 'K' ? '1K' : '1M',
+                    }
+                  )}
                 </p>
-              </header>
-
-              <div className='border-border/70 bg-background/95 border-x p-3'>
+              </div>
+              <div className='w-full md:w-[320px]'>
                 <SearchBar
                   value={searchInput}
                   onChange={setSearchInput}
@@ -172,52 +187,63 @@ export function Pricing() {
                   placeholder={t('Search models...')}
                 />
               </div>
+            </div>
 
-              <PricingToolbar
-                filteredCount={filteredModels.length}
-                totalCount={models?.length}
-                sortBy={sortBy}
-                onSortChange={setSortBy}
-                tokenUnit={tokenUnit}
-                onTokenUnitChange={setTokenUnit}
-                showRechargePrice={showRechargePrice}
-                onRechargePriceChange={setShowRechargePrice}
-                vendorFilter={vendorFilter}
-                onVendorChange={setVendorFilter}
-                vendors={vendors || []}
-                models={models || []}
-                hasActiveFilters={hasActiveFilters}
-                activeFilterCount={activeFilterCount}
-                onClearFilters={clearFilters}
-              />
+            <div className='flex [scrollbar-width:none] gap-2 overflow-x-auto sm:flex-wrap sm:overflow-visible [&::-webkit-scrollbar]:hidden'>
+              {vendorChips.map((vendor) => (
+                <button
+                  key={vendor}
+                  type='button'
+                  className={cn(
+                    'il-chip il-stateful shrink-0',
+                    vendorFilter === vendor && 'is-active'
+                  )}
+                  onClick={() => setVendorFilter(vendor)}
+                >
+                  {vendor === FILTER_ALL ? t('All') : vendor}
+                </button>
+              ))}
+            </div>
 
-              <div className='mt-5'>{renderPricingContent()}</div>
-            </main>
-          </div>
-
-          {selectedModel && (
-            <ModelDetailsDrawer
-              open={Boolean(selectedModel)}
-              onOpenChange={(open) => {
-                if (!open) setSelectedModelName(null)
-              }}
-              model={selectedModel}
-              groupRatio={groupRatio || {}}
-              usableGroup={usableGroup || {}}
-              endpointMap={
-                (endpointMap as Record<
-                  string,
-                  { path?: string; method?: string }
-                >) || {}
-              }
-              autoGroups={autoGroups || []}
-              priceRate={priceRate ?? 1}
-              usdExchangeRate={usdExchangeRate ?? 1}
+            <PricingControls
+              sortBy={sortBy}
+              onSortChange={setSortBy}
               tokenUnit={tokenUnit}
+              onTokenUnitChange={setTokenUnit}
               showRechargePrice={showRechargePrice}
+              onRechargePriceChange={setShowRechargePrice}
+              viewMode={viewMode}
+              onViewModeChange={setViewMode}
+              filteredCount={filteredModels.length}
+              totalCount={models?.length || 0}
             />
-          )}
-        </PageTransition>
+
+            {renderPricingContent()}
+          </section>
+        </main>
+
+        {selectedModel && (
+          <ModelDetailsDrawer
+            open={Boolean(selectedModel)}
+            onOpenChange={(open) => {
+              if (!open) setSelectedModelName(null)
+            }}
+            model={selectedModel}
+            groupRatio={groupRatio || {}}
+            usableGroup={usableGroup || {}}
+            endpointMap={
+              (endpointMap as Record<
+                string,
+                { path?: string; method?: string }
+              >) || {}
+            }
+            autoGroups={autoGroups || []}
+            priceRate={priceRate ?? 1}
+            usdExchangeRate={usdExchangeRate ?? 1}
+            tokenUnit={tokenUnit}
+            showRechargePrice={showRechargePrice}
+          />
+        )}
       </div>
     </PublicLayout>
   )

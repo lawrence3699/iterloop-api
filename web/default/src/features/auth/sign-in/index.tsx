@@ -32,12 +32,17 @@ export function SignIn() {
   const period = i18n.resolvedLanguage?.startsWith('zh') ? '。' : '.'
 
   return (
-    <AuthLayout pageTitle={t('Sign in to access the console faster.')}>
+    <AuthLayout
+      pageTitle={t(
+        'I am IterLoop, the God of Agents, governing Codex, Claude Code, and Gemini. Sign in to begin.'
+      )}
+    >
       <div className='iterloop-signin-panel'>
-        <div className='iterloop-signin-heading'>
-          <h2>{t('Sign in to IterLoop API')}</h2>
-          {!status?.self_use_mode_enabled &&
-            status?.register_enabled !== false && (
+        <UserAuthForm redirectTo={redirect} />
+
+        {!status?.self_use_mode_enabled &&
+          status?.register_enabled !== false && (
+            <div className='iterloop-signin-heading il-auth-signup-hint'>
               <p>
                 {t("Don't have an account?")}{' '}
                 <Link to='/sign-up' className='iterloop-auth-link'>
@@ -45,10 +50,8 @@ export function SignIn() {
                 </Link>
                 {period}
               </p>
-            )}
-        </div>
-
-        <UserAuthForm redirectTo={redirect} />
+            </div>
+          )}
 
         <TermsFooter
           variant='sign-in'

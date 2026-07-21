@@ -218,17 +218,17 @@ function AnalyticsTrend(props: {
               >
                 <stop
                   offset='0%'
-                  stopColor='var(--primary)'
+                  stopColor='var(--dash-amber)'
                   stopOpacity={0.32}
                 />
                 <stop
                   offset='100%'
-                  stopColor='var(--primary)'
+                  stopColor='var(--dash-amber)'
                   stopOpacity={0}
                 />
               </linearGradient>
             </defs>
-            <CartesianGrid stroke='var(--border)' vertical={false} />
+            <CartesianGrid stroke='var(--dash-line)' vertical={false} />
             <XAxis
               dataKey='label'
               tickLine={false}
@@ -250,15 +250,15 @@ function AnalyticsTrend(props: {
                   : formatCompactNumber(numberValue)
               }}
               contentStyle={{
-                border: '1px solid var(--border)',
+                border: '1px solid var(--dash-line-strong)',
                 borderRadius: 10,
-                background: 'var(--popover)',
+                background: 'var(--dash-card, #fff)',
               }}
             />
             <Area
               type='monotone'
               dataKey='value'
-              stroke='var(--primary)'
+              stroke='var(--dash-amber)'
               strokeWidth={2}
               fill={`url(#analytics-${props.kind})`}
             />

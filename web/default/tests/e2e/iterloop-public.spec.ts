@@ -87,15 +87,29 @@ async function settlePage(page: Page) {
   await page.addStyleTag({ content: QA_STYLES })
   await page.evaluate(async () => {
     await document.fonts.ready
+    // Lazy images that never enter the viewport never fire `load`, so
+    // awaiting them hangs the test. Wait only for images that are actually
+    // loading: eager ones, plus lazy ones already inside the viewport
+    // (those affect the screenshot and do finish loading).
     await Promise.all(
-      [...document.images].map(
-        (image) =>
-          image.complete ||
-          new Promise<void>((resolve) => {
-            image.addEventListener('load', () => resolve(), { once: true })
-            image.addEventListener('error', () => resolve(), { once: true })
-          })
-      )
+      [...document.images]
+        .filter((image) => {
+          if (image.complete) return false
+          if (image.loading !== 'lazy') return true
+          const rect = image.getBoundingClientRect()
+          return (
+            rect.width > 0 &&
+            rect.bottom > 0 &&
+            rect.top < window.innerHeight
+          )
+        })
+        .map(
+          (image) =>
+            new Promise<void>((resolve) => {
+              image.addEventListener('load', () => resolve(), { once: true })
+              image.addEventListener('error', () => resolve(), { once: true })
+            })
+        )
     )
   })
 }
@@ -106,11 +120,11 @@ async function openHome(
 ) {
   await preparePage(page, options)
   await page.goto('/')
-  const heading =
-    options.language === 'en'
-      ? 'Your coding agents. Connected in one click.'
-      : '你的编码代理，一键连接。'
-  await expect(page.getByRole('heading', { name: heading })).toBeVisible()
+  // Clone hero: "For your Claude Code / Codex — The native LLM router".
+  // The h1 also contains the rotating product spans, so match partially.
+  const heroPattern =
+    options.language === 'en' ? /The native LLM router/ : /原生 LLM 路由/
+  await expect(page.getByRole('heading', { name: heroPattern })).toBeVisible()
   await settlePage(page)
 }
 
@@ -157,19 +171,22 @@ test.describe('Download-first public experience', () => {
       name: 'Production model pricing',
     })
     await pricing.scrollIntoViewIfNeeded()
-    await expect(pricing.locator('article')).toHaveCount(16)
+    // The clone pricing section renders one table row per model.
+    await expect(pricing.locator('tbody tr')).toHaveCount(16)
     const text = await page.locator('body').innerText()
     expect(text).not.toMatch(/Google|DeepSeek|GLM|Grok/)
     expect(text).not.toContain('Codex and Claude are verified')
   })
 
   test('download channels are explicitly coming soon', async ({ page }) => {
-    await openHome(page, { language: 'en' })
+    // The mac/win download buttons moved from the homepage to /download.
+    await preparePage(page, { language: 'en' })
+    await page.goto('/download')
     await expect(
-      page.getByRole('button', { name: /macOS.*Coming soon/ })
+      page.getByRole('button', { name: /Download for macOS.*Coming soon/ })
     ).toBeDisabled()
     await expect(
-      page.getByRole('button', { name: /Windows.*Coming soon/ })
+      page.getByRole('button', { name: /Download Windows.*Coming soon/ })
     ).toBeDisabled()
   })
 })
@@ -185,9 +202,13 @@ test.describe('Documentation', () => {
     await expect(
       page.getByRole('heading', { name: 'Connect Codex Desktop to IterLoop' })
     ).toBeVisible()
-    await page.getByRole('button', { name: /Open screenshot/ }).click()
+    // The restyled docs lightbox triggers are labeled "View image"
+    // and the dialog takes the screenshot's alt text as its name.
+    await page.getByRole('button', { name: 'View image' }).first().click()
     await expect(
-      page.getByRole('dialog', { name: 'IterLoop Desktop screenshot' })
+      page.getByRole('dialog', {
+        name: 'IterLoop client sign-in and registration screen',
+      })
     ).toBeVisible()
     await page.keyboard.press('Escape')
     await expect(page.getByRole('dialog')).toHaveCount(0)
@@ -240,10 +261,17 @@ test.describe('Five-tab authenticated console', () => {
     const errors: string[] = []
     page.on('pageerror', (error) => errors.push(error.message))
     await page.goto('/dashboard')
-    for (const tab of ['Billing', 'Routing', 'API Keys', 'Usage', 'Cost']) {
-      await page.getByRole('link', { name: tab, exact: true }).click()
+    // Nav link label → clone page h1.
+    for (const [link, heading] of [
+      ['Billing', 'Balance & billing'],
+      ['Routing', 'Routing settings'],
+      ['API Keys', 'API keys'],
+      ['Usage', 'Usage'],
+      ['Cost', 'Cost'],
+    ] as const) {
+      await page.getByRole('link', { name: link, exact: true }).click()
       await expect(
-        page.getByRole('heading', { name: tab, exact: true, level: 1 })
+        page.getByRole('heading', { name: heading, exact: true, level: 1 })
       ).toBeVisible()
     }
     expect(errors).toEqual([])

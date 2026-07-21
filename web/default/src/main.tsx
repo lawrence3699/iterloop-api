@@ -41,6 +41,10 @@ import { routeTree } from './routeTree.gen'
 // Keep the public shell paintable while the full application stylesheet loads.
 import './styles/critical.css'
 
+// Clone design-system layer (tokens + .il-* utilities + motion) — loaded
+// eagerly so the restyled public shell (header/footer) paints correctly.
+import './styles/clone.css'
+
 // Ensure VChart theme is initialized before any chart mounts (prevents white default theme flash)
 // VChart theme is driven by our ThemeProvider (html.light/html.dark) via per-chart `theme` prop.
 initializeFrontendCache()

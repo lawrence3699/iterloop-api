@@ -1,0 +1,486 @@
+/*
+Copyright (C) 2023-2026 QuantumNous
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU Affero General Public License as
+published by the Free Software Foundation, either version 3 of the
+License, or (at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+GNU Affero General Public License for more details.
+
+You should have received a copy of the GNU Affero General Public License
+along with this program. If not, see <https://www.gnu.org/licenses/>.
+
+For commercial licensing, please contact support@quantumnous.com
+*/
+/* ------------------------------------------------------------------ *
+ * clone-auth.css — auth pages skin reproducing the old iter-loop.com
+ * /login design: a full-viewport near-black rounded canvas floating on
+ * a light backdrop, tiny wordmark top-left, power icon top-right,
+ * centered display copy, white input fields and small round icon
+ * buttons for alternative sign-in methods.
+ *
+ * Everything is scoped under .il-auth-shell / .il-auth-canvas. The
+ * canvas is intentionally dark in BOTH app themes (no double
+ * inversion): all colors here are literal, matching the clone.
+ * ------------------------------------------------------------------ */
+
+.il-auth-shell {
+  display: flex;
+  min-height: 100svh;
+  flex-direction: column;
+  padding: 20px;
+  background: #b9b8b5;
+}
+
+.dark .il-auth-shell {
+  background: #2a2a2a;
+}
+
+.il-auth-canvas {
+  position: relative;
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: calc(100svh - 40px);
+  overflow: hidden;
+  border-radius: 24px;
+  background: #141414;
+  color: #f5f5f5;
+
+  /* Re-scope the app's semantic vars so shadcn/Base UI components stay
+     legible on the always-dark canvas in BOTH app themes (this block
+     wins over :root and .dark alike — no double inversion). */
+  --background: #141414;
+  --foreground: #f5f5f5;
+  --card: #1d1d1d;
+  --card-foreground: #f5f5f5;
+  --popover: #1d1d1d;
+  --popover-foreground: #f5f5f5;
+  --primary: #d0240f;
+  --primary-foreground: #f7f7f7;
+  --secondary: #252525;
+  --secondary-foreground: #f5f5f5;
+  --muted: #252525;
+  --muted-foreground: rgba(245, 245, 245, 0.62);
+  --accent: #252525;
+  --accent-foreground: #f5f5f5;
+  --destructive: #ff8a7a;
+  --border: rgba(255, 255, 255, 0.16);
+  --input: #c4c4c4;
+  --ring: rgba(255, 255, 255, 0.5);
+}
+
+/* -------------------------------------------------- top bar */
+
+.il-auth-top {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: 14px 24px 0 36px;
+}
+
+.il-auth-wordmark {
+  padding-top: 8px;
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.025em;
+}
+
+.il-auth-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.il-auth-actions [data-slot='button'] {
+  color: rgba(255, 255, 255, 0.75);
+}
+
+.il-auth-actions [data-slot='button']:hover {
+  color: #ffffff;
+  background: #252525;
+}
+
+.il-auth-power {
+  display: grid;
+  width: 48px;
+  height: 48px;
+  place-items: center;
+  border-radius: 16px;
+  color: rgba(255, 255, 255, 0.9);
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease;
+}
+
+.il-auth-power:hover {
+  background: #252525;
+  color: #ffffff;
+}
+
+.il-auth-power svg {
+  width: 28px;
+  height: 28px;
+}
+
+.il-auth-power:focus-visible,
+.il-auth-icon-btn:focus-visible {
+  outline: 2px solid rgba(255, 255, 255, 0.55);
+  outline-offset: 2px;
+}
+
+/* -------------------------------------------------- main area */
+
+.il-auth-main {
+  display: flex;
+  flex: 1;
+  justify-content: center;
+  padding: 40px 32px 56px;
+}
+
+.il-auth-main--center {
+  align-items: center;
+}
+
+.il-auth-main--top {
+  align-items: flex-start;
+  padding-top: 56px;
+}
+
+.il-auth-content {
+  width: min(730px, 100%);
+}
+
+.il-auth-hero {
+  margin: 0 0 20px;
+  color: #ffffff;
+  font-size: 30px;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+/* -------------------------------------------------- headings on dark */
+
+.il-auth-canvas .iterloop-signin-heading,
+.il-auth-canvas .iterloop-signup-heading {
+  margin-bottom: 22px;
+  text-align: left;
+}
+
+.il-auth-canvas .iterloop-signin-heading h2,
+.il-auth-canvas .iterloop-signup-heading h2 {
+  color: rgba(255, 255, 255, 0.66);
+  font-size: 15px;
+  font-weight: 500;
+  line-height: 1.4;
+}
+
+.il-auth-canvas .iterloop-signin-heading p,
+.il-auth-canvas .iterloop-signup-heading > p,
+.il-auth-canvas .iterloop-signup-heading .iterloop-signup-existing {
+  margin: 8px 0 0;
+  color: rgba(245, 245, 245, 0.55);
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+/* -------------------------------------------------- inputs (white on dark) */
+
+.il-auth-canvas [data-slot='input'],
+.il-auth-canvas .iterloop-auth-input {
+  height: 44px;
+  border: 1px solid #c4c4c4;
+  border-radius: 8px;
+  padding: 8px 12px;
+  background: #fffefb;
+  color: #121212;
+  font-size: 14px;
+  box-shadow: none;
+}
+
+.il-auth-canvas [data-slot='input']::placeholder,
+.il-auth-canvas .iterloop-auth-input::placeholder {
+  color: #737373;
+}
+
+.il-auth-canvas [data-slot='input']:focus-visible,
+.il-auth-canvas .iterloop-auth-input:focus-visible {
+  border-color: #121212;
+  outline: 2px solid rgba(255, 255, 255, 0.6);
+  outline-offset: 1px;
+}
+
+.il-auth-canvas [data-slot='input']:disabled {
+  background: rgba(255, 254, 251, 0.82);
+  opacity: 1;
+}
+
+/* password visibility toggle sits inside the white field — keep it dark */
+
+.il-auth-canvas [data-slot='input'] + [data-slot='button'],
+.il-auth-canvas [data-slot='input'] ~ [data-slot='button'] {
+  color: #525252;
+}
+
+.il-auth-canvas [data-slot='input'] + [data-slot='button']:hover,
+.il-auth-canvas [data-slot='input'] ~ [data-slot='button']:hover {
+  color: #121212;
+  background: rgba(18, 18, 18, 0.06);
+}
+
+/* email + arrow submit row (clone: input flex-1, arrow button beside) */
+
+.il-auth-canvas .iterloop-login-field {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.il-auth-canvas .iterloop-login-field [data-slot='form-item'] {
+  flex: 1;
+  min-width: 0;
+}
+
+.il-auth-canvas .iterloop-login-field .iterloop-auth-input {
+  padding-right: 12px;
+}
+
+.il-auth-canvas .iterloop-login-continue {
+  position: static;
+  display: grid;
+  width: 44px;
+  height: 44px;
+  flex: 0 0 auto;
+  place-items: center;
+  border: 0;
+  border-radius: 14px;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.7);
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease;
+}
+
+.il-auth-canvas .iterloop-login-continue:hover {
+  border-color: transparent;
+  background: #252525;
+  color: #ffffff;
+}
+
+.il-auth-canvas .iterloop-login-continue svg {
+  width: 28px;
+  height: 28px;
+}
+
+/* -------------------------------------------------- text + links on dark */
+
+.il-auth-canvas .text-muted-foreground {
+  color: rgba(245, 245, 245, 0.62);
+}
+
+.il-auth-canvas .text-primary {
+  color: #ffb094;
+}
+
+.il-auth-canvas .text-destructive,
+.il-auth-canvas [data-slot='form-message'] {
+  color: #ff8a7a;
+}
+
+.il-auth-canvas .iterloop-auth-link,
+.il-auth-canvas .iterloop-login-options a {
+  color: #ffb094;
+}
+
+.il-auth-canvas .iterloop-auth-link:hover,
+.il-auth-canvas .iterloop-login-options a:hover {
+  color: #ffc8ad;
+}
+
+.il-auth-canvas [data-slot='label'],
+.il-auth-canvas [data-slot='form-label'] {
+  color: rgba(255, 255, 255, 0.72);
+}
+
+.il-auth-canvas .iterloop-form-separator {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+/* -------------------------------------------------- primary CTA (clone red) */
+
+.il-auth-canvas .iterloop-auth-primary {
+  height: 48px;
+  border-radius: 8px;
+  background: #d0240f;
+  color: #f7f7f7;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.18),
+    0 8px 22px rgba(208, 36, 15, 0.28);
+  transition:
+    background-color 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.il-auth-canvas .iterloop-auth-primary:hover {
+  background: #bb2009;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.18),
+    0 10px 26px rgba(208, 36, 15, 0.38);
+}
+
+.il-auth-canvas .iterloop-auth-primary:active {
+  background: #a01b08;
+}
+
+/* -------------------------------------------------- alt methods icon row */
+
+.il-auth-alt {
+  display: grid;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.il-auth-alt-sep {
+  color: rgba(255, 255, 255, 0.4);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.il-auth-alt-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  margin-left: -10px;
+}
+
+.il-auth-icon-btn {
+  display: grid;
+  width: 48px;
+  height: 48px;
+  place-items: center;
+  border: 0;
+  border-radius: 12px;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.8);
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease;
+}
+
+.il-auth-icon-btn:hover {
+  background: #252525;
+  color: #ffffff;
+}
+
+.il-auth-icon-btn:disabled {
+  opacity: 0.3;
+  pointer-events: none;
+}
+
+.il-auth-alt-note {
+  margin: 0;
+  color: rgba(245, 245, 245, 0.5);
+  font-size: 12px;
+}
+
+/* -------------------------------------------------- shared field widgets */
+
+.il-auth-consent {
+  border-color: rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.il-auth-canvas [data-slot='checkbox'] {
+  border-color: rgba(255, 255, 255, 0.45);
+}
+
+.il-auth-canvas [data-slot='input-otp-slot'] {
+  border-color: rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.06);
+  color: #ffffff;
+}
+
+.il-auth-canvas .animate-caret-blink {
+  background: #ffffff;
+}
+
+.il-auth-canvas .il-auth-signup-hint {
+  margin-top: 20px;
+  margin-bottom: 0;
+}
+
+.il-auth-canvas .iterloop-auth-terms {
+  margin-top: 24px;
+  text-align: left;
+}
+
+/* -------------------------------------------------- bottom legal strip */
+
+.il-auth-bottom {
+  display: flex;
+  flex: 0 0 auto;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 20px;
+  padding: 16px 36px 22px;
+  color: rgba(255, 255, 255, 0.45);
+  font-size: 12px;
+}
+
+.il-auth-bottom a {
+  color: rgba(255, 255, 255, 0.45);
+  transition: color 0.15s ease;
+}
+
+.il-auth-bottom a:hover {
+  color: #ffffff;
+}
+
+.il-auth-bottom-help {
+  margin-left: auto;
+}
+
+/* -------------------------------------------------- responsive */
+
+@media (max-width: 640px) {
+  .il-auth-shell {
+    padding: 10px;
+  }
+
+  .il-auth-canvas {
+    min-height: calc(100svh - 20px);
+    border-radius: 18px;
+  }
+
+  .il-auth-top {
+    padding: 10px 12px 0 20px;
+  }
+
+  .il-auth-main {
+    padding: 28px 20px 40px;
+  }
+
+  .il-auth-main--top {
+    padding-top: 36px;
+  }
+
+  .il-auth-hero {
+    font-size: 23px;
+  }
+
+  .il-auth-bottom {
+    padding: 14px 20px 18px;
+  }
+
+  .il-auth-bottom-help {
+    margin-left: 0;
+  }
+}

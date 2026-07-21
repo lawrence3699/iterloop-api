@@ -1,0 +1,857 @@
+/*
+Copyright (C) 2023-2026 QuantumNous
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU Affero General Public License as
+published by the Free Software Foundation, either version 3 of the
+License, or (at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+GNU Affero General Public License for more details.
+
+You should have received a copy of the GNU Affero General Public License
+along with this program. If not, see <https://www.gnu.org/licenses/>.
+
+For commercial licensing, please contact support@quantumnous.com
+*/
+/* ------------------------------------------------------------------ *
+ * clone.css — shared design-system layer extracted 1:1 from the old
+ * iter-loop.com compiled stylesheet (design-reference/iterloop.css).
+ * Owned by the foundation step. Feature agents: REUSE these tokens and
+ * classes; add page-specific rules only in your own CSS file.
+ *
+ * Token names keep the original names, except those that collide with
+ * the app theme (theme.css @theme inline): --color-success/--color-warning
+ * and --chart-* → prefixed with --il-. JS-driven progress var is
+ * --il-scroll-progress.
+ * ------------------------------------------------------------------ */
+
+:root {
+  --openclaw-red: #d0240f;
+  --openclaw-rust: #ae453f;
+  --openclaw-orange: #ff9931;
+  --bg-canvas: #f7f7f7;
+  --bg-surface: #efefef;
+  --bg-subtle: #f0f0f0;
+  --bg-elevated: #ffffff;
+  --bg-hover: #dcdcdc;
+  --bg-selected: #ffe8dd;
+  --bg-active: #c4c4c4;
+  --bg-overlay: rgba(18, 18, 18, 0.72);
+  --text-primary: #121212;
+  --text-secondary: #525252;
+  --text-tertiary: #737373;
+  --text-disabled: #9e9e9e;
+  --text-inverse: #f7f7f7;
+  --text-link: var(--openclaw-rust);
+  --text-link-hover: var(--openclaw-red);
+  --border-subtle: #dcdcdc;
+  --border-default: #c4c4c4;
+  --border-strong: #525252;
+  --border-focus: #121212;
+  --color-brand-solid: var(--openclaw-red);
+  --color-brand-solid-hover: #bb2009;
+  --color-brand-solid-active: #a01b08;
+  --color-brand-text: #f7f7f7;
+  --color-brand-subtle: rgba(208, 36, 15, 0.08);
+  --color-brand-border: rgba(208, 36, 15, 0.22);
+  --color-brand-accent: #d0240f;
+  --color-brand-accent-muted: #9a3b25;
+  --color-brand-glow-red: rgba(208, 36, 15, 0.24);
+  --color-brand-glow-orange: rgba(255, 153, 49, 0.32);
+  --color-brand-cell: #fbeede;
+  --color-brand-cell-hover: #f7e4cc;
+  --color-brand-cell-line: #e8d5be;
+  --color-brand-cell-plain: #ffffff;
+  --il-color-success: #16a34a;
+  --il-color-success-bg: #f0fdf4;
+  --il-color-warning: #d97706;
+  --il-color-warning-bg: #fffbeb;
+  --il-color-danger: #dc2626;
+  --il-color-danger-bg: #fef2f2;
+  --il-chart-grid: #dcdcdc;
+  --il-chart-axis: #737373;
+  --il-chart-1: #121212;
+  --il-chart-2: #3d3d3d;
+  --il-chart-3: #737373;
+  --il-chart-4: #9e9e9e;
+  --il-chart-5: #c4c4c4;
+  --il-scroll-progress: 0;
+}
+
+.dark {
+  --bg-canvas: #121212;
+  --bg-surface: #1a1a1a;
+  --bg-subtle: #212121;
+  --bg-elevated: #161616;
+  --bg-hover: #252525;
+  --bg-selected: #2a1f1b;
+  --bg-active: #2f2f2f;
+  --bg-overlay: rgba(0, 0, 0, 0.72);
+  --text-primary: #f5f5f5;
+  --text-secondary: #c8c8c8;
+  --text-tertiary: #a2a2a2;
+  --text-disabled: #696969;
+  --text-inverse: #121212;
+  --text-link: #ffb094;
+  --text-link-hover: #ffc8ad;
+  --border-subtle: #2d2d2d;
+  --border-default: #3b3b3b;
+  --border-strong: #5a5a5a;
+  --border-focus: #f7f7f7;
+  --color-brand-solid: #e05b47;
+  --color-brand-solid-hover: #e86b57;
+  --color-brand-solid-active: #d44e3a;
+  --color-brand-text: #fefefe;
+  --color-brand-subtle: rgba(224, 91, 71, 0.16);
+  --color-brand-border: rgba(224, 91, 71, 0.32);
+  --color-brand-accent: #ff9b7c;
+  --color-brand-accent-muted: #ff9b7c;
+  --color-brand-glow-red: rgba(224, 91, 71, 0.2);
+  --color-brand-glow-orange: rgba(255, 153, 49, 0.18);
+  --color-brand-cell: rgba(34, 22, 18, 0.85);
+  --color-brand-cell-hover: rgba(46, 29, 23, 0.85);
+  --color-brand-cell-line: rgba(61, 41, 32, 0.6);
+  --color-brand-cell-plain: #181614;
+  --il-color-success: #4ade80;
+  --il-color-success-bg: rgba(34, 197, 94, 0.12);
+  --il-color-warning: #fbbf24;
+  --il-color-warning-bg: rgba(251, 191, 36, 0.12);
+  --il-color-danger: #f87171;
+  --il-color-danger-bg: rgba(248, 113, 113, 0.12);
+  --il-chart-grid: #2d2d2d;
+  --il-chart-axis: #a2a2a2;
+  --il-chart-1: #f5f5f5;
+  --il-chart-2: #c8c8c8;
+  --il-chart-3: #a2a2a2;
+  --il-chart-4: #696969;
+  --il-chart-5: #4a4a4a;
+}
+
+/* --------------------------- interaction ------------------------- */
+
+/* Original `.stateful` — apply to every clone-styled button/control. */
+.il-stateful {
+  transition:
+    background-color 0.16s ease-out,
+    color 0.16s ease-out,
+    border-color 0.16s ease-out,
+    transform 0.12s ease-out,
+    opacity 0.16s ease-out;
+}
+
+.il-stateful:hover {
+  filter: brightness(0.98);
+}
+
+.il-stateful:active {
+  filter: brightness(0.94);
+  transform: translateY(1px) scale(0.99);
+}
+
+.il-stateful[data-loading='true'] {
+  opacity: 0.7;
+  cursor: progress;
+  pointer-events: none;
+}
+
+.il-stateful:disabled,
+.il-stateful[data-disabled='true'] {
+  opacity: 0.4;
+  color: var(--text-disabled);
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+/* ----------------------------- buttons --------------------------- */
+
+/* Primary red CTA ("Get API Key"). Default size h-12 px-5. */
+.il-btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 48px;
+  padding: 0 20px;
+  border: 1px solid var(--color-brand-solid);
+  border-radius: 0.375rem;
+  background: var(--color-brand-solid);
+  color: var(--color-brand-text);
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 20px;
+  white-space: nowrap;
+  cursor: pointer;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.22),
+    0 16px 32px -16px rgba(208, 36, 15, 0.55);
+  transition:
+    box-shadow 0.16s ease-out,
+    background-color 0.16s ease-out,
+    color 0.16s ease-out,
+    border-color 0.16s ease-out,
+    transform 0.12s ease-out,
+    opacity 0.16s ease-out;
+}
+
+.il-btn-primary:hover {
+  filter: brightness(0.98);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.22),
+    0 20px 40px -16px rgba(208, 36, 15, 0.65);
+}
+
+.il-btn-primary:active {
+  filter: brightness(0.94);
+  transform: translateY(1px) scale(0.99);
+}
+
+.il-btn-primary:focus-visible {
+  outline: none;
+  box-shadow:
+    0 0 0 2px var(--bg-canvas),
+    0 0 0 4px var(--border-focus);
+}
+
+.il-btn-primary:disabled {
+  opacity: 0.4;
+  pointer-events: none;
+}
+
+/* Secondary / outline button ("Download app", "Sign in"). */
+.il-btn-outline {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 48px;
+  padding: 0 20px;
+  border: 1px solid var(--border-default);
+  border-radius: 0.375rem;
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(4px);
+  color: var(--text-primary);
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 20px;
+  white-space: nowrap;
+  cursor: pointer;
+  transition:
+    background-color 0.16s ease-out,
+    color 0.16s ease-out,
+    border-color 0.16s ease-out,
+    transform 0.12s ease-out,
+    opacity 0.16s ease-out;
+}
+
+.il-btn-outline:hover {
+  background: #ffffff;
+}
+
+.il-btn-outline:active {
+  filter: brightness(0.94);
+  transform: translateY(1px) scale(0.99);
+}
+
+.il-btn-outline:focus-visible {
+  outline: none;
+  box-shadow:
+    0 0 0 2px var(--bg-canvas),
+    0 0 0 4px var(--border-focus);
+}
+
+.dark .il-btn-outline {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.dark .il-btn-outline:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+/* Compact nav variant (the top-nav "Sign in"): h-8 px-3 on white. */
+.il-btn-sm {
+  height: 32px;
+  padding: 0 12px;
+  backdrop-filter: none;
+  background: #ffffff;
+}
+
+.dark .il-btn-sm {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+/* ------------------------- top nav (glass) ------------------------ */
+
+.il-navbar-glass {
+  position: fixed;
+  z-index: 50;
+  inset: 0 0 auto 0;
+  border-bottom: 1px solid
+    color-mix(in srgb, var(--border-subtle) 72%, transparent);
+  background: color-mix(in srgb, var(--bg-canvas) 76%, transparent);
+  box-shadow: 0 10px 34px -28px rgba(18, 18, 18, 0.46);
+  backdrop-filter: blur(18px) saturate(160%);
+}
+
+.il-top-nav-inner {
+  display: flex;
+  width: 100%;
+  max-width: 1440px;
+  height: 76px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 0 auto;
+  padding: 0 16px;
+}
+
+.il-top-nav-brand {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 8px;
+  gap: 8px;
+  padding: 4px 8px;
+  background: transparent;
+  color: #14110f;
+  cursor: pointer;
+  transition: background-color 0.16s ease;
+}
+
+.il-top-nav-brand:hover {
+  background: rgba(18, 18, 18, 0.04);
+}
+
+.il-top-nav-logo {
+  display: block;
+  width: 150px;
+  height: auto;
+}
+
+.dark .il-top-nav-logo {
+  filter: invert(1);
+}
+
+.il-top-nav-links {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+  color: #525252;
+  font-family: var(
+    --font-sans,
+    'IBM Plex Sans Variable',
+    'IBM Plex Sans',
+    'Noto Sans SC',
+    system-ui,
+    sans-serif
+  );
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 20px;
+  letter-spacing: 0;
+}
+
+.dark .il-top-nav-links {
+  color: var(--text-secondary);
+}
+
+.il-top-nav-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  border: 0;
+  border-radius: 8px;
+  padding: 8px 10px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  line-height: 20px;
+  white-space: nowrap;
+  cursor: pointer;
+  transition:
+    background-color 0.16s ease,
+    color 0.16s ease;
+}
+
+.il-top-nav-link:hover {
+  background: #f3f3f3;
+  color: #121212;
+  opacity: 1;
+}
+
+.il-top-nav-link.is-active {
+  color: #121212;
+}
+
+.dark .il-top-nav-link:hover {
+  background: var(--bg-subtle);
+  color: var(--text-primary);
+}
+
+.dark .il-top-nav-link.is-active {
+  color: var(--text-primary);
+}
+
+.il-top-nav-actions {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 12px;
+}
+
+.il-top-nav-lang {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-width: 68px;
+  height: 40px;
+  padding: 0 10px 0 8px;
+  border: 0;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--bg-subtle) 58%, transparent);
+  color: var(--text-primary);
+  font-size: 13px;
+  font-weight: 650;
+  letter-spacing: 0;
+  cursor: pointer;
+  transition:
+    background-color 0.16s ease,
+    box-shadow 0.16s ease,
+    transform 0.16s ease;
+}
+
+.il-top-nav-lang:hover {
+  background: var(--bg-hover);
+  box-shadow: inset 0 0 0 1px
+    color-mix(in srgb, var(--border-default) 70%, transparent);
+}
+
+.il-top-nav-lang:active {
+  transform: scale(0.96);
+}
+
+.il-top-nav-lang-icon {
+  position: relative;
+  display: grid;
+  width: 24px;
+  height: 24px;
+  place-items: center;
+  border-radius: 999px;
+  background: var(--bg-canvas);
+  color: var(--text-secondary);
+  box-shadow: inset 0 0 0 1px var(--border-subtle);
+}
+
+.il-top-nav-lang-dot {
+  position: absolute;
+  right: 3px;
+  bottom: 3px;
+  width: 5px;
+  height: 5px;
+  border: 1px solid var(--bg-canvas);
+  border-radius: 999px;
+  background: var(--color-brand-solid);
+}
+
+.il-top-nav-lang-label {
+  min-width: 24px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.il-top-nav-menu-button {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: background-color 0.16s ease;
+}
+
+.il-top-nav-menu-button:hover {
+  background: var(--bg-subtle);
+}
+
+/* Round icon button in the nav actions (theme toggle, profile fallback). */
+.il-top-nav-icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border: 0;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--bg-subtle) 58%, transparent);
+  color: var(--text-primary);
+  cursor: pointer;
+  transition:
+    background-color 0.16s ease,
+    box-shadow 0.16s ease,
+    transform 0.16s ease;
+}
+
+.il-top-nav-icon-btn:hover {
+  background: var(--bg-hover);
+  box-shadow: inset 0 0 0 1px
+    color-mix(in srgb, var(--border-default) 70%, transparent);
+}
+
+.il-top-nav-icon-btn:active {
+  transform: scale(0.96);
+}
+
+@media (max-width: 1240px) {
+  .il-top-nav-inner {
+    justify-content: space-between;
+    padding-inline: 16px;
+  }
+
+  .il-top-nav-links {
+    display: none;
+  }
+
+  .il-top-nav-menu-button {
+    display: inline-flex;
+  }
+}
+
+@media (min-width: 1536px) {
+  .il-top-nav-inner {
+    padding-inline: 120px;
+  }
+}
+
+@media (max-width: 640px) {
+  .il-top-nav-inner {
+    height: 60px;
+    padding-inline: 20px;
+  }
+
+  .il-top-nav-logo {
+    width: 128px;
+  }
+
+  .il-top-nav-lang {
+    min-width: 62px;
+    height: 38px;
+    padding-inline: 7px 9px;
+  }
+
+  .il-top-nav-menu-button {
+    width: 38px;
+    height: 38px;
+  }
+}
+
+/* Mobile dropdown panel under the glass bar (clone shows stacked links). */
+.il-top-nav-mobile {
+  display: none;
+  border-top: 1px solid color-mix(in srgb, var(--border-subtle) 72%, transparent);
+  padding: 8px 12px 14px;
+}
+
+.il-top-nav-mobile.is-open {
+  display: grid;
+  gap: 2px;
+}
+
+.il-top-nav-mobile .il-top-nav-link {
+  justify-content: flex-start;
+  width: 100%;
+  padding: 10px 12px;
+}
+
+@media (min-width: 1241px) {
+  .il-top-nav-mobile,
+  .il-top-nav-mobile.is-open {
+    display: none;
+  }
+}
+
+/* ------------------------------ cards ----------------------------- */
+
+.il-card {
+  border: 1px solid var(--border-subtle);
+  border-radius: 1rem;
+  background: var(--bg-elevated);
+  box-shadow: 0 10px 32px rgba(18, 18, 18, 0.08);
+  transition:
+    border-color 0.22s ease,
+    box-shadow 0.26s ease,
+    background-color 0.22s ease;
+}
+
+.il-card:hover {
+  border-color: rgba(174, 69, 63, 0.38);
+  box-shadow: 0 24px 40px -30px rgba(208, 36, 15, 0.48);
+}
+
+/* --------------------------- section title ------------------------ */
+
+.il-section-title {
+  color: var(--text-primary);
+  font-size: 1.5rem;
+  font-weight: 700;
+  letter-spacing: -0.025em;
+  line-height: 2rem;
+}
+
+@media (min-width: 768px) {
+  .il-section-title {
+    font-size: 1.875rem;
+    line-height: 2.25rem;
+  }
+}
+
+/* ------------------------------ tables ---------------------------- */
+
+.il-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+  text-align: left;
+}
+
+.il-table thead tr {
+  background: var(--bg-surface);
+  color: var(--text-secondary);
+}
+
+.il-table th,
+.il-table td {
+  padding: 12px 16px;
+}
+
+.il-table th {
+  font-weight: 500;
+}
+
+.il-table tbody tr {
+  border-top: 1px solid color-mix(in srgb, var(--border-subtle) 70%, transparent);
+}
+
+/* Highlighted "IterLoop price" column. */
+.il-table th.il-table-highlight {
+  background: #fff7f2;
+  color: #ae453f;
+}
+
+.il-table td.il-table-highlight {
+  background: rgba(255, 247, 242, 0.6);
+  color: var(--text-primary);
+}
+
+.dark .il-table th.il-table-highlight {
+  background: rgba(42, 31, 27, 0.8);
+  color: #ffb49a;
+}
+
+.dark .il-table td.il-table-highlight {
+  background: rgba(42, 31, 27, 0.45);
+}
+
+/* ---------------------------- chips/badges ------------------------ */
+
+.il-chip {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  padding: 6px 12px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 999px;
+  background: var(--bg-canvas);
+  color: var(--text-secondary);
+  font-size: 14px;
+  line-height: 20px;
+  white-space: nowrap;
+  cursor: pointer;
+  transition:
+    background-color 0.16s ease-out,
+    color 0.16s ease-out,
+    border-color 0.16s ease-out,
+    transform 0.12s ease-out;
+}
+
+.il-chip:hover {
+  filter: brightness(0.98);
+}
+
+.il-chip.is-active {
+  border-color: var(--color-brand-solid);
+  background: var(--bg-selected);
+  color: var(--text-primary);
+}
+
+.il-badge-solid {
+  display: inline-flex;
+  align-items: center;
+  border: 0;
+  border-radius: 999px;
+  padding: 4px 8px;
+  background: var(--color-brand-solid);
+  color: var(--color-brand-text);
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 16px;
+  white-space: nowrap;
+  box-shadow:
+    0 4px 6px -1px rgb(0 0 0 / 0.1),
+    0 2px 4px -2px rgb(0 0 0 / 0.1);
+}
+
+/* ------------------------------ motion ---------------------------- */
+
+/* Scroll reveal — gated on body.js-motion-enabled (set by the
+   useScrollReveal hook) so content stays visible without JS. */
+body.js-motion-enabled .motion-item {
+  opacity: 0;
+  filter: none;
+  transform: none;
+  transition: opacity 0.48s cubic-bezier(0.22, 1, 0.36, 1);
+  transition-delay: var(--stagger-delay, 0s);
+  will-change: opacity;
+}
+
+body.js-motion-enabled .motion-item.is-visible {
+  opacity: 1;
+  filter: none;
+  transform: none;
+}
+
+@keyframes il-page-enter {
+  0% {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-page-enter {
+  animation: il-page-enter 0.22s ease-out both;
+}
+
+/* Top scroll progress bar. JS drives --il-scroll-progress (0..1) on
+   the element (or documentElement). */
+.scroll-progress {
+  position: fixed;
+  inset: 0 auto auto 0;
+  z-index: 60;
+  height: 2px;
+  width: 100%;
+  pointer-events: none;
+  transform-origin: left center;
+  transform: scaleX(var(--il-scroll-progress, 0));
+  background: linear-gradient(
+    90deg,
+    var(--openclaw-red) 0,
+    var(--openclaw-rust) 45%,
+    var(--openclaw-orange) 100%
+  );
+  transition: transform 0.14s linear;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .scroll-progress {
+    display: none;
+  }
+
+  body.js-motion-enabled .motion-item {
+    opacity: 1 !important;
+    filter: none !important;
+    transform: none !important;
+  }
+
+  .animate-page-enter {
+    animation: none;
+  }
+}
+
+/* ------------------------------ footer ---------------------------- */
+
+.il-footer {
+  margin-top: 4rem;
+  border-top: 1px solid var(--border-subtle);
+  background: var(--bg-canvas);
+}
+
+@media (min-width: 768px) {
+  .il-footer {
+    margin-top: 5rem;
+  }
+}
+
+.il-footer-inner {
+  width: 100%;
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+@media (min-width: 1536px) {
+  .il-footer-inner {
+    padding-inline: 120px;
+  }
+}
+
+.il-footer-tagline {
+  color: var(--text-secondary);
+  font-size: 14px;
+  line-height: 24px;
+}
+
+.il-footer-col-title {
+  color: var(--text-primary);
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 20px;
+}
+
+.il-footer-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 0;
+  color: var(--text-secondary);
+  font-size: 14px;
+  line-height: 20px;
+  transition: color 0.15s ease;
+}
+
+.il-footer-link:hover {
+  color: var(--text-primary);
+}
+
+.il-footer-bottom {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  border-top: 1px solid var(--border-subtle);
+  padding: 20px 0;
+  color: var(--text-tertiary);
+  font-size: 13px;
+  line-height: 20px;
+}
+
+@media (min-width: 640px) {
+  .il-footer-bottom {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
+}
