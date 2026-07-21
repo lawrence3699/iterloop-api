@@ -259,30 +259,30 @@ export function StripeTopupSection(props: StripeTopupSectionProps) {
         <Label className='text-muted-foreground text-xs font-medium tracking-wider uppercase'>
           {t('Payment Method')}
         </Label>
-        <Button
-          variant='outline'
+        <button
+          type='button'
           onClick={handleCheckout}
           disabled={!canSubmit}
-          className='min-h-14 w-full justify-start gap-2 rounded-lg px-3 py-2 text-left sm:w-auto sm:min-w-64'
+          className='il-btn-primary il-stateful min-h-14 w-full gap-2.5 !px-5 text-left disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto sm:min-w-72'
         >
           {submitting ? (
-            <Loader2 className='h-4 w-4 animate-spin' />
+            <Loader2 className='h-5 w-5 shrink-0 animate-spin' />
           ) : (
-            getPaymentIcon('stripe', 'h-4 w-4')
+            getPaymentIcon('stripe', 'h-5 w-5 shrink-0')
           )}
           <span className='flex min-w-0 flex-col items-start gap-0.5'>
-            <span className='max-w-full truncate'>
+            <span className='max-w-full truncate text-[15px] font-semibold'>
               {t('Pay with Stripe')}
             </span>
             {summary && (
-              <span className='text-muted-foreground max-w-full truncate text-[11px] leading-4 font-normal'>
+              <span className='max-w-full truncate text-[11px] leading-4 font-normal text-white/85'>
                 {t('Charged {{amount}}', { amount: summary.charge })}
                 {' · '}
                 {t('Credited {{amount}}', { amount: summary.credit })}
               </span>
             )}
           </span>
-        </Button>
+        </button>
       </div>
     </div>
   )
