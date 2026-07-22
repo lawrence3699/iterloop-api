@@ -69,7 +69,7 @@ export function CommunityContact() {
             className='mt-4 rounded-2xl bg-white p-3 shadow-sm ring-1 ring-black/5'
           >
             <img
-              src='/iterloop-whatsapp-community-qr.png'
+              src='/media/iterloop-whatsapp-community-qr.png'
               alt=''
               className='size-48 rounded-lg object-contain sm:size-52'
             />
