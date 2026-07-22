@@ -72,6 +72,14 @@ const criticalZhCN: Record<string, string> = {
   'Get API Key': '获取 API Key',
   'Download app': '下载应用',
   'No setup required': '无需配置',
+  'Join the community': '加入社区',
+  'Scan the QR code to join the conversation.': '扫描二维码，加入交流。',
+  'WhatsApp group': 'WhatsApp 社群',
+  'WhatsApp group QR code': 'WhatsApp 社群二维码',
+  'Discord community': 'Discord 社区',
+  'Discord community QR code': 'Discord 社区二维码',
+  'Open Discord': '打开 Discord',
+  'Open community contact options': '打开社区联系方式',
 }
 
 const loadedLanguages = new Set<string>()
@@ -121,9 +129,9 @@ async function loadLanguageResources(language: string) {
 
 const initialLanguage = (() => {
   try {
-    return window.localStorage.getItem('i18nextLng') || 'zhCN'
+    return window.localStorage.getItem('i18nextLng') || 'en'
   } catch {
-    return 'zhCN'
+    return 'en'
   }
 })()
 
