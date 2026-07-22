@@ -39,18 +39,27 @@ export function CommunityContact() {
       trigger={
         <button
           type='button'
-          className='group fixed right-4 bottom-[calc(1rem+env(safe-area-inset-bottom))] z-40 flex size-14 items-center justify-center rounded-full bg-linear-to-br from-amber-200 via-orange-300 to-rose-400 text-stone-950 shadow-[0_12px_32px_rgba(217,119,6,0.32)] transition duration-300 hover:-translate-y-1 hover:scale-110 hover:shadow-[0_18px_42px_rgba(217,119,6,0.42)] focus-visible:ring-3 focus-visible:ring-amber-400/60 focus-visible:outline-none motion-safe:animate-[pulse_3s_ease-in-out_infinite] motion-reduce:transition-none'
+          className='group fixed right-5 bottom-[calc(1.25rem+env(safe-area-inset-bottom))] z-60 flex size-16 items-center justify-center rounded-full border-2 border-white/80 text-white shadow-[0_14px_36px_rgba(208,36,15,0.5)] transition duration-300 hover:-translate-y-1 hover:scale-110 hover:shadow-[0_20px_46px_rgba(208,36,15,0.64)] focus-visible:ring-4 focus-visible:ring-[#ff9931]/60 focus-visible:outline-none motion-safe:animate-[pulse_2.6s_ease-in-out_infinite] motion-reduce:transition-none'
+          style={{
+            background:
+              'linear-gradient(135deg, #d0240f 0%, #e85d25 58%, #ff9931 100%)',
+            color: '#fff',
+          }}
           aria-label={t('Open community contact options')}
         >
           <span
             aria-hidden='true'
-            className='absolute -inset-1 rounded-full border border-amber-300/70 opacity-0 transition duration-500 group-hover:scale-125 group-hover:opacity-100'
+            className='absolute -inset-2 rounded-full border-2 border-[#ff9931]/70 opacity-70 motion-safe:animate-ping motion-reduce:animate-none'
           />
           <span
             aria-hidden='true'
-            className='absolute inset-1 rounded-full bg-white/35 blur-sm'
+            className='absolute inset-1 rounded-full bg-white/20 blur-sm'
           />
-          <MessagesSquare className='relative size-6 stroke-[2.25]' />
+          <span
+            aria-hidden='true'
+            className='absolute inset-0 rounded-full bg-linear-to-tr from-transparent via-white/25 to-transparent opacity-80'
+          />
+          <MessagesSquare className='relative size-7 stroke-[2.5]' />
         </button>
       }
     >
