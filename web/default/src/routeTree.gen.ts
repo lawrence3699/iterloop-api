@@ -20,7 +20,15 @@ import { Route as DownloadIndexRouteImport } from './routes/download/index'
 import { Route as DocsIndexRouteImport } from './routes/docs/index'
 import { Route as AboutIndexRouteImport } from './routes/about/index'
 import { Route as OauthProviderRouteImport } from './routes/oauth/$provider'
+import { Route as DocsOpenclawRouteImport } from './routes/docs/openclaw'
+import { Route as DocsOpenApisRouteImport } from './routes/docs/open-apis'
 import { Route as DocsInstallCodexDesktopRouteImport } from './routes/docs/install-codex-desktop'
+import { Route as DocsCodexCliRouteImport } from './routes/docs/codex-cli'
+import { Route as DocsClineRouteImport } from './routes/docs/cline'
+import { Route as DocsClaudeDesktopRouteImport } from './routes/docs/claude-desktop'
+import { Route as DocsClaudeCodeRouteImport } from './routes/docs/claude-code'
+import { Route as DocsCherryStudioRouteImport } from './routes/docs/cherry-studio'
+import { Route as DocsBillingQuestionsRouteImport } from './routes/docs/billing-questions'
 import { Route as DocsApiIntegrationRouteImport } from './routes/docs/api-integration'
 import { Route as ConsoleTopupRouteImport } from './routes/console/topup'
 import { Route as ConsoleLogRouteImport } from './routes/console/log'
@@ -128,9 +136,49 @@ const OauthProviderRoute = OauthProviderRouteImport.update({
   path: '/oauth/$provider',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DocsOpenclawRoute = DocsOpenclawRouteImport.update({
+  id: '/docs/openclaw',
+  path: '/docs/openclaw',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DocsOpenApisRoute = DocsOpenApisRouteImport.update({
+  id: '/docs/open-apis',
+  path: '/docs/open-apis',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const DocsInstallCodexDesktopRoute = DocsInstallCodexDesktopRouteImport.update({
   id: '/docs/install-codex-desktop',
   path: '/docs/install-codex-desktop',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DocsCodexCliRoute = DocsCodexCliRouteImport.update({
+  id: '/docs/codex-cli',
+  path: '/docs/codex-cli',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DocsClineRoute = DocsClineRouteImport.update({
+  id: '/docs/cline',
+  path: '/docs/cline',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DocsClaudeDesktopRoute = DocsClaudeDesktopRouteImport.update({
+  id: '/docs/claude-desktop',
+  path: '/docs/claude-desktop',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DocsClaudeCodeRoute = DocsClaudeCodeRouteImport.update({
+  id: '/docs/claude-code',
+  path: '/docs/claude-code',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DocsCherryStudioRoute = DocsCherryStudioRouteImport.update({
+  id: '/docs/cherry-studio',
+  path: '/docs/cherry-studio',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DocsBillingQuestionsRoute = DocsBillingQuestionsRouteImport.update({
+  id: '/docs/billing-questions',
+  path: '/docs/billing-questions',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DocsApiIntegrationRoute = DocsApiIntegrationRouteImport.update({
@@ -452,7 +500,15 @@ export interface FileRoutesByFullPath {
   '/console/log': typeof ConsoleLogRoute
   '/console/topup': typeof ConsoleTopupRoute
   '/docs/api-integration': typeof DocsApiIntegrationRoute
+  '/docs/billing-questions': typeof DocsBillingQuestionsRoute
+  '/docs/cherry-studio': typeof DocsCherryStudioRoute
+  '/docs/claude-code': typeof DocsClaudeCodeRoute
+  '/docs/claude-desktop': typeof DocsClaudeDesktopRoute
+  '/docs/cline': typeof DocsClineRoute
+  '/docs/codex-cli': typeof DocsCodexCliRoute
   '/docs/install-codex-desktop': typeof DocsInstallCodexDesktopRoute
+  '/docs/open-apis': typeof DocsOpenApisRoute
+  '/docs/openclaw': typeof DocsOpenclawRoute
   '/oauth/$provider': typeof OauthProviderRoute
   '/about/': typeof AboutIndexRoute
   '/docs/': typeof DocsIndexRoute
@@ -516,7 +572,15 @@ export interface FileRoutesByTo {
   '/console/log': typeof ConsoleLogRoute
   '/console/topup': typeof ConsoleTopupRoute
   '/docs/api-integration': typeof DocsApiIntegrationRoute
+  '/docs/billing-questions': typeof DocsBillingQuestionsRoute
+  '/docs/cherry-studio': typeof DocsCherryStudioRoute
+  '/docs/claude-code': typeof DocsClaudeCodeRoute
+  '/docs/claude-desktop': typeof DocsClaudeDesktopRoute
+  '/docs/cline': typeof DocsClineRoute
+  '/docs/codex-cli': typeof DocsCodexCliRoute
   '/docs/install-codex-desktop': typeof DocsInstallCodexDesktopRoute
+  '/docs/open-apis': typeof DocsOpenApisRoute
+  '/docs/openclaw': typeof DocsOpenclawRoute
   '/oauth/$provider': typeof OauthProviderRoute
   '/about': typeof AboutIndexRoute
   '/docs': typeof DocsIndexRoute
@@ -584,7 +648,15 @@ export interface FileRoutesById {
   '/console/log': typeof ConsoleLogRoute
   '/console/topup': typeof ConsoleTopupRoute
   '/docs/api-integration': typeof DocsApiIntegrationRoute
+  '/docs/billing-questions': typeof DocsBillingQuestionsRoute
+  '/docs/cherry-studio': typeof DocsCherryStudioRoute
+  '/docs/claude-code': typeof DocsClaudeCodeRoute
+  '/docs/claude-desktop': typeof DocsClaudeDesktopRoute
+  '/docs/cline': typeof DocsClineRoute
+  '/docs/codex-cli': typeof DocsCodexCliRoute
   '/docs/install-codex-desktop': typeof DocsInstallCodexDesktopRoute
+  '/docs/open-apis': typeof DocsOpenApisRoute
+  '/docs/openclaw': typeof DocsOpenclawRoute
   '/oauth/$provider': typeof OauthProviderRoute
   '/about/': typeof AboutIndexRoute
   '/docs/': typeof DocsIndexRoute
@@ -651,7 +723,15 @@ export interface FileRouteTypes {
     | '/console/log'
     | '/console/topup'
     | '/docs/api-integration'
+    | '/docs/billing-questions'
+    | '/docs/cherry-studio'
+    | '/docs/claude-code'
+    | '/docs/claude-desktop'
+    | '/docs/cline'
+    | '/docs/codex-cli'
     | '/docs/install-codex-desktop'
+    | '/docs/open-apis'
+    | '/docs/openclaw'
     | '/oauth/$provider'
     | '/about/'
     | '/docs/'
@@ -715,7 +795,15 @@ export interface FileRouteTypes {
     | '/console/log'
     | '/console/topup'
     | '/docs/api-integration'
+    | '/docs/billing-questions'
+    | '/docs/cherry-studio'
+    | '/docs/claude-code'
+    | '/docs/claude-desktop'
+    | '/docs/cline'
+    | '/docs/codex-cli'
     | '/docs/install-codex-desktop'
+    | '/docs/open-apis'
+    | '/docs/openclaw'
     | '/oauth/$provider'
     | '/about'
     | '/docs'
@@ -782,7 +870,15 @@ export interface FileRouteTypes {
     | '/console/log'
     | '/console/topup'
     | '/docs/api-integration'
+    | '/docs/billing-questions'
+    | '/docs/cherry-studio'
+    | '/docs/claude-code'
+    | '/docs/claude-desktop'
+    | '/docs/cline'
+    | '/docs/codex-cli'
     | '/docs/install-codex-desktop'
+    | '/docs/open-apis'
+    | '/docs/openclaw'
     | '/oauth/$provider'
     | '/about/'
     | '/docs/'
@@ -840,7 +936,15 @@ export interface RootRouteChildren {
   ConsoleLogRoute: typeof ConsoleLogRoute
   ConsoleTopupRoute: typeof ConsoleTopupRoute
   DocsApiIntegrationRoute: typeof DocsApiIntegrationRoute
+  DocsBillingQuestionsRoute: typeof DocsBillingQuestionsRoute
+  DocsCherryStudioRoute: typeof DocsCherryStudioRoute
+  DocsClaudeCodeRoute: typeof DocsClaudeCodeRoute
+  DocsClaudeDesktopRoute: typeof DocsClaudeDesktopRoute
+  DocsClineRoute: typeof DocsClineRoute
+  DocsCodexCliRoute: typeof DocsCodexCliRoute
   DocsInstallCodexDesktopRoute: typeof DocsInstallCodexDesktopRoute
+  DocsOpenApisRoute: typeof DocsOpenApisRoute
+  DocsOpenclawRoute: typeof DocsOpenclawRoute
   OauthProviderRoute: typeof OauthProviderRoute
   AboutIndexRoute: typeof AboutIndexRoute
   DocsIndexRoute: typeof DocsIndexRoute
@@ -929,11 +1033,67 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof OauthProviderRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/docs/openclaw': {
+      id: '/docs/openclaw'
+      path: '/docs/openclaw'
+      fullPath: '/docs/openclaw'
+      preLoaderRoute: typeof DocsOpenclawRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/docs/open-apis': {
+      id: '/docs/open-apis'
+      path: '/docs/open-apis'
+      fullPath: '/docs/open-apis'
+      preLoaderRoute: typeof DocsOpenApisRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/docs/install-codex-desktop': {
       id: '/docs/install-codex-desktop'
       path: '/docs/install-codex-desktop'
       fullPath: '/docs/install-codex-desktop'
       preLoaderRoute: typeof DocsInstallCodexDesktopRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/docs/codex-cli': {
+      id: '/docs/codex-cli'
+      path: '/docs/codex-cli'
+      fullPath: '/docs/codex-cli'
+      preLoaderRoute: typeof DocsCodexCliRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/docs/cline': {
+      id: '/docs/cline'
+      path: '/docs/cline'
+      fullPath: '/docs/cline'
+      preLoaderRoute: typeof DocsClineRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/docs/claude-desktop': {
+      id: '/docs/claude-desktop'
+      path: '/docs/claude-desktop'
+      fullPath: '/docs/claude-desktop'
+      preLoaderRoute: typeof DocsClaudeDesktopRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/docs/claude-code': {
+      id: '/docs/claude-code'
+      path: '/docs/claude-code'
+      fullPath: '/docs/claude-code'
+      preLoaderRoute: typeof DocsClaudeCodeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/docs/cherry-studio': {
+      id: '/docs/cherry-studio'
+      path: '/docs/cherry-studio'
+      fullPath: '/docs/cherry-studio'
+      preLoaderRoute: typeof DocsCherryStudioRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/docs/billing-questions': {
+      id: '/docs/billing-questions'
+      path: '/docs/billing-questions'
+      fullPath: '/docs/billing-questions'
+      preLoaderRoute: typeof DocsBillingQuestionsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/docs/api-integration': {
@@ -1460,7 +1620,15 @@ const rootRouteChildren: RootRouteChildren = {
   ConsoleLogRoute: ConsoleLogRoute,
   ConsoleTopupRoute: ConsoleTopupRoute,
   DocsApiIntegrationRoute: DocsApiIntegrationRoute,
+  DocsBillingQuestionsRoute: DocsBillingQuestionsRoute,
+  DocsCherryStudioRoute: DocsCherryStudioRoute,
+  DocsClaudeCodeRoute: DocsClaudeCodeRoute,
+  DocsClaudeDesktopRoute: DocsClaudeDesktopRoute,
+  DocsClineRoute: DocsClineRoute,
+  DocsCodexCliRoute: DocsCodexCliRoute,
   DocsInstallCodexDesktopRoute: DocsInstallCodexDesktopRoute,
+  DocsOpenApisRoute: DocsOpenApisRoute,
+  DocsOpenclawRoute: DocsOpenclawRoute,
   OauthProviderRoute: OauthProviderRoute,
   AboutIndexRoute: AboutIndexRoute,
   DocsIndexRoute: DocsIndexRoute,

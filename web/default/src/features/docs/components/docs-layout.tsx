@@ -127,14 +127,26 @@ export function CodeSample(props: { title: string; value: string }) {
   )
 }
 
+type DocsPagerRoute =
+  | '/docs/install-codex-desktop'
+  | '/docs/codex-cli'
+  | '/docs/claude-code'
+  | '/docs/claude-desktop'
+  | '/docs/cline'
+  | '/docs/cherry-studio'
+  | '/docs/openclaw'
+  | '/docs/api-integration'
+  | '/docs/open-apis'
+  | '/docs/billing-questions'
+
 export function DocsPager(props: {
   previous?: {
     label: string
-    to: '/docs/install-codex-desktop' | '/docs/api-integration'
+    to: DocsPagerRoute
   }
   next?: {
     label: string
-    to: '/docs/install-codex-desktop' | '/docs/api-integration'
+    to: DocsPagerRoute
   }
 }) {
   const { t } = useTranslation()

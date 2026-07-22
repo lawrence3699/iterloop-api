@@ -111,7 +111,8 @@ export function ApiIntegrationDocs() {
         <CodeSample title='curl' value={CURL_EXAMPLE} />
       </DocSection>
       <DocsPager
-        previous={{ label: 'Codex Desktop', to: '/docs/install-codex-desktop' }}
+        previous={{ label: 'OpenClaw', to: '/docs/openclaw' }}
+        next={{ label: 'Open APIs', to: '/docs/open-apis' }}
       />
     </DocsLayout>
   )

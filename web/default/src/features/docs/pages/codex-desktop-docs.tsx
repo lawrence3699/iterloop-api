@@ -176,7 +176,7 @@ export function CodexDesktopDocs() {
         </ul>
       </DocSection>
       <DocsPager
-        next={{ label: 'API Integration', to: '/docs/api-integration' }}
+        next={{ label: 'Claude Desktop', to: '/docs/claude-desktop' }}
       />
     </DocsLayout>
   )

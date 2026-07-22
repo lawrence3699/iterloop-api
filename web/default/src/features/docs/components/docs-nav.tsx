@@ -22,9 +22,29 @@ import { useTranslation } from 'react-i18next'
 
 import { cn } from '@/lib/utils'
 
-export type DocsNavActiveId = 'codex-desktop' | 'api-integration'
+export type DocsNavActiveId =
+  | 'codex-desktop'
+  | 'codex-cli'
+  | 'claude-code'
+  | 'claude-desktop'
+  | 'cline'
+  | 'cherry-studio'
+  | 'openclaw'
+  | 'api-integration'
+  | 'open-apis'
+  | 'billing-questions'
 
-type DocRoute = '/docs/install-codex-desktop' | '/docs/api-integration'
+type DocRoute =
+  | '/docs/install-codex-desktop'
+  | '/docs/codex-cli'
+  | '/docs/claude-code'
+  | '/docs/claude-desktop'
+  | '/docs/cline'
+  | '/docs/cherry-studio'
+  | '/docs/openclaw'
+  | '/docs/api-integration'
+  | '/docs/open-apis'
+  | '/docs/billing-questions'
 
 /* Brand glyphs captured 1:1 from the clone docs sidebar markup. */
 
@@ -122,12 +142,42 @@ const MAIN_GROUP: DocsNavEntry[] = [
     to: '/docs/install-codex-desktop',
     icon: <CodexGlyphIcon />,
   },
-  { label: 'Claude Desktop', icon: <ClaudeGlyphIcon /> },
-  { label: 'Claude Code CLI', icon: <ClaudeGlyphIcon /> },
-  { label: 'Codex CLI', icon: <CodexGlyphIcon /> },
-  { label: 'VSCode + Cline', icon: <ClineGlyphIcon /> },
-  { label: 'Cherry Studio', icon: <CherryStudioGlyphIcon /> },
-  { label: 'OpenClaw', icon: <OpenClawGlyphIcon /> },
+  {
+    id: 'claude-desktop',
+    label: 'Claude Desktop',
+    to: '/docs/claude-desktop',
+    icon: <ClaudeGlyphIcon />,
+  },
+  {
+    id: 'claude-code',
+    label: 'Claude Code CLI',
+    to: '/docs/claude-code',
+    icon: <ClaudeGlyphIcon />,
+  },
+  {
+    id: 'codex-cli',
+    label: 'Codex CLI',
+    to: '/docs/codex-cli',
+    icon: <CodexGlyphIcon />,
+  },
+  {
+    id: 'cline',
+    label: 'VSCode + Cline',
+    to: '/docs/cline',
+    icon: <ClineGlyphIcon />,
+  },
+  {
+    id: 'cherry-studio',
+    label: 'Cherry Studio',
+    to: '/docs/cherry-studio',
+    icon: <CherryStudioGlyphIcon />,
+  },
+  {
+    id: 'openclaw',
+    label: 'OpenClaw',
+    to: '/docs/openclaw',
+    icon: <OpenClawGlyphIcon />,
+  },
 ]
 
 const API_GROUP: DocsNavEntry[] = [
@@ -138,12 +188,20 @@ const API_GROUP: DocsNavEntry[] = [
     icon: <Braces strokeWidth={2.1} />,
     lineIcon: true,
   },
-  { label: 'Open APIs', icon: <Braces strokeWidth={2.1} />, lineIcon: true },
+  {
+    id: 'open-apis',
+    label: 'Open APIs',
+    to: '/docs/open-apis',
+    icon: <Braces strokeWidth={2.1} />,
+    lineIcon: true,
+  },
 ]
 
 const BILLING_GROUP: DocsNavEntry[] = [
   {
+    id: 'billing-questions',
     label: 'Billing Questions',
+    to: '/docs/billing-questions',
     icon: <WalletCards strokeWidth={2.1} />,
     lineIcon: true,
   },
