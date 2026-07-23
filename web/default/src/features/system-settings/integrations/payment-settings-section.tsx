@@ -144,6 +144,12 @@ const paymentSchema = z.object({
   StripeApiSecret: z.string(),
   StripeWebhookSecret: z.string(),
   StripePriceId: z.string(),
+  StripeCurrency: z
+    .string()
+    .refine(
+      (value) => value.trim().toUpperCase() === 'AUD',
+      'Stripe currency must be AUD'
+    ),
   StripeUnitPrice: z.coerce.number().min(0),
   StripeMinTopUp: z.coerce.number().min(0),
   StripePromotionCodesEnabled: z.boolean(),
@@ -430,6 +436,7 @@ export function PaymentSettingsSection({
       StripeApiSecret: values.StripeApiSecret.trim(),
       StripeWebhookSecret: values.StripeWebhookSecret.trim(),
       StripePriceId: values.StripePriceId.trim(),
+      StripeCurrency: values.StripeCurrency.trim().toUpperCase(),
       StripeUnitPrice: values.StripeUnitPrice,
       StripeMinTopUp: values.StripeMinTopUp,
       StripePromotionCodesEnabled: values.StripePromotionCodesEnabled,
@@ -474,6 +481,7 @@ export function PaymentSettingsSection({
       StripeApiSecret: initialRef.current.StripeApiSecret.trim(),
       StripeWebhookSecret: initialRef.current.StripeWebhookSecret.trim(),
       StripePriceId: initialRef.current.StripePriceId.trim(),
+      StripeCurrency: initialRef.current.StripeCurrency.trim().toUpperCase(),
       StripeUnitPrice: initialRef.current.StripeUnitPrice,
       StripeMinTopUp: initialRef.current.StripeMinTopUp,
       StripePromotionCodesEnabled:
@@ -581,6 +589,10 @@ export function PaymentSettingsSection({
 
     if (sanitized.StripePriceId !== initial.StripePriceId) {
       updates.push({ key: 'StripePriceId', value: sanitized.StripePriceId })
+    }
+
+    if (sanitized.StripeCurrency !== initial.StripeCurrency) {
+      updates.push({ key: 'StripeCurrency', value: sanitized.StripeCurrency })
     }
 
     if (sanitized.StripeUnitPrice !== initial.StripeUnitPrice) {
@@ -1263,12 +1275,12 @@ export function PaymentSettingsSection({
                     </li>
                     <li>
                       {t('Required events:')}{' '}
-                      <code className='rounded bg-blue-100 px-1 py-0.5 text-xs dark:bg-blue-900'>
-                        {t('checkout.session.completed')}
-                      </code>{' '}
-                      {t('and')}{' '}
-                      <code className='rounded bg-blue-100 px-1 py-0.5 text-xs dark:bg-blue-900'>
-                        {t('checkout.session.expired')}
+                      <code className='rounded bg-blue-100 px-1 py-0.5 text-xs break-all dark:bg-blue-900'>
+                        checkout.session.completed, checkout.session.expired,
+                        checkout.session.async_payment_succeeded,
+                        checkout.session.async_payment_failed, charge.refunded,
+                        charge.dispute.created, charge.dispute.updated,
+                        charge.dispute.closed
                       </code>
                     </li>
                     <li>
@@ -1340,21 +1352,23 @@ export function PaymentSettingsSection({
 
                   <FormField
                     control={form.control}
-                    name='StripePriceId'
+                    name='StripeCurrency'
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>{t('Price ID')}</FormLabel>
+                        <FormLabel>{t('Settlement currency')}</FormLabel>
                         <FormControl>
                           <Input
-                            placeholder={t('price_xxx')}
+                            placeholder='AUD'
                             {...field}
                             onChange={(event) =>
-                              field.onChange(event.target.value)
+                              field.onChange(event.target.value.toUpperCase())
                             }
                           />
                         </FormControl>
                         <FormDescription>
-                          {t('Stripe product price ID')}
+                          {t(
+                            'AUD only for the Australian prepaid-credit launch'
+                          )}
                         </FormDescription>
                         <FormMessage />
                       </FormItem>

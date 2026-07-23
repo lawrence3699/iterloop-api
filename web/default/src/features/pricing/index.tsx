@@ -52,6 +52,7 @@ export function Pricing() {
     isLoading,
     priceRate,
     usdExchangeRate,
+    pricingCurrency,
   } = usePricingData()
 
   const {
@@ -149,6 +150,11 @@ export function Pricing() {
                   </h1>
                   <span className='rounded-full bg-white/90 px-3 py-1 text-xs font-semibold text-blue-700 shadow-sm'>
                     {t('{{count}} models', { count: models?.length || 0 })}
+                  </span>
+                  <span className='rounded-full border border-white/25 bg-white/10 px-3 py-1 text-xs font-semibold text-white shadow-sm backdrop-blur-sm'>
+                    {t('Prices in {{currency}}', {
+                      currency: pricingCurrency.code,
+                    })}
                   </span>
                 </div>
                 <p className='mt-2 max-w-2xl text-sm text-blue-50/90 sm:text-base'>

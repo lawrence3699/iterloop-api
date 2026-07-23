@@ -17,7 +17,10 @@ func isStripeTopUpEnabled() bool {
 	}
 	return strings.TrimSpace(setting.StripeApiSecret) != "" &&
 		strings.TrimSpace(setting.StripeWebhookSecret) != "" &&
-		strings.TrimSpace(setting.StripePriceId) != ""
+		strings.EqualFold(strings.TrimSpace(setting.StripeCurrency), "AUD") &&
+		setting.StripeUnitPrice > 0 &&
+		!setting.StripePromotionCodesEnabled &&
+		len(operation_setting.GetPaymentSetting().AmountOptions) > 0
 }
 
 func isStripeWebhookConfigured() bool {
@@ -25,7 +28,9 @@ func isStripeWebhookConfigured() bool {
 }
 
 func isStripeWebhookEnabled() bool {
-	return isStripeTopUpEnabled()
+	// Keep callbacks available for already-created orders even if checkout
+	// creation is temporarily disabled by rotating the API key or pricing config.
+	return isPaymentComplianceConfirmed() && isStripeWebhookConfigured()
 }
 
 func isCreemTopUpEnabled() bool {

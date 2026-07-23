@@ -130,6 +130,10 @@ export interface TopupInfo {
   min_topup: number
   /** Minimum topup amount for Stripe */
   stripe_min_topup: number
+  /** Stripe checkout currency */
+  stripe_currency?: string
+  /** Whether Stripe only accepts configured preset amounts */
+  stripe_preset_only?: boolean
   /** Preset amount options */
   amount_options: number[]
   /** Discount rates by amount */
@@ -247,7 +251,15 @@ export interface UserWalletData {
 /**
  * Topup record status
  */
-export type TopupStatus = 'success' | 'pending' | 'expired'
+export type TopupStatus =
+  | 'success'
+  | 'pending'
+  | 'failed'
+  | 'expired'
+  | 'partially_refunded'
+  | 'refunded'
+  | 'disputed'
+  | 'chargeback'
 
 /**
  * Topup billing record
@@ -261,6 +273,10 @@ export interface TopupRecord {
   amount: number
   /** Payment amount (actual money paid) */
   money: number
+  expected_amount?: number
+  currency?: string
+  credited_quota?: number
+  refunded_amount?: number
   /** Trade/order number */
   trade_no: string
   /** Payment method type */

@@ -22,6 +22,25 @@ type TopUp struct {
 	CreateTime      int64   `json:"create_time"`
 	CompleteTime    int64   `json:"complete_time"`
 	Status          string  `json:"status"`
+
+	// Immutable checkout snapshot. Monetary amounts use the currency's smallest
+	// unit (for AUD, cents) so fulfilment never depends on floating point maths
+	// or mutable runtime pricing settings.
+	ExpectedAmount int64  `json:"expected_amount" gorm:"type:bigint;not null;default:0"`
+	Currency       string `json:"currency" gorm:"type:varchar(8);not null;default:''"`
+	CreditedQuota  int64  `json:"credited_quota" gorm:"type:bigint;not null;default:0"`
+
+	// Provider identifiers are intentionally excluded from user-facing JSON.
+	ProviderSessionId string `json:"-" gorm:"type:varchar(255);index"`
+	ProviderPaymentId string `json:"-" gorm:"type:varchar(255);index"`
+	FailureReason     string `json:"-" gorm:"type:varchar(255);default:''"`
+
+	RefundedAmount int64  `json:"refunded_amount" gorm:"type:bigint;not null;default:0"`
+	RefundedQuota  int64  `json:"-" gorm:"type:bigint;not null;default:0"`
+	DisputedAmount int64  `json:"-" gorm:"type:bigint;not null;default:0"`
+	DisputedQuota  int64  `json:"-" gorm:"type:bigint;not null;default:0"`
+	DisputeStatus  string `json:"-" gorm:"type:varchar(32);default:''"`
+	DisputeEventAt int64  `json:"-" gorm:"type:bigint;not null;default:0"`
 }
 
 const (
@@ -351,7 +370,9 @@ func ManualCompleteTopUp(tradeNo string, callerIp string) error {
 		// 计算应充值额度：
 		// - Stripe 订单：Money 代表经分组倍率换算后的美元数量，直接 * QuotaPerUnit
 		// - 其他订单（如易支付）：Amount 为美元数量，* QuotaPerUnit
-		if topUp.PaymentProvider == PaymentProviderStripe {
+		if topUp.PaymentProvider == PaymentProviderStripe && topUp.CreditedQuota > 0 {
+			quotaToAdd = int(topUp.CreditedQuota)
+		} else if topUp.PaymentProvider == PaymentProviderStripe {
 			dQuotaPerUnit := decimal.NewFromFloat(common.QuotaPerUnit)
 			quotaToAdd = int(decimal.NewFromFloat(topUp.Money).Mul(dQuotaPerUnit).IntPart())
 		} else {
