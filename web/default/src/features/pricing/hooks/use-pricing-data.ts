@@ -18,13 +18,16 @@ For commercial licensing, please contact support@quantumnous.com
 */
 import { useQuery } from '@tanstack/react-query'
 import { useMemo } from 'react'
+import { useTranslation } from 'react-i18next'
 
 import { useStatus } from '@/hooks/use-status'
 
 import { getPricing } from '../api'
+import { resolvePricingCurrency } from '../lib/pricing-currency'
 
 export function usePricingData() {
   const { status } = useStatus()
+  const { i18n } = useTranslation()
 
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: ['pricing'],
@@ -40,6 +43,15 @@ export function usePricingData() {
   const usdExchangeRate = useMemo(
     () => Math.max((status?.usd_exchange_rate as number) ?? priceRate, 0.001),
     [status?.usd_exchange_rate, priceRate]
+  )
+
+  const pricingCurrency = useMemo(
+    () =>
+      resolvePricingCurrency(
+        data?.pricing_currency,
+        i18n.resolvedLanguage || i18n.language
+      ),
+    [data?.pricing_currency, i18n.language, i18n.resolvedLanguage]
   )
 
   const models = useMemo(() => {
@@ -60,9 +72,10 @@ export function usePricingData() {
         vendor_icon: vendor?.icon,
         vendor_description: vendor?.description,
         group_ratio: data.group_ratio,
+        pricing_currency: pricingCurrency,
       }
     })
-  }, [data])
+  }, [data, pricingCurrency])
 
   return {
     models,
@@ -76,5 +89,6 @@ export function usePricingData() {
     refetch,
     priceRate,
     usdExchangeRate,
+    pricingCurrency,
   }
 }

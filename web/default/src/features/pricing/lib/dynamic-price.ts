@@ -16,10 +16,8 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
-import { formatBillingCurrencyFromUSD } from '@/lib/currency'
-
 import { TOKEN_UNIT_DIVISORS } from '../constants'
-import type { PricingModel, TokenUnit } from '../types'
+import type { PricingModel, ResolvedPricingCurrency, TokenUnit } from '../types'
 import {
   BILLING_PRICING_VARS,
   parseTiersFromExpr,
@@ -29,6 +27,7 @@ import {
   type ParsedTier,
 } from './billing-expr'
 import { getDisplayGroupRatio } from './model-helpers'
+import { formatPricingCurrencyFromUSD } from './pricing-currency'
 
 type DynamicPriceOptions = {
   tokenUnit: TokenUnit
@@ -36,6 +35,7 @@ type DynamicPriceOptions = {
   priceRate?: number
   usdExchangeRate?: number
   groupRatioMultiplier?: number
+  currency?: ResolvedPricingCurrency
 }
 
 export type DynamicPriceEntry = {
@@ -100,7 +100,7 @@ export function formatDynamicUnitPrice(
     usdExchangeRate
   )
 
-  return formatBillingCurrencyFromUSD(displayPrice, {
+  return formatPricingCurrencyFromUSD(displayPrice, options.currency, {
     digitsLarge: 4,
     digitsSmall: 6,
     abbreviate: false,
@@ -161,7 +161,10 @@ export function getDynamicPricingSummary(
 
   const tiers = getDynamicPricingTiers(model)
   const tier = tiers[0] || null
-  const entries = getDynamicPriceEntries(tier, options)
+  const entries = getDynamicPriceEntries(tier, {
+    ...options,
+    currency: options.currency ?? model.pricing_currency,
+  })
   const rawExpression = model.billing_expr || ''
 
   return {

@@ -7,19 +7,27 @@ import (
 )
 
 type IterLoopPricingSetting struct {
-	Enabled      bool    `json:"enabled"`
-	CodexRatio   float64 `json:"codex_ratio"`
-	ClaudeRatio  float64 `json:"claude_ratio"`
-	GrokRatio    float64 `json:"grok_ratio"`
-	CombinedMode string  `json:"combined_mode"`
+	Enabled         bool    `json:"enabled"`
+	CodexRatio      float64 `json:"codex_ratio"`
+	ClaudeRatio     float64 `json:"claude_ratio"`
+	GrokRatio       float64 `json:"grok_ratio"`
+	CombinedMode    string  `json:"combined_mode"`
+	CNYExchangeRate float64 `json:"cny_exchange_rate"`
+	AUDExchangeRate float64 `json:"aud_exchange_rate"`
+	ReferenceURL    string  `json:"reference_url"`
+	ReferenceDate   string  `json:"reference_date"`
 }
 
 var iterLoopPricingSetting = IterLoopPricingSetting{
-	Enabled:      true,
-	CodexRatio:   0.4,
-	ClaudeRatio:  0.7,
-	GrokRatio:    1.0,
-	CombinedMode: "model-family",
+	Enabled:         true,
+	CodexRatio:      1.0,
+	ClaudeRatio:     1.0,
+	GrokRatio:       1.0,
+	CombinedMode:    "model-family",
+	CNYExchangeRate: 7.3,
+	AUDExchangeRate: 1.52,
+	ReferenceURL:    "https://faroapi.com/pricing",
+	ReferenceDate:   "2026-07-19",
 }
 
 func init() {

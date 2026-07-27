@@ -30,8 +30,9 @@ import {
   getDynamicPricingSummary,
 } from '../lib/dynamic-price'
 import { isTokenBasedModel } from '../lib/model-helpers'
-import { formatPrice, formatRequestPrice } from '../lib/price'
+import { formatRequestPrice } from '../lib/price'
 import type { PricingModel, TokenUnit } from '../types'
+import { PriceComparison } from './price-comparison'
 
 export interface ModelCardProps {
   model: PricingModel
@@ -58,7 +59,6 @@ export const ModelCard = memo(function ModelCard(props: ModelCardProps) {
   const isDynamicPricing =
     props.model.billing_mode === 'tiered_expr' &&
     Boolean(props.model.billing_expr)
-  const hasCachedPrice = isTokenBased && props.model.cache_ratio != null
   const dynamicSummary = isDynamicPricing
     ? getDynamicPricingSummary(props.model, {
         tokenUnit,
@@ -115,52 +115,28 @@ export const ModelCard = memo(function ModelCard(props: ModelCardProps) {
     }
   } else if (isTokenBased) {
     priceSummary = (
-      <>
-        <span className='text-muted-foreground whitespace-nowrap'>
-          {t('Input')}{' '}
-          <span className='text-foreground font-mono font-semibold'>
-            {formatPrice(
-              props.model,
-              'input',
-              tokenUnit,
-              showRechargePrice,
-              priceRate,
-              usdExchangeRate,
-              props.selectedGroup
-            )}
-          </span>
-        </span>
-        <span className='text-muted-foreground whitespace-nowrap'>
-          {t('Output')}{' '}
-          <span className='text-foreground font-mono font-semibold'>
-            {formatPrice(
-              props.model,
-              'output',
-              tokenUnit,
-              showRechargePrice,
-              priceRate,
-              usdExchangeRate,
-              props.selectedGroup
-            )}
-          </span>
-        </span>
-        {hasCachedPrice && (
-          <span className='text-muted-foreground whitespace-nowrap'>
-            {t('Cached')}{' '}
-            <span className='text-foreground font-mono font-semibold'>
-              {formatPrice(
-                props.model,
-                'cache',
-                tokenUnit,
-                showRechargePrice,
-                priceRate,
-                usdExchangeRate,
-                props.selectedGroup
-              )}
-            </span>
-          </span>
-        )}
-      </>
+      <div className='grid grid-cols-2 gap-2'>
+        <PriceComparison
+          model={props.model}
+          type='input'
+          label='Input'
+          tokenUnit={tokenUnit}
+          showRechargePrice={showRechargePrice}
+          priceRate={priceRate}
+          usdExchangeRate={usdExchangeRate}
+          selectedGroup={props.selectedGroup}
+        />
+        <PriceComparison
+          model={props.model}
+          type='output'
+          label='Output'
+          tokenUnit={tokenUnit}
+          showRechargePrice={showRechargePrice}
+          priceRate={priceRate}
+          usdExchangeRate={usdExchangeRate}
+          selectedGroup={props.selectedGroup}
+        />
+      </div>
     )
   } else {
     priceSummary = (
@@ -182,7 +158,7 @@ export const ModelCard = memo(function ModelCard(props: ModelCardProps) {
   return (
     <article
       className={cn(
-        'group relative flex min-h-[230px] cursor-pointer flex-col rounded-2xl border bg-card p-5 shadow-sm transition-all',
+        'group relative flex min-h-[280px] cursor-pointer flex-col rounded-2xl border bg-card p-5 shadow-sm transition-all',
         'hover:border-primary/20 hover:-translate-y-0.5 hover:shadow-md'
       )}
     >
@@ -202,13 +178,10 @@ export const ModelCard = memo(function ModelCard(props: ModelCardProps) {
               </span>
             )}
           </div>
-          <div className='min-w-0'>
+          <div className='min-w-0 pt-1'>
             <h3 className='text-foreground truncate text-lg leading-tight font-semibold tracking-tight'>
               {props.model.model_name}
             </h3>
-            <div className='mt-2 flex flex-col items-start gap-1 text-sm'>
-              {priceSummary}
-            </div>
           </div>
         </div>
 
@@ -223,6 +196,10 @@ export const ModelCard = memo(function ModelCard(props: ModelCardProps) {
           </button>
           <ChevronRight className='text-muted-foreground/50 size-4 transition-transform group-hover:translate-x-0.5' />
         </div>
+      </div>
+
+      <div className='pointer-events-none relative z-10 mt-4 text-sm'>
+        {priceSummary}
       </div>
 
       <div className='pointer-events-none relative z-10 mt-auto flex flex-wrap items-center gap-2 pt-5'>
