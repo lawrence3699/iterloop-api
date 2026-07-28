@@ -157,7 +157,17 @@ func HandleStreamFinalResponse(c *gin.Context, info *relaycommon.RelayInfo, clau
 	}
 
 	if info.RelayFormat == types.RelayFormatClaude {
-		//
+		// Some Anthropic-compatible upstreams emit a complete message_delta and
+		// then close the SSE body without message_stop. Claude Code treats that
+		// otherwise-successful EOF as a truncated response. Only repair a normal
+		// EOF/[DONE] after message_delta; never mask timeouts, client disconnects,
+		// scanner errors, or streams that did not reach a terminal stop reason.
+		if claudeInfo.Done && !claudeInfo.MessageStopSeen && info.StreamStatus != nil &&
+			(info.StreamStatus.EndReason == relaycommon.StreamEndReasonEOF ||
+				info.StreamStatus.EndReason == relaycommon.StreamEndReasonDone) {
+			helper.ClaudeChunkData(c, dto.ClaudeResponse{Type: "message_stop"}, `{"type":"message_stop"}`)
+			claudeInfo.MessageStopSeen = true
+		}
 	} else if info.RelayFormat == types.RelayFormatOpenAI {
 		if info.ShouldIncludeUsage {
 			openAIUsage := buildOpenAIStyleUsageFromClaudeUsage(claudeInfo.Usage)

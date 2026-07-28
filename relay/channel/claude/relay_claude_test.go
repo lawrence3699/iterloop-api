@@ -1,11 +1,15 @@
 package claude
 
 import (
+	"net/http/httptest"
 	"strings"
 	"testing"
 
 	"github.com/QuantumNous/new-api/dto"
+	relaycommon "github.com/QuantumNous/new-api/relay/common"
 	"github.com/QuantumNous/new-api/service/relayconvert"
+	"github.com/QuantumNous/new-api/types"
+	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -221,6 +225,51 @@ func TestFormatClaudeResponseInfo_ContentBlockDelta(t *testing.T) {
 	if claudeInfo.ResponseText.String() != "hello" {
 		t.Errorf("ResponseText = %q, want %q", claudeInfo.ResponseText.String(), "hello")
 	}
+}
+
+func TestHandleStreamFinalResponseSynthesizesMissingMessageStopAfterEOF(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	recorder := httptest.NewRecorder()
+	context, _ := gin.CreateTestContext(recorder)
+	context.Request = httptest.NewRequest("POST", "/v1/messages", nil)
+
+	info := &relaycommon.RelayInfo{
+		RelayFormat:  types.RelayFormatClaude,
+		StreamStatus: relaycommon.NewStreamStatus(),
+	}
+	info.StreamStatus.SetEndReason(relaycommon.StreamEndReasonEOF, nil)
+	claudeInfo := &ClaudeResponseInfo{
+		Done:  true,
+		Usage: &dto.Usage{PromptTokens: 1, CompletionTokens: 1},
+	}
+
+	HandleStreamFinalResponse(context, info, claudeInfo)
+
+	assert.True(t, claudeInfo.MessageStopSeen)
+	assert.Contains(t, recorder.Body.String(), "event: message_stop")
+	assert.Contains(t, recorder.Body.String(), `data: {"type":"message_stop"}`)
+}
+
+func TestHandleStreamFinalResponseDoesNotSynthesizeOnTimeout(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	recorder := httptest.NewRecorder()
+	context, _ := gin.CreateTestContext(recorder)
+	context.Request = httptest.NewRequest("POST", "/v1/messages", nil)
+
+	info := &relaycommon.RelayInfo{
+		RelayFormat:  types.RelayFormatClaude,
+		StreamStatus: relaycommon.NewStreamStatus(),
+	}
+	info.StreamStatus.SetEndReason(relaycommon.StreamEndReasonTimeout, nil)
+	claudeInfo := &ClaudeResponseInfo{
+		Done:  true,
+		Usage: &dto.Usage{PromptTokens: 1, CompletionTokens: 1},
+	}
+
+	HandleStreamFinalResponse(context, info, claudeInfo)
+
+	assert.False(t, claudeInfo.MessageStopSeen)
+	assert.NotContains(t, recorder.Body.String(), "message_stop")
 }
 
 func TestBuildOpenAIStyleUsageFromClaudeUsage(t *testing.T) {

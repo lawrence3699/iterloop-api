@@ -13,12 +13,13 @@ import (
 )
 
 type ClaudeResponseInfo struct {
-	ResponseId   string
-	Created      int64
-	Model        string
-	ResponseText strings.Builder
-	Usage        *dto.Usage
-	Done         bool
+	ResponseId      string
+	Created         int64
+	Model           string
+	ResponseText    strings.Builder
+	Usage           *dto.Usage
+	Done            bool
+	MessageStopSeen bool
 }
 
 func StopReasonClaudeToOpenAI(reason string) string {
@@ -387,6 +388,9 @@ func FormatClaudeResponseInfo(claudeResponse *dto.ClaudeResponse, oaiResponse *d
 		}
 
 		claudeInfo.Done = true
+	} else if claudeResponse.Type == "message_stop" {
+		claudeInfo.MessageStopSeen = true
+		return false
 	} else if claudeResponse.Type == "content_block_start" {
 	} else {
 		return false
