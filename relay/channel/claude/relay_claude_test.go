@@ -272,6 +272,24 @@ func TestHandleStreamFinalResponseDoesNotSynthesizeOnTimeout(t *testing.T) {
 	assert.NotContains(t, recorder.Body.String(), "message_stop")
 }
 
+func TestCompleteClaudeNativeStreamImmediatelyAfterTerminalDelta(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	recorder := httptest.NewRecorder()
+	context, _ := gin.CreateTestContext(recorder)
+	context.Request = httptest.NewRequest("POST", "/v1/messages", nil)
+
+	info := &relaycommon.RelayInfo{RelayFormat: types.RelayFormatClaude}
+	claudeInfo := &ClaudeResponseInfo{Done: true, Usage: &dto.Usage{}}
+
+	completed := completeClaudeNativeStreamAfterTerminalDelta(context, info, claudeInfo)
+
+	assert.True(t, completed)
+	assert.True(t, claudeInfo.MessageStopSeen)
+	assert.Contains(t, recorder.Body.String(), "event: message_stop")
+	assert.Contains(t, recorder.Body.String(), `data: {"type":"message_stop"}`)
+	assert.False(t, completeClaudeNativeStreamAfterTerminalDelta(context, info, claudeInfo), "must not emit a duplicate stop")
+}
+
 func TestBuildOpenAIStyleUsageFromClaudeUsage(t *testing.T) {
 	usage := &dto.Usage{
 		PromptTokens:     100,

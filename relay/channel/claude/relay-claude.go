@@ -165,8 +165,7 @@ func HandleStreamFinalResponse(c *gin.Context, info *relaycommon.RelayInfo, clau
 		if claudeInfo.Done && !claudeInfo.MessageStopSeen && info.StreamStatus != nil &&
 			(info.StreamStatus.EndReason == relaycommon.StreamEndReasonEOF ||
 				info.StreamStatus.EndReason == relaycommon.StreamEndReasonDone) {
-			helper.ClaudeChunkData(c, dto.ClaudeResponse{Type: "message_stop"}, `{"type":"message_stop"}`)
-			claudeInfo.MessageStopSeen = true
+			completeClaudeNativeStreamAfterTerminalDelta(c, info, claudeInfo)
 		}
 	} else if info.RelayFormat == types.RelayFormatOpenAI {
 		if info.ShouldIncludeUsage {
@@ -179,6 +178,16 @@ func HandleStreamFinalResponse(c *gin.Context, info *relaycommon.RelayInfo, clau
 		}
 		helper.Done(c)
 	}
+}
+
+func completeClaudeNativeStreamAfterTerminalDelta(c *gin.Context, info *relaycommon.RelayInfo, claudeInfo *ClaudeResponseInfo) bool {
+	if info == nil || claudeInfo == nil || info.RelayFormat != types.RelayFormatClaude ||
+		!claudeInfo.Done || claudeInfo.MessageStopSeen {
+		return false
+	}
+	helper.ClaudeChunkData(c, dto.ClaudeResponse{Type: "message_stop"}, `{"type":"message_stop"}`)
+	claudeInfo.MessageStopSeen = true
+	return true
 }
 
 func ClaudeStreamHandler(c *gin.Context, resp *http.Response, info *relaycommon.RelayInfo) (*dto.Usage, *types.NewAPIError) {
@@ -194,6 +203,14 @@ func ClaudeStreamHandler(c *gin.Context, resp *http.Response, info *relaycommon.
 		err = HandleStreamResponseData(c, info, claudeInfo, data)
 		if err != nil {
 			sr.Stop(err)
+			return
+		}
+		// Anthropic message_delta is the terminal semantic event. Some compatible
+		// upstreams never send the following message_stop and keep the socket open
+		// until the downstream client times out. Complete the downstream protocol
+		// immediately and cancel the now-useless upstream body.
+		if completeClaudeNativeStreamAfterTerminalDelta(c, info, claudeInfo) {
+			sr.Done()
 		}
 	})
 	if err != nil {
