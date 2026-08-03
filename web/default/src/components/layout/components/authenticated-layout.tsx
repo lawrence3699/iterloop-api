@@ -19,7 +19,6 @@ For commercial licensing, please contact support@quantumnous.com
 import { useLocation } from '@tanstack/react-router'
 
 import { AnimatedOutlet } from '@/components/page-transition'
-import { CommunityContact } from '@/components/community-contact'
 import { SkipToMain } from '@/components/skip-to-main'
 import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar'
 import { LayoutProvider } from '@/context/layout-provider'
@@ -64,7 +63,6 @@ export function AuthenticatedLayout(props: AuthenticatedLayoutProps) {
                 {props.children ?? <AnimatedOutlet />}
               </main>
             </div>
-            <CommunityContact />
           </div>
         </SearchProvider>
       </LayoutProvider>
