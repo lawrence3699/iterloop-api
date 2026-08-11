@@ -16,14 +16,10 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
-export { ApiIntegrationDocs } from './pages/api-integration-docs'
-export { BillingQuestionsDocs } from './pages/billing-questions-docs'
-export { CcSwitchDocs } from './pages/cc-switch-docs'
-export { CherryStudioDocs } from './pages/cherry-studio-docs'
-export { ClaudeCodeDocs } from './pages/claude-code-docs'
-export { ClaudeDesktopDocs } from './pages/claude-desktop-docs'
-export { ClineDocs } from './pages/cline-docs'
-export { CodexCliDocs } from './pages/codex-cli-docs'
-export { CodexDesktopDocs } from './pages/codex-desktop-docs'
-export { OpenApisDocs } from './pages/open-apis-docs'
-export { OpenClawDocs } from './pages/openclaw-docs'
+import { createFileRoute } from '@tanstack/react-router'
+
+import { CcSwitchDocs } from '@/features/docs'
+
+export const Route = createFileRoute('/docs/install-cc-switch')({
+  component: CcSwitchDocs,
+})

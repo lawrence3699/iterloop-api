@@ -17,12 +17,13 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 import { Link } from '@tanstack/react-router'
-import { Braces, WalletCards } from 'lucide-react'
+import { ArrowRightLeft, Braces, WalletCards } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
 import { cn } from '@/lib/utils'
 
 export type DocsNavActiveId =
+  | 'cc-switch'
   | 'codex-desktop'
   | 'codex-cli'
   | 'claude-code'
@@ -35,6 +36,7 @@ export type DocsNavActiveId =
   | 'billing-questions'
 
 type DocRoute =
+  | '/docs/install-cc-switch'
   | '/docs/install-codex-desktop'
   | '/docs/codex-cli'
   | '/docs/claude-code'
@@ -136,6 +138,13 @@ type DocsNavEntry = {
 }
 
 const MAIN_GROUP: DocsNavEntry[] = [
+  {
+    id: 'cc-switch',
+    label: 'CC Switch',
+    to: '/docs/install-cc-switch',
+    icon: <ArrowRightLeft strokeWidth={2.1} />,
+    lineIcon: true,
+  },
   {
     id: 'codex-desktop',
     label: 'Codex Desktop',

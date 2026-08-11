@@ -27,65 +27,128 @@ import { ComboboxInput } from '@/components/ui/combobox-input'
 import { Label } from '@/components/ui/label'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { getUserModels } from '@/lib/api'
+import { copyToClipboard } from '@/lib/copy-to-clipboard'
+import { ITERLOOP_API_ORIGIN } from '@/lib/iterloop-host'
 
-const APP_CONFIGS = {
+const CC_SWITCH_DOWNLOAD_URL = 'https://ccswitch.io'
+
+interface ModelFieldConfig {
+  key: string
+  labelKey: string
+  required: boolean
+  /** Preferred model ids, most preferred first. */
+  preferred: readonly string[]
+  /** Used when none of the preferred ids is available to this key. */
+  fallbackPrefix: string
+}
+
+interface AppConfig {
+  label: string
+  defaultName: string
+  /** Appended to the API origin to form the endpoint CC Switch stores. */
+  endpointSuffix: string
+  modelFields: readonly ModelFieldConfig[]
+}
+
+const APP_CONFIGS: Record<'claude' | 'codex', AppConfig> = {
   claude: {
-    label: 'Claude',
-    defaultName: 'My Claude',
+    label: 'Claude Code',
+    defaultName: 'IterLoop',
+    // Claude Code speaks the Anthropic Messages API, served from the API origin
+    // root — appending /v1 here would double the version prefix.
+    endpointSuffix: '',
     modelFields: [
-      { key: 'model', labelKey: 'Primary Model', required: true },
-      { key: 'haikuModel', labelKey: 'Haiku Model', required: false },
-      { key: 'sonnetModel', labelKey: 'Sonnet Model', required: false },
-      { key: 'opusModel', labelKey: 'Opus Model', required: false },
+      {
+        key: 'model',
+        labelKey: 'Primary Model',
+        required: true,
+        preferred: ['claude-sonnet-4-6'],
+        fallbackPrefix: 'claude-sonnet',
+      },
+      {
+        key: 'haikuModel',
+        labelKey: 'Haiku Model',
+        required: false,
+        preferred: ['claude-haiku-4-5-20251001'],
+        fallbackPrefix: 'claude-haiku',
+      },
+      {
+        key: 'sonnetModel',
+        labelKey: 'Sonnet Model',
+        required: false,
+        preferred: ['claude-sonnet-4-6'],
+        fallbackPrefix: 'claude-sonnet',
+      },
+      {
+        key: 'opusModel',
+        labelKey: 'Opus Model',
+        required: false,
+        preferred: ['claude-opus-5'],
+        fallbackPrefix: 'claude-opus',
+      },
     ],
   },
   codex: {
     label: 'Codex',
-    defaultName: 'My Codex',
-    modelFields: [{ key: 'model', labelKey: 'Primary Model', required: true }],
+    defaultName: 'IterLoop Codex',
+    // Codex speaks the OpenAI Responses API, which lives under /v1.
+    endpointSuffix: '/v1',
+    modelFields: [
+      {
+        key: 'model',
+        labelKey: 'Primary Model',
+        required: true,
+        preferred: ['gpt-5.6-sol'],
+        fallbackPrefix: 'gpt-',
+      },
+    ],
   },
-  gemini: {
-    label: 'Gemini',
-    defaultName: 'My Gemini',
-    modelFields: [{ key: 'model', labelKey: 'Primary Model', required: true }],
-  },
-} as const
+}
 
 type AppType = keyof typeof APP_CONFIGS
 
-function getServerAddress(): string {
-  try {
-    const raw = localStorage.getItem('status')
-    if (raw) {
-      const status = JSON.parse(raw)
-      if (status.server_address) return status.server_address
-    }
-  } catch {
-    /* empty */
+/**
+ * Pre-fills the model fields so the dialog is genuinely one-click. A default is
+ * only used when this key can actually reach the model, so a retired model never
+ * leaves a field pointing at something the request would reject.
+ */
+function pickDefaultModels(
+  app: AppType,
+  availableModels: string[]
+): Record<string, string> {
+  const defaults: Record<string, string> = {}
+  for (const field of APP_CONFIGS[app].modelFields) {
+    const chosen =
+      field.preferred.find((name) => availableModels.includes(name)) ??
+      availableModels.find((name) => name.startsWith(field.fallbackPrefix))
+    if (chosen) defaults[field.key] = chosen
   }
-  return window.location.origin
+  return defaults
 }
 
 function buildCCSwitchURL(
-  app: string,
+  app: AppType,
   name: string,
   models: Record<string, string>,
   apiKey: string
 ): string {
-  const serverAddress = getServerAddress()
-  const endpoint = app === 'codex' ? serverAddress + '/v1' : serverAddress
-  const params = new URLSearchParams()
-  params.set('resource', 'provider')
-  params.set('app', app)
-  params.set('name', name)
-  params.set('endpoint', endpoint)
-  params.set('apiKey', apiKey)
-  for (const [k, v] of Object.entries(models)) {
-    if (v) params.set(k, v)
-  }
-  params.set('homepage', serverAddress)
-  params.set('enabled', 'true')
-  return `ccswitch://v1/import?${params.toString()}`
+  const endpoint = `${ITERLOOP_API_ORIGIN}${APP_CONFIGS[app].endpointSuffix}`
+  const params: [string, string][] = [
+    ['resource', 'provider'],
+    ['app', app],
+    ['name', name],
+    ['endpoint', endpoint],
+    ['apiKey', apiKey],
+    ...Object.entries(models).filter(([, v]) => v),
+    ['homepage', ITERLOOP_API_ORIGIN],
+    ['enabled', 'true'],
+  ]
+  // Percent-encode rather than using URLSearchParams, which writes spaces as
+  // "+" — the CC Switch deep-link spec documents %20.
+  const query = params
+    .map(([k, v]) => `${k}=${encodeURIComponent(v)}`)
+    .join('&')
+  return `ccswitch://v1/import?${query}`
 }
 
 interface Props {
@@ -107,42 +170,70 @@ export function CCSwitchDialog(props: Props) {
     staleTime: 5 * 60 * 1000,
   })
 
-  const modelOptions = useMemo(() => {
-    const items = modelsData?.data ?? []
-    return items.map((m) => ({ value: m, label: m }))
-  }, [modelsData?.data])
+  const availableModels = useMemo(
+    () => modelsData?.data ?? [],
+    [modelsData?.data]
+  )
+
+  const modelOptions = useMemo(
+    () => availableModels.map((m) => ({ value: m, label: m })),
+    [availableModels]
+  )
 
   useEffect(() => {
-    if (props.open) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setModels({})
+    if (!props.open) return
+    setApp('claude')
 
-      setApp('claude')
-
-      setName(APP_CONFIGS.claude.defaultName)
-    }
+    setName(APP_CONFIGS.claude.defaultName)
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setModels({})
   }, [props.open])
 
+  // The model list arrives asynchronously, so defaults are filled once it lands.
+  // Anything the user already picked wins.
+  useEffect(() => {
+    if (!props.open || availableModels.length === 0) return
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setModels((prev) =>
+      prev.model ? prev : pickDefaultModels(app, availableModels)
+    )
+  }, [props.open, app, availableModels])
+
   const currentConfig = APP_CONFIGS[app]
+  const endpoint = `${ITERLOOP_API_ORIGIN}${currentConfig.endpointSuffix}`
 
   const handleAppChange = (val: string) => {
     const appVal = val as AppType
     setApp(appVal)
     setName(APP_CONFIGS[appVal].defaultName)
-    setModels({})
+    setModels(pickDefaultModels(appVal, availableModels))
   }
 
-  const handleSubmit = () => {
+  const importUrl = () => {
     if (!models.model) {
       toast.warning(t('Please select a primary model'))
-      return
+      return null
     }
     const key = props.tokenKey.startsWith('sk-')
       ? props.tokenKey
       : `sk-${props.tokenKey}`
-    const url = buildCCSwitchURL(app, name, models, key)
-    window.open(url, '_blank')
+    return buildCCSwitchURL(app, name, models, key)
+  }
+
+  const handleSubmit = () => {
+    const url = importUrl()
+    if (!url) return
+    // A custom scheme has to replace the current location: window.open leaves an
+    // orphaned blank tab behind in Chrome and Safari.
+    window.location.href = url
     props.onOpenChange(false)
+  }
+
+  const handleCopyLink = async () => {
+    const url = importUrl()
+    if (!url) return
+    const ok = await copyToClipboard(url)
+    if (ok) toast.success(t('Copied'))
   }
 
   return (
@@ -172,20 +263,22 @@ export function CCSwitchDialog(props: Props) {
             onValueChange={handleAppChange}
             className='flex gap-4'
           >
-            {(
-              Object.entries(APP_CONFIGS) as [
-                AppType,
-                (typeof APP_CONFIGS)[AppType],
-              ][]
-            ).map(([key, cfg]) => (
-              <div key={key} className='flex items-center gap-2'>
-                <RadioGroupItem value={key} id={`app-${key}`} />
-                <Label htmlFor={`app-${key}`} className='cursor-pointer'>
-                  {cfg.label}
-                </Label>
-              </div>
-            ))}
+            {(Object.entries(APP_CONFIGS) as [AppType, AppConfig][]).map(
+              ([key, cfg]) => (
+                <div key={key} className='flex items-center gap-2'>
+                  <RadioGroupItem value={key} id={`app-${key}`} />
+                  <Label htmlFor={`app-${key}`} className='cursor-pointer'>
+                    {cfg.label}
+                  </Label>
+                </div>
+              )
+            )}
           </RadioGroup>
+        </div>
+
+        <div className='space-y-2'>
+          <Label>{t('Base URL')}</Label>
+          <p className='text-muted-foreground font-mono text-xs'>{endpoint}</p>
         </div>
 
         <div className='space-y-2'>
@@ -219,6 +312,26 @@ export function CCSwitchDialog(props: Props) {
             />
           </div>
         ))}
+
+        <p className='text-muted-foreground text-xs'>
+          {t('Nothing happened? Install CC Switch first, then try again.')}{' '}
+          <a
+            href={CC_SWITCH_DOWNLOAD_URL}
+            target='_blank'
+            rel='noreferrer'
+            className='underline underline-offset-2'
+          >
+            {t('Download CC Switch')}
+          </a>
+          {' · '}
+          <button
+            type='button'
+            onClick={handleCopyLink}
+            className='underline underline-offset-2'
+          >
+            {t('Copy import link')}
+          </button>
+        </p>
       </div>
     </Dialog>
   )

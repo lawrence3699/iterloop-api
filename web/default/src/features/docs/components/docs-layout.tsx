@@ -128,6 +128,7 @@ export function CodeSample(props: { title: string; value: string }) {
 }
 
 type DocsPagerRoute =
+  | '/docs/install-cc-switch'
   | '/docs/install-codex-desktop'
   | '/docs/codex-cli'
   | '/docs/claude-code'

@@ -42,6 +42,16 @@ export const ITERLOOP_ADMIN_ORIGIN = (
   import.meta.env.VITE_ITERLOOP_ADMIN_ORIGIN || 'https://admin.iter-loop.com'
 ).replace(/\/$/, '')
 
+// Origin that serves model traffic (/v1/**). It must stay a build-time literal:
+// the mainland entry point (console-cn.iter-loop.com) rewrites the API host in
+// the response body, so deriving it from window.location would bypass that
+// rewrite and hand mainland users an unreachable address.
+export const ITERLOOP_API_ORIGIN = (
+  import.meta.env.VITE_ITERLOOP_API_BASE_URL || 'https://api.iter-loop.com/v1'
+)
+  .replace(/\/v1\/?$/, '')
+  .replace(/\/$/, '')
+
 function currentHostname(hostname?: string): string {
   return (
     hostname ?? (typeof window === 'undefined' ? '' : window.location.hostname)

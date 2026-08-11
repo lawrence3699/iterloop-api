@@ -176,6 +176,7 @@ export function CodexDesktopDocs() {
         </ul>
       </DocSection>
       <DocsPager
+        previous={{ label: 'CC Switch', to: '/docs/install-cc-switch' }}
         next={{ label: 'Claude Desktop', to: '/docs/claude-desktop' }}
       />
     </DocsLayout>

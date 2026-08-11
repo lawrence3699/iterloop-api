@@ -23,6 +23,7 @@ import { Route as OauthProviderRouteImport } from './routes/oauth/$provider'
 import { Route as DocsOpenclawRouteImport } from './routes/docs/openclaw'
 import { Route as DocsOpenApisRouteImport } from './routes/docs/open-apis'
 import { Route as DocsInstallCodexDesktopRouteImport } from './routes/docs/install-codex-desktop'
+import { Route as DocsInstallCcSwitchRouteImport } from './routes/docs/install-cc-switch'
 import { Route as DocsCodexCliRouteImport } from './routes/docs/codex-cli'
 import { Route as DocsClineRouteImport } from './routes/docs/cline'
 import { Route as DocsClaudeDesktopRouteImport } from './routes/docs/claude-desktop'
@@ -149,6 +150,11 @@ const DocsOpenApisRoute = DocsOpenApisRouteImport.update({
 const DocsInstallCodexDesktopRoute = DocsInstallCodexDesktopRouteImport.update({
   id: '/docs/install-codex-desktop',
   path: '/docs/install-codex-desktop',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DocsInstallCcSwitchRoute = DocsInstallCcSwitchRouteImport.update({
+  id: '/docs/install-cc-switch',
+  path: '/docs/install-cc-switch',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DocsCodexCliRoute = DocsCodexCliRouteImport.update({
@@ -506,6 +512,7 @@ export interface FileRoutesByFullPath {
   '/docs/claude-desktop': typeof DocsClaudeDesktopRoute
   '/docs/cline': typeof DocsClineRoute
   '/docs/codex-cli': typeof DocsCodexCliRoute
+  '/docs/install-cc-switch': typeof DocsInstallCcSwitchRoute
   '/docs/install-codex-desktop': typeof DocsInstallCodexDesktopRoute
   '/docs/open-apis': typeof DocsOpenApisRoute
   '/docs/openclaw': typeof DocsOpenclawRoute
@@ -578,6 +585,7 @@ export interface FileRoutesByTo {
   '/docs/claude-desktop': typeof DocsClaudeDesktopRoute
   '/docs/cline': typeof DocsClineRoute
   '/docs/codex-cli': typeof DocsCodexCliRoute
+  '/docs/install-cc-switch': typeof DocsInstallCcSwitchRoute
   '/docs/install-codex-desktop': typeof DocsInstallCodexDesktopRoute
   '/docs/open-apis': typeof DocsOpenApisRoute
   '/docs/openclaw': typeof DocsOpenclawRoute
@@ -654,6 +662,7 @@ export interface FileRoutesById {
   '/docs/claude-desktop': typeof DocsClaudeDesktopRoute
   '/docs/cline': typeof DocsClineRoute
   '/docs/codex-cli': typeof DocsCodexCliRoute
+  '/docs/install-cc-switch': typeof DocsInstallCcSwitchRoute
   '/docs/install-codex-desktop': typeof DocsInstallCodexDesktopRoute
   '/docs/open-apis': typeof DocsOpenApisRoute
   '/docs/openclaw': typeof DocsOpenclawRoute
@@ -729,6 +738,7 @@ export interface FileRouteTypes {
     | '/docs/claude-desktop'
     | '/docs/cline'
     | '/docs/codex-cli'
+    | '/docs/install-cc-switch'
     | '/docs/install-codex-desktop'
     | '/docs/open-apis'
     | '/docs/openclaw'
@@ -801,6 +811,7 @@ export interface FileRouteTypes {
     | '/docs/claude-desktop'
     | '/docs/cline'
     | '/docs/codex-cli'
+    | '/docs/install-cc-switch'
     | '/docs/install-codex-desktop'
     | '/docs/open-apis'
     | '/docs/openclaw'
@@ -876,6 +887,7 @@ export interface FileRouteTypes {
     | '/docs/claude-desktop'
     | '/docs/cline'
     | '/docs/codex-cli'
+    | '/docs/install-cc-switch'
     | '/docs/install-codex-desktop'
     | '/docs/open-apis'
     | '/docs/openclaw'
@@ -942,6 +954,7 @@ export interface RootRouteChildren {
   DocsClaudeDesktopRoute: typeof DocsClaudeDesktopRoute
   DocsClineRoute: typeof DocsClineRoute
   DocsCodexCliRoute: typeof DocsCodexCliRoute
+  DocsInstallCcSwitchRoute: typeof DocsInstallCcSwitchRoute
   DocsInstallCodexDesktopRoute: typeof DocsInstallCodexDesktopRoute
   DocsOpenApisRoute: typeof DocsOpenApisRoute
   DocsOpenclawRoute: typeof DocsOpenclawRoute
@@ -1052,6 +1065,13 @@ declare module '@tanstack/react-router' {
       path: '/docs/install-codex-desktop'
       fullPath: '/docs/install-codex-desktop'
       preLoaderRoute: typeof DocsInstallCodexDesktopRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/docs/install-cc-switch': {
+      id: '/docs/install-cc-switch'
+      path: '/docs/install-cc-switch'
+      fullPath: '/docs/install-cc-switch'
+      preLoaderRoute: typeof DocsInstallCcSwitchRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/docs/codex-cli': {
@@ -1626,6 +1646,7 @@ const rootRouteChildren: RootRouteChildren = {
   DocsClaudeDesktopRoute: DocsClaudeDesktopRoute,
   DocsClineRoute: DocsClineRoute,
   DocsCodexCliRoute: DocsCodexCliRoute,
+  DocsInstallCcSwitchRoute: DocsInstallCcSwitchRoute,
   DocsInstallCodexDesktopRoute: DocsInstallCodexDesktopRoute,
   DocsOpenApisRoute: DocsOpenApisRoute,
   DocsOpenclawRoute: DocsOpenclawRoute,

@@ -18,6 +18,7 @@ For commercial licensing, please contact support@quantumnous.com
 */
 import { useQuery } from '@tanstack/react-query'
 import {
+  ArrowRightLeft,
   CheckCircle2,
   Copy,
   Download,
@@ -43,13 +44,15 @@ import {
   useApiKeys,
 } from '@/features/keys/components/api-keys-provider'
 import { API_KEY_STATUSES } from '@/features/keys/constants'
+import type { ApiKey } from '@/features/keys/types'
 import { formatQuota } from '@/lib/format'
+import { ITERLOOP_API_ORIGIN } from '@/lib/iterloop-host'
 
 import { getSelfAnalytics } from '../api'
 
 const BASE_URLS = {
-  openai: 'https://api.iter-loop.com/v1',
-  anthropic: 'https://api.iter-loop.com',
+  openai: `${ITERLOOP_API_ORIGIN}/v1`,
+  anthropic: ITERLOOP_API_ORIGIN,
 } as const
 
 function EndpointCard() {
@@ -164,6 +167,14 @@ function ApiKeysTable() {
     toast.success(t('Copied'))
   }
 
+  const openCcSwitch = async (apiKey: ApiKey) => {
+    const realKey = await apiKeys.resolveRealKey(apiKey.id)
+    if (!realKey) return
+    apiKeys.setResolvedKey(realKey)
+    apiKeys.setCurrentRow(apiKey)
+    apiKeys.setOpen('cc-switch')
+  }
+
   return (
     <section className='iterloop-api-keys-table'>
       <header>
@@ -219,38 +230,51 @@ function ApiKeysTable() {
                     </button>
                   </td>
                   <td>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger
-                        render={
-                          <Button
-                            variant='ghost'
-                            size='icon-sm'
-                            aria-label={t('Actions')}
-                          />
-                        }
+                    <div className='flex items-center justify-end gap-1'>
+                      <Button
+                        variant='outline'
+                        size='sm'
+                        onClick={() => openCcSwitch(key)}
                       >
-                        <MoreHorizontal aria-hidden='true' />
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align='end'>
-                        <DropdownMenuItem
-                          onClick={() => {
-                            apiKeys.setCurrentRow(key)
-                            apiKeys.setOpen('update')
-                          }}
+                        <ArrowRightLeft aria-hidden='true' />
+                        {t('One-click setup')}
+                      </Button>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger
+                          render={
+                            <Button
+                              variant='ghost'
+                              size='icon-sm'
+                              aria-label={t('Actions')}
+                            />
+                          }
                         >
-                          {t('Edit')}
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          variant='destructive'
-                          onClick={() => {
-                            apiKeys.setCurrentRow(key)
-                            apiKeys.setOpen('delete')
-                          }}
-                        >
-                          {t('Delete')}
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
+                          <MoreHorizontal aria-hidden='true' />
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align='end'>
+                          <DropdownMenuItem onClick={() => openCcSwitch(key)}>
+                            {t('Import to CC Switch')}
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => {
+                              apiKeys.setCurrentRow(key)
+                              apiKeys.setOpen('update')
+                            }}
+                          >
+                            {t('Edit')}
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            variant='destructive'
+                            onClick={() => {
+                              apiKeys.setCurrentRow(key)
+                              apiKeys.setOpen('delete')
+                            }}
+                          >
+                            {t('Delete')}
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
                   </td>
                 </tr>
               )
