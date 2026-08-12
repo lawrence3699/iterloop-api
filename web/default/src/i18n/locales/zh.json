@@ -5717,6 +5717,10 @@
     "Please select a default model": "请选择默认模型",
     "Claude Code uses the Anthropic endpoint; Codex uses the OpenAI-compatible one. That is the whole form — model fields sit under Advanced options and can be left alone.": "Claude Code 用 Anthropic 接入地址，Codex 用 OpenAI 兼容地址。表单到这里就填完了——模型相关的项都在「高级选项」里，可以完全不管。",
     "Codex keeps a single model in its config file, so one default is written. Run codex -m <model> to use any of the others on your key.": "Codex 的配置文件只放一个模型，所以这里只写入一个默认值。其余模型用 codex -m <模型> 指定。",
-    "No primary model is set on purpose. With it left empty, /model inside Claude Code reaches every Claude model your key allows; the three role models only map Claude Code’s haiku/sonnet/opus tiers onto our catalog.": "这里刻意不设主模型。留空后，Claude Code 里的 /model 能切到这把密钥允许的每一个 Claude 模型；三个角色模型只是把 Claude Code 的 haiku/sonnet/opus 档位映射到我们的目录。"
+    "No primary model is set on purpose. With it left empty, /model inside Claude Code reaches every Claude model your key allows; the three role models only map Claude Code’s haiku/sonnet/opus tiers onto our catalog.": "这里刻意不设主模型。留空后，Claude Code 里的 /model 能切到这把密钥允许的每一个 Claude 模型；三个角色模型只是把 Claude Code 的 haiku/sonnet/opus 档位映射到我们的目录。",
+    "Use models from other families": "使用其他系列的模型",
+    "Point the slots below at Grok or GPT models on the same key. Codex-only models stay hidden because Claude Code cannot reach them.": "把下面的槽位指向同一把密钥上的 Grok 或 GPT 模型。Codex 专属模型不会出现，因为 Claude Code 调不到它们。",
+    "Point the default below at a Claude or Grok model on the same key.": "把下面的默认模型指向同一把密钥上的 Claude 或 Grok 模型。",
+    "{{count}} models on this key can be reached from {{client}}, across Claude, Codex and Grok.": "这把密钥上有 {{count}} 个模型可以从 {{client}} 调用，涵盖 Claude、Codex 和 Grok。"
   }
 }

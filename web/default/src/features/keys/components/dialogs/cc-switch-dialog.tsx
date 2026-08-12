@@ -32,6 +32,7 @@ import {
 import { ComboboxInput } from '@/components/ui/combobox-input'
 import { Label } from '@/components/ui/label'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
+import { Switch } from '@/components/ui/switch'
 import { getUserModels } from '@/lib/api'
 import { copyToClipboard } from '@/lib/copy-to-clipboard'
 import { ITERLOOP_API_ORIGIN } from '@/lib/iterloop-host'
@@ -55,6 +56,17 @@ interface AppConfig {
   endpointSuffix: string
   /** Identifies which of this account's models this client can actually call. */
   modelPrefixes: readonly string[]
+  /**
+   * Families that belong to another client but that this client's protocol also
+   * serves, offered only once the user opts into mixing families.
+   */
+  crossModelPrefixes: readonly string[]
+  /**
+   * Models the relay serves on the Responses API only. They share the gpt-
+   * prefix but are bound to a Codex account upstream, which rejects them on the
+   * Anthropic Messages path, so they must never reach a Claude Code slot.
+   */
+  responsesOnlySuffixes?: readonly string[]
   modelFields: readonly ModelFieldConfig[]
 }
 
@@ -66,6 +78,10 @@ const APP_CONFIGS: Record<'claude' | 'codex', AppConfig> = {
     // root — appending /v1 here would double the version prefix.
     endpointSuffix: '',
     modelPrefixes: ['claude-'],
+    // The Messages endpoint also answers for Grok and for general GPT models,
+    // so a Claude Code slot can be pointed at either family.
+    crossModelPrefixes: ['grok-', 'gpt-'],
+    responsesOnlySuffixes: ['-sol', '-terra', '-luna'],
     modelFields: [
       // Deliberately has no default: leaving ANTHROPIC_MODEL unset is what keeps
       // every Claude model in the catalog reachable through /model. Pinning one
@@ -104,6 +120,9 @@ const APP_CONFIGS: Record<'claude' | 'codex', AppConfig> = {
     // Codex speaks the OpenAI Responses API, which lives under /v1.
     endpointSuffix: '/v1',
     modelPrefixes: ['gpt-', 'codex-'],
+    // The Responses endpoint answers for every family the relay serves, so the
+    // Codex default can be a Claude or Grok model.
+    crossModelPrefixes: ['claude-', 'grok-'],
     modelFields: [
       // Required: config.toml carries exactly one model, and CC Switch falls back
       // to "gpt-5-codex" when the deep link omits it — a model IterLoop does not
@@ -178,6 +197,7 @@ export function CCSwitchDialog(props: Props) {
   const [name, setName] = useState<string>(APP_CONFIGS.claude.defaultName)
   const [models, setModels] = useState<Record<string, string>>({})
   const [advancedOpen, setAdvancedOpen] = useState(false)
+  const [mixFamilies, setMixFamilies] = useState(false)
 
   const { data: modelsData } = useQuery({
     queryKey: ['user-models-ccswitch'],
@@ -193,16 +213,21 @@ export function CCSwitchDialog(props: Props) {
 
   const currentConfig = APP_CONFIGS[app]
 
-  // Only the models this client can actually call: Claude Code talks Anthropic
-  // Messages and Codex talks the Responses API, and the relay serves each family
-  // on one protocol only.
-  const usableModels = useMemo(
-    () =>
-      availableModels.filter((m) =>
-        currentConfig.modelPrefixes.some((p) => m.startsWith(p))
-      ),
-    [availableModels, currentConfig.modelPrefixes]
-  )
+  // Only the models this client can actually call. Its own family always
+  // qualifies; the families served by the same protocol are added once the user
+  // opts in, minus the ones the relay answers on the Responses API alone.
+  const usableModels = useMemo(() => {
+    const { modelPrefixes, crossModelPrefixes, responsesOnlySuffixes } =
+      currentConfig
+    return availableModels.filter((model) => {
+      if (modelPrefixes.some((prefix) => model.startsWith(prefix))) return true
+      if (!mixFamilies) return false
+      if (responsesOnlySuffixes?.some((suffix) => model.endsWith(suffix))) {
+        return false
+      }
+      return crossModelPrefixes.some((prefix) => model.startsWith(prefix))
+    })
+  }, [availableModels, currentConfig, mixFamilies])
 
   const modelOptions = useMemo(
     () => usableModels.map((m) => ({ value: m, label: m })),
@@ -216,6 +241,8 @@ export function CCSwitchDialog(props: Props) {
     setName(APP_CONFIGS.claude.defaultName)
 
     setAdvancedOpen(false)
+
+    setMixFamilies(false)
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setModels({})
   }, [props.open])
@@ -236,6 +263,20 @@ export function CCSwitchDialog(props: Props) {
     setApp(appVal)
     setName(APP_CONFIGS[appVal].defaultName)
     setModels({})
+  }
+
+  const handleMixFamiliesChange = (checked: boolean) => {
+    setMixFamilies(checked)
+    if (checked) return
+    // Dropping the opt-in has to drop the picks it enabled, or the import would
+    // carry a model this client cannot reach.
+    setModels((prev) =>
+      Object.fromEntries(
+        Object.entries(prev).filter(([, model]) =>
+          currentConfig.modelPrefixes.some((prefix) => model.startsWith(prefix))
+        )
+      )
+    )
   }
 
   const importUrl = () => {
@@ -266,6 +307,24 @@ export function CCSwitchDialog(props: Props) {
     if (!url) return
     const ok = await copyToClipboard(url)
     if (ok) toast.success(t('Copied'))
+  }
+
+  let availabilityNote: string
+  if (mixFamilies) {
+    availabilityNote = t(
+      '{{count}} models on this key can be reached from {{client}}, across Claude, Codex and Grok.',
+      { count: usableModels.length, client: currentConfig.label }
+    )
+  } else if (app === 'claude') {
+    availabilityNote = t(
+      'All {{count}} Claude models on this key stay available — switch between them with /model inside Claude Code.',
+      { count: usableModels.length }
+    )
+  } else {
+    availabilityNote = t(
+      'This key serves {{count}} Codex models. Codex stores one default in its config; run codex -m <model> to use another.',
+      { count: usableModels.length }
+    )
   }
 
   return (
@@ -323,17 +382,7 @@ export function CCSwitchDialog(props: Props) {
           />
         </div>
 
-        <p className='text-muted-foreground text-xs'>
-          {app === 'claude'
-            ? t(
-                'All {{count}} Claude models on this key stay available — switch between them with /model inside Claude Code.',
-                { count: usableModels.length }
-              )
-            : t(
-                'This key serves {{count}} Codex models. Codex stores one default in its config; run codex -m <model> to use another.',
-                { count: usableModels.length }
-              )}
-        </p>
+        <p className='text-muted-foreground text-xs'>{availabilityNote}</p>
 
         <Collapsible open={advancedOpen} onOpenChange={setAdvancedOpen}>
           <CollapsibleTrigger
@@ -347,6 +396,29 @@ export function CCSwitchDialog(props: Props) {
             {t('Advanced options')}
           </CollapsibleTrigger>
           <CollapsibleContent className='space-y-4 pt-4'>
+            <div className='flex items-start justify-between gap-4'>
+              <div className='space-y-1'>
+                <Label htmlFor='cc-switch-mix-families'>
+                  {t('Use models from other families')}
+                </Label>
+                <p className='text-muted-foreground text-xs'>
+                  {app === 'claude'
+                    ? t(
+                        'Point the slots below at Grok or GPT models on the same key. Codex-only models stay hidden because Claude Code cannot reach them.'
+                      )
+                    : t(
+                        'Point the default below at a Claude or Grok model on the same key.'
+                      )}
+                </p>
+              </div>
+              <Switch
+                id='cc-switch-mix-families'
+                checked={mixFamilies}
+                onCheckedChange={handleMixFamiliesChange}
+                aria-label={t('Use models from other families')}
+              />
+            </div>
+
             {currentConfig.modelFields.map((field) => (
               <div key={field.key} className='space-y-2'>
                 <Label>
