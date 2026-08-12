@@ -120,11 +120,11 @@ const APP_CONFIGS: Record<'claude' | 'codex', AppConfig> = {
     // Codex speaks the OpenAI Responses API, which lives under /v1.
     endpointSuffix: '/v1',
     modelPrefixes: ['gpt-', 'codex-'],
-    // Grok only. Claude is deliberately absent: the relay answers a Responses
-    // request for a Claude model with "not implemented" (no Responses ->
-    // Anthropic Messages conversion), so offering it here would hand the user a
-    // provider that fails on first use.
-    crossModelPrefixes: ['grok-'],
+    // Claude reaches Codex through the CLIProxy channel, which serves Claude
+    // models over the Responses API. The native Anthropic channel that outranks
+    // it answers "not implemented" instead, so this depends on RetryTimes being
+    // above zero for the request to fall through to CLIProxy.
+    crossModelPrefixes: ['claude-', 'grok-'],
     modelFields: [
       // Required: config.toml carries exactly one model, and CC Switch falls back
       // to "gpt-5-codex" when the deep link omits it — a model IterLoop does not
@@ -421,7 +421,7 @@ export function CCSwitchDialog(props: Props) {
                         'Point the slots below at Grok or GPT models on the same key. Codex-only models stay hidden because Claude Code cannot reach them.'
                       )
                     : t(
-                        'Point the default below at a Grok model on the same key. Claude models stay hidden because Codex cannot reach them.'
+                        'Point the default below at a Claude or Grok model on the same key.'
                       )}
                 </p>
               </div>
