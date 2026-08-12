@@ -5678,7 +5678,7 @@
     "A new Developer menu appears. Open Developer → Configure Third-Party Inference.": "A new Developer menu appears. Open Developer → Configure Third-Party Inference.",
     "Set the Base URL and paste an API key from Console → API Keys as the credential.": "Set the Base URL and paste an API key from Console → API Keys as the credential.",
     "Machine-readable references": "Machine-readable references",
-    ", install it, and leave it running.": "，安裝後讓它在背景執行。",
+    ", install it, and leave it running.": " 下載，安裝後讓它在背景執行。",
     "A copied import link looks like this:": "複製出來的匯入連結長這樣：",
     "Adding it by hand": "手動新增",
     "CC Switch is a free third-party desktop app that manages provider configurations for Claude Code, Codex and similar clients. Download it for macOS, Windows or Linux from": "CC Switch 是一個免費的第三方桌面應用程式，用來管理 Claude Code、Codex 等用戶端的供應商設定。macOS、Windows、Linux 版本都可以從",
@@ -5714,6 +5714,9 @@
     "This key serves {{count}} Codex models. Codex stores one default in its config; run codex -m <model> to use another.": "這把金鑰可用 {{count}} 個 Codex 模型。Codex 設定裡只能寫一個預設模型，其餘用 codex -m <模型> 臨時指定。",
     "Pin a model (optional)": "鎖定某個模型（選填）",
     "Default Model": "預設模型",
-    "Please select a default model": "請選擇預設模型"
+    "Please select a default model": "請選擇預設模型",
+    "Claude Code uses the Anthropic endpoint; Codex uses the OpenAI-compatible one. That is the whole form — model fields sit under Advanced options and can be left alone.": "Claude Code 用 Anthropic 接入位址，Codex 用 OpenAI 相容位址。表單到這裡就填完了——模型相關的項目都在「進階選項」裡，可以完全不管。",
+    "Codex keeps a single model in its config file, so one default is written. Run codex -m <model> to use any of the others on your key.": "Codex 的設定檔只放一個模型，所以這裡只寫入一個預設值。其餘模型用 codex -m <模型> 指定。",
+    "No primary model is set on purpose. With it left empty, /model inside Claude Code reaches every Claude model your key allows; the three role models only map Claude Code’s haiku/sonnet/opus tiers onto our catalog.": "這裡刻意不設主模型。留空後，Claude Code 裡的 /model 能切到這把金鑰允許的每一個 Claude 模型；三個角色模型只是把 Claude Code 的 haiku/sonnet/opus 檔位映射到我們的目錄。"
   }
 }

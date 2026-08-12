@@ -5714,6 +5714,9 @@
     "This key serves {{count}} Codex models. Codex stores one default in its config; run codex -m <model> to use another.": "Этот ключ даёт доступ к {{count}} моделям Codex. В конфигурации Codex хранится только одна модель по умолчанию; для остальных используйте codex -m <модель>.",
     "Pin a model (optional)": "Закрепить модель (необязательно)",
     "Default Model": "Модель по умолчанию",
-    "Please select a default model": "Выберите модель по умолчанию"
+    "Please select a default model": "Выберите модель по умолчанию",
+    "Claude Code uses the Anthropic endpoint; Codex uses the OpenAI-compatible one. That is the whole form — model fields sit under Advanced options and can be left alone.": "Claude Code использует адрес Anthropic, а Codex — OpenAI-совместимый. На этом форма заканчивается: поля моделей находятся в дополнительных параметрах, их можно не трогать.",
+    "Codex keeps a single model in its config file, so one default is written. Run codex -m <model> to use any of the others on your key.": "Codex хранит в конфигурации только одну модель, поэтому записывается одно значение по умолчанию. Для остальных моделей используйте codex -m <модель>.",
+    "No primary model is set on purpose. With it left empty, /model inside Claude Code reaches every Claude model your key allows; the three role models only map Claude Code’s haiku/sonnet/opus tiers onto our catalog.": "Основная модель намеренно не задана. Если оставить поле пустым, команда /model в Claude Code открывает доступ ко всем моделям Claude, разрешённым вашим ключом; три ролевые модели лишь сопоставляют уровни haiku/sonnet/opus с нашим каталогом."
   }
 }

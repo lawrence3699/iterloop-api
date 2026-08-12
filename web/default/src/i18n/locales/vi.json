@@ -5714,6 +5714,9 @@
     "This key serves {{count}} Codex models. Codex stores one default in its config; run codex -m <model> to use another.": "Khóa này dùng được {{count}} mô hình Codex. Codex chỉ lưu một mô hình mặc định trong cấu hình; dùng codex -m <mô hình> để chọn mô hình khác.",
     "Pin a model (optional)": "Ghim một mô hình (tùy chọn)",
     "Default Model": "Mô hình mặc định",
-    "Please select a default model": "Vui lòng chọn mô hình mặc định"
+    "Please select a default model": "Vui lòng chọn mô hình mặc định",
+    "Claude Code uses the Anthropic endpoint; Codex uses the OpenAI-compatible one. That is the whole form — model fields sit under Advanced options and can be left alone.": "Claude Code dùng endpoint Anthropic; Codex dùng endpoint tương thích OpenAI. Biểu mẫu chỉ có vậy — các ô mô hình nằm trong tùy chọn nâng cao và có thể để nguyên.",
+    "Codex keeps a single model in its config file, so one default is written. Run codex -m <model> to use any of the others on your key.": "Codex chỉ giữ một mô hình trong tệp cấu hình nên chỉ ghi một giá trị mặc định. Dùng codex -m <mô hình> để dùng các mô hình khác trên khóa của bạn.",
+    "No primary model is set on purpose. With it left empty, /model inside Claude Code reaches every Claude model your key allows; the three role models only map Claude Code’s haiku/sonnet/opus tiers onto our catalog.": "Mô hình chính được cố ý bỏ trống. Khi để trống, lệnh /model trong Claude Code truy cập được mọi mô hình Claude mà khóa của bạn cho phép; ba mô hình vai trò chỉ ánh xạ các bậc haiku/sonnet/opus của Claude Code sang danh mục của chúng tôi."
   }
 }

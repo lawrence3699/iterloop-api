@@ -26,16 +26,20 @@ import {
   DocsPager,
 } from '../components/docs-layout'
 
-const CLAUDE_MANUAL = `Endpoint   https://api.iter-loop.com
-API Key    sk-your-iterloop-key
-Model      claude-sonnet-4-6`
+const CLAUDE_MANUAL = `Endpoint      https://api.iter-loop.com
+API Key       sk-your-iterloop-key
+Haiku model   claude-haiku-4-5-20251001
+Sonnet model  claude-sonnet-4-6
+Opus model    claude-opus-5`
 
-const CODEX_MANUAL = `Endpoint   https://api.iter-loop.com/v1
-API Key    sk-your-iterloop-key
-Model      gpt-5.6-sol`
+const CODEX_MANUAL = `Endpoint      https://api.iter-loop.com/v1
+API Key       sk-your-iterloop-key
+Model         gpt-5.6-sol`
 
 const IMPORT_LINK = `ccswitch://v1/import?resource=provider&app=claude&name=IterLoop
-  &endpoint=https%3A%2F%2Fapi.iter-loop.com&apiKey=sk-your-iterloop-key`
+  &endpoint=https%3A%2F%2Fapi.iter-loop.com&apiKey=sk-your-iterloop-key
+  &haikuModel=claude-haiku-4-5-20251001&sonnetModel=claude-sonnet-4-6
+  &opusModel=claude-opus-5&enabled=true`
 
 export function CcSwitchDocs() {
   const { t } = useTranslation()
@@ -79,7 +83,7 @@ export function CcSwitchDocs() {
           <li>
             <strong>{t('Pick the client')}</strong>{' '}
             {t(
-              'Claude Code uses the Anthropic endpoint; Codex uses the OpenAI-compatible one. The model fields are pre-filled and can be changed.'
+              'Claude Code uses the Anthropic endpoint; Codex uses the OpenAI-compatible one. That is the whole form — model fields sit under Advanced options and can be left alone.'
             )}
           </li>
           <li>
@@ -108,12 +112,24 @@ export function CcSwitchDocs() {
         <DocNote>
           <p>
             {t(
+              'No primary model is set on purpose. With it left empty, /model inside Claude Code reaches every Claude model your key allows; the three role models only map Claude Code’s haiku/sonnet/opus tiers onto our catalog.'
+            )}
+          </p>
+          <p>
+            {t(
               'The Anthropic endpoint is the bare domain — do not add /v1. Only the OpenAI-compatible endpoint used by Codex carries the /v1 suffix.'
             )}
           </p>
         </DocNote>
         <h3>Codex</h3>
         <CodeSample title='CC Switch' value={CODEX_MANUAL} />
+        <DocNote>
+          <p>
+            {t(
+              'Codex keeps a single model in its config file, so one default is written. Run codex -m <model> to use any of the others on your key.'
+            )}
+          </p>
+        </DocNote>
       </DocSection>
 
       <DocSection id='troubleshooting' title='If nothing happens'>

@@ -5678,7 +5678,7 @@
     "A new Developer menu appears. Open Developer → Configure Third-Party Inference.": "此时会出现一个新的开发者菜单。打开 开发者 → 配置第三方推理。",
     "Set the Base URL and paste an API key from Console → API Keys as the credential.": "设置 Base URL，并粘贴一个来自 控制台 → API 密钥 的密钥作为凭据。",
     "Machine-readable references": "机器可读参考资料",
-    ", install it, and leave it running.": "，安装后保持它在后台运行。",
+    ", install it, and leave it running.": " 下载，安装后保持它在后台运行。",
     "A copied import link looks like this:": "复制出来的导入链接长这样：",
     "Adding it by hand": "手动添加",
     "CC Switch is a free third-party desktop app that manages provider configurations for Claude Code, Codex and similar clients. Download it for macOS, Windows or Linux from": "CC Switch 是一个免费的第三方桌面应用，用来管理 Claude Code、Codex 等客户端的供应商配置。macOS、Windows、Linux 版本都可以从",
@@ -5714,6 +5714,9 @@
     "This key serves {{count}} Codex models. Codex stores one default in its config; run codex -m <model> to use another.": "这把密钥可用 {{count}} 个 Codex 模型。Codex 配置里只能写一个默认模型，其余用 codex -m <模型> 临时指定。",
     "Pin a model (optional)": "锁定某个模型（可选）",
     "Default Model": "默认模型",
-    "Please select a default model": "请选择默认模型"
+    "Please select a default model": "请选择默认模型",
+    "Claude Code uses the Anthropic endpoint; Codex uses the OpenAI-compatible one. That is the whole form — model fields sit under Advanced options and can be left alone.": "Claude Code 用 Anthropic 接入地址，Codex 用 OpenAI 兼容地址。表单到这里就填完了——模型相关的项都在「高级选项」里，可以完全不管。",
+    "Codex keeps a single model in its config file, so one default is written. Run codex -m <model> to use any of the others on your key.": "Codex 的配置文件只放一个模型，所以这里只写入一个默认值。其余模型用 codex -m <模型> 指定。",
+    "No primary model is set on purpose. With it left empty, /model inside Claude Code reaches every Claude model your key allows; the three role models only map Claude Code’s haiku/sonnet/opus tiers onto our catalog.": "这里刻意不设主模型。留空后，Claude Code 里的 /model 能切到这把密钥允许的每一个 Claude 模型；三个角色模型只是把 Claude Code 的 haiku/sonnet/opus 档位映射到我们的目录。"
   }
 }

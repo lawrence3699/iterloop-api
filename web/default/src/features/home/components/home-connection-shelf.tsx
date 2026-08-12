@@ -56,7 +56,7 @@ const STEPS: ConnectionStep[] = [
     id: 'switch',
     number: '02',
     title: 'Import with CC Switch',
-    body: 'Choose one-click connection on the token row, select the client and model, then open CC Switch.',
+    body: 'Choose one-click connection on the token row, pick the client, then open CC Switch.',
     icon: ClipboardCheck,
     tone: 'light',
   },

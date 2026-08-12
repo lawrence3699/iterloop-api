@@ -311,8 +311,8 @@ export const iterLoopZhCN: Record<string, string> = {
   'Independent balances': '独立额度',
   'Import this key': '导入这个 Key',
   'Import with CC Switch': 'CC Switch 导入',
-  'Choose one-click connection on the token row, select the client and model, then open CC Switch.':
-    '在令牌行点一键接入，选客户端和模型后打开 CC Switch。',
+  'Choose one-click connection on the token row, pick the client, then open CC Switch.':
+    '在令牌行点一键接入，选好客户端后打开 CC Switch。',
   'Keep account and key usage visible without inventing subscription plans.':
     '清楚展示账户和 Key 用量，不虚构订阅套餐。',
   'Keep familiar clients and replace only the API settings.':

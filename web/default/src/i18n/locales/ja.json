@@ -5714,6 +5714,9 @@
     "This key serves {{count}} Codex models. Codex stores one default in its config; run codex -m <model> to use another.": "このキーでは {{count}} 個の Codex モデルを利用できます。Codex の設定に書ける既定モデルは 1 つだけなので、他は codex -m <モデル> で指定してください。",
     "Pin a model (optional)": "モデルを固定（任意）",
     "Default Model": "既定モデル",
-    "Please select a default model": "既定モデルを選択してください"
+    "Please select a default model": "既定モデルを選択してください",
+    "Claude Code uses the Anthropic endpoint; Codex uses the OpenAI-compatible one. That is the whole form — model fields sit under Advanced options and can be left alone.": "Claude Code は Anthropic エンドポイント、Codex は OpenAI 互換エンドポイントを使います。入力はこれで完了です。モデル関連の項目は「詳細オプション」内にあり、触らなくても構いません。",
+    "Codex keeps a single model in its config file, so one default is written. Run codex -m <model> to use any of the others on your key.": "Codex は設定ファイルにモデルを 1 つしか保持しないため、既定値は 1 つだけ書き込まれます。他のモデルは codex -m <モデル> で指定してください。",
+    "No primary model is set on purpose. With it left empty, /model inside Claude Code reaches every Claude model your key allows; the three role models only map Claude Code’s haiku/sonnet/opus tiers onto our catalog.": "主モデルはあえて設定していません。空のままなら、Claude Code の /model からキーで許可されたすべての Claude モデルに切り替えられます。3 つのロールモデルは Claude Code の haiku/sonnet/opus の各段階を当社のカタログに対応付けるだけのものです。"
   }
 }
