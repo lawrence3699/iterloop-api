@@ -5709,6 +5709,11 @@
     "The browser blocked the link": "ブラウザーがリンクをブロックした",
     "The button hands the link to your operating system. With no app registered for it, the click does nothing — install CC Switch and try again.": "このボタンはリンクを OS に渡して開きます。対応するアプリが登録されていないと、クリックしても何も起こりません。CC Switch をインストールしてからお試しください。",
     "The key was disabled, deleted, or is out of quota. Check it under Console → API Keys.": "キーが無効化・削除されたか、残高が不足しています。コンソール → API キー で確認してください。",
-    "Use \"Copy import link\" in the dialog and paste the link into CC Switch, or into your browser address bar.": "ダイアログの「インポートリンクをコピー」を使い、リンクを CC Switch かブラウザーのアドレスバーに貼り付けてください。"
+    "Use \"Copy import link\" in the dialog and paste the link into CC Switch, or into your browser address bar.": "ダイアログの「インポートリンクをコピー」を使い、リンクを CC Switch かブラウザーのアドレスバーに貼り付けてください。",
+    "All {{count}} Claude models on this key stay available — switch between them with /model inside Claude Code.": "このキーで使える {{count}} 個の Claude モデルはすべて利用できます。Claude Code 内の /model で切り替えてください。",
+    "This key serves {{count}} Codex models. Codex stores one default in its config; run codex -m <model> to use another.": "このキーでは {{count}} 個の Codex モデルを利用できます。Codex の設定に書ける既定モデルは 1 つだけなので、他は codex -m <モデル> で指定してください。",
+    "Pin a model (optional)": "モデルを固定（任意）",
+    "Default Model": "既定モデル",
+    "Please select a default model": "既定モデルを選択してください"
   }
 }

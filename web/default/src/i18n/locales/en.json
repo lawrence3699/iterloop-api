@@ -5709,6 +5709,11 @@
     "The browser blocked the link": "The browser blocked the link",
     "The button hands the link to your operating system. With no app registered for it, the click does nothing — install CC Switch and try again.": "The button hands the link to your operating system. With no app registered for it, the click does nothing — install CC Switch and try again.",
     "The key was disabled, deleted, or is out of quota. Check it under Console → API Keys.": "The key was disabled, deleted, or is out of quota. Check it under Console → API Keys.",
-    "Use \"Copy import link\" in the dialog and paste the link into CC Switch, or into your browser address bar.": "Use \"Copy import link\" in the dialog and paste the link into CC Switch, or into your browser address bar."
+    "Use \"Copy import link\" in the dialog and paste the link into CC Switch, or into your browser address bar.": "Use \"Copy import link\" in the dialog and paste the link into CC Switch, or into your browser address bar.",
+    "All {{count}} Claude models on this key stay available — switch between them with /model inside Claude Code.": "All {{count}} Claude models on this key stay available — switch between them with /model inside Claude Code.",
+    "This key serves {{count}} Codex models. Codex stores one default in its config; run codex -m <model> to use another.": "This key serves {{count}} Codex models. Codex stores one default in its config; run codex -m <model> to use another.",
+    "Pin a model (optional)": "Pin a model (optional)",
+    "Default Model": "Default Model",
+    "Please select a default model": "Please select a default model"
   }
 }

@@ -5709,6 +5709,11 @@
     "The browser blocked the link": "瀏覽器擋下了這個連結",
     "The button hands the link to your operating system. With no app registered for it, the click does nothing — install CC Switch and try again.": "按鈕是把連結交給作業系統開啟的。系統中沒有應用程式註冊這個連結時，點了就不會有任何反應——裝好 CC Switch 再試一次。",
     "The key was disabled, deleted, or is out of quota. Check it under Console → API Keys.": "金鑰被停用、被刪除，或額度已用完。到主控台 → API 金鑰中確認一下。",
-    "Use \"Copy import link\" in the dialog and paste the link into CC Switch, or into your browser address bar.": "用對話框裡的「複製匯入連結」，再把連結貼到 CC Switch 或瀏覽器網址列。"
+    "Use \"Copy import link\" in the dialog and paste the link into CC Switch, or into your browser address bar.": "用對話框裡的「複製匯入連結」，再把連結貼到 CC Switch 或瀏覽器網址列。",
+    "All {{count}} Claude models on this key stay available — switch between them with /model inside Claude Code.": "這把金鑰能用的 {{count}} 個 Claude 模型全部可用——在 Claude Code 裡用 /model 切換。",
+    "This key serves {{count}} Codex models. Codex stores one default in its config; run codex -m <model> to use another.": "這把金鑰可用 {{count}} 個 Codex 模型。Codex 設定裡只能寫一個預設模型，其餘用 codex -m <模型> 臨時指定。",
+    "Pin a model (optional)": "鎖定某個模型（選填）",
+    "Default Model": "預設模型",
+    "Please select a default model": "請選擇預設模型"
   }
 }

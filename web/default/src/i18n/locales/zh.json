@@ -5709,6 +5709,11 @@
     "The browser blocked the link": "浏览器拦下了这个链接",
     "The button hands the link to your operating system. With no app registered for it, the click does nothing — install CC Switch and try again.": "按钮是把链接交给操作系统打开的。系统里没有应用注册这个链接时，点了就没有任何反应——装好 CC Switch 再试一次。",
     "The key was disabled, deleted, or is out of quota. Check it under Console → API Keys.": "密钥被禁用、被删除，或者额度已用完。到控制台 → API 密钥里确认一下。",
-    "Use \"Copy import link\" in the dialog and paste the link into CC Switch, or into your browser address bar.": "用弹窗里的「复制导入链接」，再把链接粘贴到 CC Switch 或浏览器地址栏里。"
+    "Use \"Copy import link\" in the dialog and paste the link into CC Switch, or into your browser address bar.": "用弹窗里的「复制导入链接」，再把链接粘贴到 CC Switch 或浏览器地址栏里。",
+    "All {{count}} Claude models on this key stay available — switch between them with /model inside Claude Code.": "这把密钥能用的 {{count}} 个 Claude 模型全部可用——在 Claude Code 里用 /model 切换。",
+    "This key serves {{count}} Codex models. Codex stores one default in its config; run codex -m <model> to use another.": "这把密钥可用 {{count}} 个 Codex 模型。Codex 配置里只能写一个默认模型，其余用 codex -m <模型> 临时指定。",
+    "Pin a model (optional)": "锁定某个模型（可选）",
+    "Default Model": "默认模型",
+    "Please select a default model": "请选择默认模型"
   }
 }

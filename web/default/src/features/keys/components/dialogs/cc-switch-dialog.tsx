@@ -17,12 +17,18 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 import { useQuery } from '@tanstack/react-query'
+import { ChevronRight } from 'lucide-react'
 import { useState, useEffect, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 
 import { Dialog } from '@/components/dialog'
 import { Button } from '@/components/ui/button'
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from '@/components/ui/collapsible'
 import { ComboboxInput } from '@/components/ui/combobox-input'
 import { Label } from '@/components/ui/label'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
@@ -36,10 +42,10 @@ interface ModelFieldConfig {
   key: string
   labelKey: string
   required: boolean
-  /** Preferred model ids, most preferred first. */
-  preferred: readonly string[]
+  /** Preferred model ids, most preferred first. Omit to leave the field empty. */
+  preferred?: readonly string[]
   /** Used when none of the preferred ids is available to this key. */
-  fallbackPrefix: string
+  fallbackPrefix?: string
 }
 
 interface AppConfig {
@@ -47,6 +53,8 @@ interface AppConfig {
   defaultName: string
   /** Appended to the API origin to form the endpoint CC Switch stores. */
   endpointSuffix: string
+  /** Identifies which of this account's models this client can actually call. */
+  modelPrefixes: readonly string[]
   modelFields: readonly ModelFieldConfig[]
 }
 
@@ -57,13 +65,15 @@ const APP_CONFIGS: Record<'claude' | 'codex', AppConfig> = {
     // Claude Code speaks the Anthropic Messages API, served from the API origin
     // root — appending /v1 here would double the version prefix.
     endpointSuffix: '',
+    modelPrefixes: ['claude-'],
     modelFields: [
+      // Deliberately has no default: leaving ANTHROPIC_MODEL unset is what keeps
+      // every Claude model in the catalog reachable through /model. Pinning one
+      // here would lock the client to it.
       {
         key: 'model',
-        labelKey: 'Primary Model',
-        required: true,
-        preferred: ['claude-sonnet-4-6'],
-        fallbackPrefix: 'claude-sonnet',
+        labelKey: 'Pin a model (optional)',
+        required: false,
       },
       {
         key: 'haikuModel',
@@ -93,10 +103,14 @@ const APP_CONFIGS: Record<'claude' | 'codex', AppConfig> = {
     defaultName: 'IterLoop Codex',
     // Codex speaks the OpenAI Responses API, which lives under /v1.
     endpointSuffix: '/v1',
+    modelPrefixes: ['gpt-', 'codex-'],
     modelFields: [
+      // Required: config.toml carries exactly one model, and CC Switch falls back
+      // to "gpt-5-codex" when the deep link omits it — a model IterLoop does not
+      // serve, which would leave the imported provider broken.
       {
         key: 'model',
-        labelKey: 'Primary Model',
+        labelKey: 'Default Model',
         required: true,
         preferred: ['gpt-5.6-sol'],
         fallbackPrefix: 'gpt-',
@@ -107,20 +121,21 @@ const APP_CONFIGS: Record<'claude' | 'codex', AppConfig> = {
 
 type AppType = keyof typeof APP_CONFIGS
 
-/**
- * Pre-fills the model fields so the dialog is genuinely one-click. A default is
- * only used when this key can actually reach the model, so a retired model never
- * leaves a field pointing at something the request would reject.
- */
 function pickDefaultModels(
   app: AppType,
   availableModels: string[]
 ): Record<string, string> {
   const defaults: Record<string, string> = {}
   for (const field of APP_CONFIGS[app].modelFields) {
+    const preferred = field.preferred?.find((name) =>
+      availableModels.includes(name)
+    )
+    const prefix = field.fallbackPrefix
     const chosen =
-      field.preferred.find((name) => availableModels.includes(name)) ??
-      availableModels.find((name) => name.startsWith(field.fallbackPrefix))
+      preferred ??
+      (prefix
+        ? availableModels.find((name) => name.startsWith(prefix))
+        : undefined)
     if (chosen) defaults[field.key] = chosen
   }
   return defaults
@@ -162,6 +177,7 @@ export function CCSwitchDialog(props: Props) {
   const [app, setApp] = useState<AppType>('claude')
   const [name, setName] = useState<string>(APP_CONFIGS.claude.defaultName)
   const [models, setModels] = useState<Record<string, string>>({})
+  const [advancedOpen, setAdvancedOpen] = useState(false)
 
   const { data: modelsData } = useQuery({
     queryKey: ['user-models-ccswitch'],
@@ -175,9 +191,22 @@ export function CCSwitchDialog(props: Props) {
     [modelsData?.data]
   )
 
+  const currentConfig = APP_CONFIGS[app]
+
+  // Only the models this client can actually call: Claude Code talks Anthropic
+  // Messages and Codex talks the Responses API, and the relay serves each family
+  // on one protocol only.
+  const usableModels = useMemo(
+    () =>
+      availableModels.filter((m) =>
+        currentConfig.modelPrefixes.some((p) => m.startsWith(p))
+      ),
+    [availableModels, currentConfig.modelPrefixes]
+  )
+
   const modelOptions = useMemo(
-    () => availableModels.map((m) => ({ value: m, label: m })),
-    [availableModels]
+    () => usableModels.map((m) => ({ value: m, label: m })),
+    [usableModels]
   )
 
   useEffect(() => {
@@ -185,33 +214,36 @@ export function CCSwitchDialog(props: Props) {
     setApp('claude')
 
     setName(APP_CONFIGS.claude.defaultName)
+
+    setAdvancedOpen(false)
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setModels({})
   }, [props.open])
 
   // The model list arrives asynchronously, so defaults are filled once it lands.
-  // Anything the user already picked wins.
   useEffect(() => {
-    if (!props.open || availableModels.length === 0) return
+    if (!props.open || usableModels.length === 0) return
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setModels((prev) =>
-      prev.model ? prev : pickDefaultModels(app, availableModels)
+      Object.keys(prev).length > 0 ? prev : pickDefaultModels(app, usableModels)
     )
-  }, [props.open, app, availableModels])
+  }, [props.open, app, usableModels])
 
-  const currentConfig = APP_CONFIGS[app]
   const endpoint = `${ITERLOOP_API_ORIGIN}${currentConfig.endpointSuffix}`
 
   const handleAppChange = (val: string) => {
     const appVal = val as AppType
     setApp(appVal)
     setName(APP_CONFIGS[appVal].defaultName)
-    setModels(pickDefaultModels(appVal, availableModels))
+    setModels({})
   }
 
   const importUrl = () => {
-    if (!models.model) {
-      toast.warning(t('Please select a primary model'))
+    const required = currentConfig.modelFields.find(
+      (f) => f.required && !models[f.key]
+    )
+    if (required) {
+      toast.warning(t('Please select a default model'))
       return null
     }
     const key = props.tokenKey.startsWith('sk-')
@@ -243,9 +275,7 @@ export function CCSwitchDialog(props: Props) {
       title={t('Import to CC Switch')}
       contentClassName='sm:max-w-md'
       contentHeight='auto'
-      bodyClassName={
-        currentConfig.modelFields.length === 1 ? 'space-y-4 pb-52' : 'space-y-4'
-      }
+      bodyClassName={advancedOpen ? 'space-y-4 pb-52' : 'space-y-4'}
       footer={
         <>
           <Button variant='outline' onClick={() => props.onOpenChange(false)}>
@@ -293,25 +323,51 @@ export function CCSwitchDialog(props: Props) {
           />
         </div>
 
-        {currentConfig.modelFields.map((field) => (
-          <div key={field.key} className='space-y-2'>
-            <Label>
-              {t(field.labelKey)}
-              {field.required && (
-                <span className='text-destructive ml-0.5'>*</span>
+        <p className='text-muted-foreground text-xs'>
+          {app === 'claude'
+            ? t(
+                'All {{count}} Claude models on this key stay available — switch between them with /model inside Claude Code.',
+                { count: usableModels.length }
+              )
+            : t(
+                'This key serves {{count}} Codex models. Codex stores one default in its config; run codex -m <model> to use another.',
+                { count: usableModels.length }
               )}
-            </Label>
-            <ComboboxInput
-              options={modelOptions}
-              value={models[field.key] || ''}
-              onValueChange={(v) =>
-                setModels((prev) => ({ ...prev, [field.key]: v }))
-              }
-              placeholder={t('Select or enter model name')}
-              emptyText={t('No models found')}
+        </p>
+
+        <Collapsible open={advancedOpen} onOpenChange={setAdvancedOpen}>
+          <CollapsibleTrigger
+            className='text-muted-foreground hover:text-foreground flex items-center gap-1 text-xs'
+            aria-label={t('Advanced options')}
+          >
+            <ChevronRight
+              aria-hidden='true'
+              className={`size-3.5 transition-transform ${advancedOpen ? 'rotate-90' : ''}`}
             />
-          </div>
-        ))}
+            {t('Advanced options')}
+          </CollapsibleTrigger>
+          <CollapsibleContent className='space-y-4 pt-4'>
+            {currentConfig.modelFields.map((field) => (
+              <div key={field.key} className='space-y-2'>
+                <Label>
+                  {t(field.labelKey)}
+                  {field.required && (
+                    <span className='text-destructive ml-0.5'>*</span>
+                  )}
+                </Label>
+                <ComboboxInput
+                  options={modelOptions}
+                  value={models[field.key] || ''}
+                  onValueChange={(v) =>
+                    setModels((prev) => ({ ...prev, [field.key]: v }))
+                  }
+                  placeholder={t('Select or enter model name')}
+                  emptyText={t('No models found')}
+                />
+              </div>
+            ))}
+          </CollapsibleContent>
+        </Collapsible>
 
         <p className='text-muted-foreground text-xs'>
           {t('Nothing happened? Install CC Switch first, then try again.')}{' '}

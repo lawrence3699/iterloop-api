@@ -5709,6 +5709,11 @@
     "The browser blocked the link": "Trình duyệt đã chặn liên kết",
     "The button hands the link to your operating system. With no app registered for it, the click does nothing — install CC Switch and try again.": "Nút này chuyển liên kết cho hệ điều hành mở. Nếu chưa có ứng dụng nào đăng ký xử lý, cú nhấn sẽ không có tác dụng — hãy cài CC Switch rồi thử lại.",
     "The key was disabled, deleted, or is out of quota. Check it under Console → API Keys.": "Khóa đã bị tắt, bị xóa hoặc hết hạn mức. Kiểm tra tại Bảng điều khiển → Khóa API.",
-    "Use \"Copy import link\" in the dialog and paste the link into CC Switch, or into your browser address bar.": "Dùng \"Sao chép liên kết nhập\" trong hộp thoại rồi dán liên kết vào CC Switch hoặc thanh địa chỉ trình duyệt."
+    "Use \"Copy import link\" in the dialog and paste the link into CC Switch, or into your browser address bar.": "Dùng \"Sao chép liên kết nhập\" trong hộp thoại rồi dán liên kết vào CC Switch hoặc thanh địa chỉ trình duyệt.",
+    "All {{count}} Claude models on this key stay available — switch between them with /model inside Claude Code.": "Toàn bộ {{count}} mô hình Claude khả dụng với khóa này vẫn dùng được — chuyển đổi bằng /model trong Claude Code.",
+    "This key serves {{count}} Codex models. Codex stores one default in its config; run codex -m <model> to use another.": "Khóa này dùng được {{count}} mô hình Codex. Codex chỉ lưu một mô hình mặc định trong cấu hình; dùng codex -m <mô hình> để chọn mô hình khác.",
+    "Pin a model (optional)": "Ghim một mô hình (tùy chọn)",
+    "Default Model": "Mô hình mặc định",
+    "Please select a default model": "Vui lòng chọn mô hình mặc định"
   }
 }

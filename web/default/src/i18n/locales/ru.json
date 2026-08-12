@@ -5709,6 +5709,11 @@
     "The browser blocked the link": "Браузер заблокировал ссылку",
     "The button hands the link to your operating system. With no app registered for it, the click does nothing — install CC Switch and try again.": "Кнопка передаёт ссылку операционной системе. Если для неё не зарегистрировано приложение, нажатие ничего не даёт — установите CC Switch и попробуйте снова.",
     "The key was disabled, deleted, or is out of quota. Check it under Console → API Keys.": "Ключ отключён, удалён или исчерпал квоту. Проверьте его в разделе Консоль → API-ключи.",
-    "Use \"Copy import link\" in the dialog and paste the link into CC Switch, or into your browser address bar.": "Используйте «Скопировать ссылку импорта» в диалоге и вставьте ссылку в CC Switch или в адресную строку браузера."
+    "Use \"Copy import link\" in the dialog and paste the link into CC Switch, or into your browser address bar.": "Используйте «Скопировать ссылку импорта» в диалоге и вставьте ссылку в CC Switch или в адресную строку браузера.",
+    "All {{count}} Claude models on this key stay available — switch between them with /model inside Claude Code.": "Все {{count}} моделей Claude, доступных этому ключу, остаются доступными — переключайтесь между ними командой /model в Claude Code.",
+    "This key serves {{count}} Codex models. Codex stores one default in its config; run codex -m <model> to use another.": "Этот ключ даёт доступ к {{count}} моделям Codex. В конфигурации Codex хранится только одна модель по умолчанию; для остальных используйте codex -m <модель>.",
+    "Pin a model (optional)": "Закрепить модель (необязательно)",
+    "Default Model": "Модель по умолчанию",
+    "Please select a default model": "Выберите модель по умолчанию"
   }
 }

@@ -5709,6 +5709,11 @@
     "The browser blocked the link": "Le navigateur a bloqué le lien",
     "The button hands the link to your operating system. With no app registered for it, the click does nothing — install CC Switch and try again.": "Le bouton transmet le lien à votre système d’exploitation. Si aucune application n’y est associée, le clic reste sans effet — installez CC Switch et réessayez.",
     "The key was disabled, deleted, or is out of quota. Check it under Console → API Keys.": "La clé a été désactivée, supprimée, ou son quota est épuisé. Vérifiez-la dans Console → Clés API.",
-    "Use \"Copy import link\" in the dialog and paste the link into CC Switch, or into your browser address bar.": "Utilisez « Copier le lien d’import » dans la boîte de dialogue, puis collez le lien dans CC Switch ou dans la barre d’adresse de votre navigateur."
+    "Use \"Copy import link\" in the dialog and paste the link into CC Switch, or into your browser address bar.": "Utilisez « Copier le lien d’import » dans la boîte de dialogue, puis collez le lien dans CC Switch ou dans la barre d’adresse de votre navigateur.",
+    "All {{count}} Claude models on this key stay available — switch between them with /model inside Claude Code.": "Les {{count}} modèles Claude accessibles avec cette clé restent tous disponibles — basculez entre eux avec /model dans Claude Code.",
+    "This key serves {{count}} Codex models. Codex stores one default in its config; run codex -m <model> to use another.": "Cette clé donne accès à {{count}} modèles Codex. Codex ne stocke qu’un modèle par défaut dans sa configuration ; utilisez codex -m <modèle> pour en choisir un autre.",
+    "Pin a model (optional)": "Épingler un modèle (facultatif)",
+    "Default Model": "Modèle par défaut",
+    "Please select a default model": "Veuillez sélectionner un modèle par défaut"
   }
 }
