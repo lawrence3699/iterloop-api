@@ -120,9 +120,11 @@ const APP_CONFIGS: Record<'claude' | 'codex', AppConfig> = {
     // Codex speaks the OpenAI Responses API, which lives under /v1.
     endpointSuffix: '/v1',
     modelPrefixes: ['gpt-', 'codex-'],
-    // The Responses endpoint answers for every family the relay serves, so the
-    // Codex default can be a Claude or Grok model.
-    crossModelPrefixes: ['claude-', 'grok-'],
+    // Grok only. Claude is deliberately absent: the relay answers a Responses
+    // request for a Claude model with "not implemented" (no Responses ->
+    // Anthropic Messages conversion), so offering it here would hand the user a
+    // provider that fails on first use.
+    crossModelPrefixes: ['grok-'],
     modelFields: [
       // Required: config.toml carries exactly one model, and CC Switch falls back
       // to "gpt-5-codex" when the deep link omits it — a model IterLoop does not
@@ -189,6 +191,10 @@ interface Props {
   open: boolean
   onOpenChange: (open: boolean) => void
   tokenKey: string
+  /** Group of the token being imported; scopes the model list to what it can call. */
+  tokenGroup?: string
+  /** Comma-separated whitelist, empty when the token has no model limit. */
+  tokenModelLimits?: string
 }
 
 export function CCSwitchDialog(props: Props) {
@@ -200,16 +206,24 @@ export function CCSwitchDialog(props: Props) {
   const [mixFamilies, setMixFamilies] = useState(false)
 
   const { data: modelsData } = useQuery({
-    queryKey: ['user-models-ccswitch'],
-    queryFn: getUserModels,
+    queryKey: ['user-models-ccswitch', props.tokenGroup],
+    queryFn: () => getUserModels(props.tokenGroup),
     enabled: props.open,
     staleTime: 5 * 60 * 1000,
   })
 
-  const availableModels = useMemo(
-    () => modelsData?.data ?? [],
-    [modelsData?.data]
-  )
+  // The token's own whitelist narrows the group list further. Without both
+  // filters the dialog offers models the imported key answers 404 or "no
+  // channel" for.
+  const availableModels = useMemo(() => {
+    const groupModels = modelsData?.data ?? []
+    const limits = (props.tokenModelLimits ?? '')
+      .split(',')
+      .map((entry) => entry.trim())
+      .filter(Boolean)
+    if (limits.length === 0) return groupModels
+    return groupModels.filter((model) => limits.includes(model))
+  }, [modelsData?.data, props.tokenModelLimits])
 
   const currentConfig = APP_CONFIGS[app]
 
@@ -407,7 +421,7 @@ export function CCSwitchDialog(props: Props) {
                         'Point the slots below at Grok or GPT models on the same key. Codex-only models stay hidden because Claude Code cannot reach them.'
                       )
                     : t(
-                        'Point the default below at a Claude or Grok model on the same key.'
+                        'Point the default below at a Grok model on the same key. Claude models stay hidden because Codex cannot reach them.'
                       )}
                 </p>
               </div>

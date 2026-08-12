@@ -187,13 +187,17 @@ export async function getSelf() {
   return res.data
 }
 
-// Get user available models
-export async function getUserModels(): Promise<{
+// Get user available models. Pass a group to get exactly what a token in that
+// group can call — the ungrouped call answers for the user's own group, which
+// is wider than a token whose group carries fewer channels.
+export async function getUserModels(group?: string): Promise<{
   success: boolean
   message?: string
   data?: string[]
 }> {
-  const res = await api.get('/api/user/models')
+  const res = await api.get('/api/user/models', {
+    params: group ? { group } : undefined,
+  })
   return res.data
 }
 

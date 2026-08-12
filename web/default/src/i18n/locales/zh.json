@@ -5720,7 +5720,7 @@
     "No primary model is set on purpose. With it left empty, /model inside Claude Code reaches every Claude model your key allows; the three role models only map Claude Code’s haiku/sonnet/opus tiers onto our catalog.": "这里刻意不设主模型。留空后，Claude Code 里的 /model 能切到这把密钥允许的每一个 Claude 模型；三个角色模型只是把 Claude Code 的 haiku/sonnet/opus 档位映射到我们的目录。",
     "Use models from other families": "使用其他系列的模型",
     "Point the slots below at Grok or GPT models on the same key. Codex-only models stay hidden because Claude Code cannot reach them.": "把下面的槽位指向同一把密钥上的 Grok 或 GPT 模型。Codex 专属模型不会出现，因为 Claude Code 调不到它们。",
-    "Point the default below at a Claude or Grok model on the same key.": "把下面的默认模型指向同一把密钥上的 Claude 或 Grok 模型。",
+    "Point the default below at a Grok model on the same key. Claude models stay hidden because Codex cannot reach them.": "把下面的默认模型指向同一把密钥上的 Grok 模型。Claude 模型不会出现，因为 Codex 调不到它们。",
     "{{count}} models on this key can be reached from {{client}}, across Claude, Codex and Grok.": "这把密钥上有 {{count}} 个模型可以从 {{client}} 调用，涵盖 Claude、Codex 和 Grok。"
   }
 }

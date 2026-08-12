@@ -5720,7 +5720,7 @@
     "No primary model is set on purpose. With it left empty, /model inside Claude Code reaches every Claude model your key allows; the three role models only map Claude Code’s haiku/sonnet/opus tiers onto our catalog.": "No primary model is set on purpose. With it left empty, /model inside Claude Code reaches every Claude model your key allows; the three role models only map Claude Code’s haiku/sonnet/opus tiers onto our catalog.",
     "Use models from other families": "Use models from other families",
     "Point the slots below at Grok or GPT models on the same key. Codex-only models stay hidden because Claude Code cannot reach them.": "Point the slots below at Grok or GPT models on the same key. Codex-only models stay hidden because Claude Code cannot reach them.",
-    "Point the default below at a Claude or Grok model on the same key.": "Point the default below at a Claude or Grok model on the same key.",
+    "Point the default below at a Grok model on the same key. Claude models stay hidden because Codex cannot reach them.": "Point the default below at a Grok model on the same key. Claude models stay hidden because Codex cannot reach them.",
     "{{count}} models on this key can be reached from {{client}}, across Claude, Codex and Grok.": "{{count}} models on this key can be reached from {{client}}, across Claude, Codex and Grok."
   }
 }
